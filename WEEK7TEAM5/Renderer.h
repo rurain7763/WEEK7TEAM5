@@ -14,6 +14,13 @@
 #include <fstream>
 #include <filesystem>
 
+struct FViewConstants
+{
+	FMatrix ViewProjectionMatrix;
+	FVector CameraPosition;
+	float pad;
+};
+
 struct FCameraConstants
 {
 	FMatrix ViewProjectionMatrix;
@@ -617,7 +624,7 @@ public:
 	TSharedPtr<FShader> CreateShaderFromMemory(const FString& ShaderMemory);
 	
 	//Rendering
-	void Prepare(const FMatrix& ViewProjectionMatrix);
+	void Prepare(FViewConstants ViewConstants);
 
 	TSharedPtr<FRenderPipeline> CreateRenderPipeline();
 

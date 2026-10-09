@@ -24,6 +24,8 @@ cbuffer ModelConstants : register(b0) // FConstants
 cbuffer ViewConstants : register(b1) // FConstants
 {
 	row_major matrix view_projection;
+    float3 cameraPosition;
+    float pad;
 }
 
 struct VS_INPUT
@@ -45,7 +47,6 @@ struct PS_INPUT
 
 Texture2D main_texture : register(t0);
 StructuredBuffer<LightInfo> lights : register(t1);
-
 SamplerState default_sampler : register(s0);
 
 // Vertex Shader
@@ -70,7 +71,7 @@ PS_INPUT mainVS(VS_INPUT input)
     {
         inputcolors = Color;
     }
-    float3 light_color = float3(0.0, 0.0, 0.0);
+    /*float3 light_color = float3(0.0, 0.0, 0.0);
     if (light_count != 0)
     {
         for (int i = 0; i < light_count; ++i)
@@ -95,11 +96,12 @@ PS_INPUT mainVS(VS_INPUT input)
         output.color.rgb = inputcolors.rgb + light_color.rgb;
         output.color.a = inputcolors.a;
     }
-    else output.color = inputcolors;
+    else output.color = inputcolors;*/
+    output.color = inputcolors;
     return output;
 }
 
-// Pixel Shader
+// Pixel Shader, Lambert+Specular
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float4 final_color = input.color;
@@ -108,7 +110,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         final_color *= main_texture.Sample(default_sampler, input.uv);
     }
     
-    /*float3 N = normalize(input.normal);
+    float3 N = normalize(input.normal);
 	
     float3 light_color = float3(0.0, 0.0, 0.0);
     for (int i = 0; i < light_count; ++i)
@@ -118,6 +120,11 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         if (light.type == 1)
         {
             float3 to_light = light.position - input.world_position;
+            float3 lightDir = input.world_position - light.position;
+            float3 viewVector = input.world_position - cameraPosition;
+            float3 halfway = -normalize(viewVector + lightDir);
+            float dotproduct = max(0.0f, dot(input.normal.xyz, halfway));
+            float specularLuminance = pow(dotproduct, 2);
             float dist = length(to_light);
             float3 L = to_light / dist;
             float NdotL = max(dot(N, L), 0.0);
@@ -126,12 +133,13 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
             float attenuation = pow(fade, light.falloff);
             
             float3 diffuse = light.color.rgb * NdotL * light.intensity * attenuation;
+            float3 specular = light.color.rgb * specularLuminance * light.intensity * attenuation;
             
             light_color += diffuse;
+            light_color += specular;
         }
-    }
+    } 
     
     final_color.rgb += light_color;
-    */
     return final_color;
 } 

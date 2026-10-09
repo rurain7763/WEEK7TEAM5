@@ -1,6 +1,8 @@
 #include "Renderer.h"
 #include "FInstrumentor.h"
 
+
+
 constexpr uint32 MaxLineInstances = 1024;
 
 void URenderer::Create(HWND hWindow)
@@ -21,7 +23,7 @@ void URenderer::Create(HWND hWindow)
 	PrimitivePipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, {EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe});
 	PrimitivePipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
 	PrimitivePipeline->AddConstantBuffer<FConstants>();
-	PrimitivePipeline->AddConstantBuffer<FMatrix>();
+	PrimitivePipeline->AddConstantBuffer<FViewConstants>();
 	PrimitivePipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
 
 	Line2DPipeline = CreateRenderPipeline();
@@ -279,7 +281,7 @@ void URenderer::SwapBuffer()
 	SwapChain->Present(0, DXGI_PRESENT_ALLOW_TEARING);
 }
 
-void URenderer::Prepare(const FMatrix& ViewProjectionMatrix)
+void URenderer::Prepare(FViewConstants ViewConstants)
 {
 	DeviceContext->ClearRenderTargetView(FrameBufferRTV, ClearColor);
 	DeviceContext->ClearDepthStencilView(DepthStencilView, D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
@@ -288,12 +290,13 @@ void URenderer::Prepare(const FMatrix& ViewProjectionMatrix)
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 
 	FCameraConstants CameraConstants;
-	CameraConstants.ViewProjectionMatrix = ViewProjectionMatrix;
+	CameraConstants.ViewProjectionMatrix = ViewConstants.ViewProjectionMatrix;
 	CameraConstants.ViewportSize = FVector2((float)Width, (float)Height);
+	
 
 	LinePipeline->UpdateConstantBuffer(0, CameraConstants);
-	PrimitivePipeline->UpdateConstantBuffer(1, ViewProjectionMatrix);
-	QuadPipeline->UpdateConstantBuffer(1, ViewProjectionMatrix);
+	PrimitivePipeline->UpdateConstantBuffer(1, ViewConstants);
+	QuadPipeline->UpdateConstantBuffer(1, ViewConstants.ViewProjectionMatrix);
 }
 
 TSharedPtr<FIndexBuffer> URenderer::CreateIndexBuffer(const uint32* Indices, UINT Count, D3D11_USAGE Usage)

@@ -35,7 +35,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mMeshPipeline->SetDepthStencilState(true, true);
 	mMeshPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
 	mMeshPipeline->AddConstantBuffer<FMeshContants>();
-	mMeshPipeline->AddConstantBuffer<FMatrix>();
+	mMeshPipeline->AddConstantBuffer<FViewConstants>();
 
 	mHighlightMarkPipeline = mRenderer->CreateRenderPipeline();
 	mHighlightMarkPipeline->SetRasterRizerState(D3D11_CULL_BACK);
@@ -84,6 +84,8 @@ FGraphicsManager::~FGraphicsManager()
 void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, const EViewModeIndex InViewMode, const EViewportType InViewportType)
 {
 	//PROFILE_SCOPE("Viewport/Prepare");
+	
+	FViewConstants ViewConstants;
 
 	mViewportType = InViewportType;
 	const bool bIsOrtho = (InViewportType != EViewportType::Perspective);
@@ -105,8 +107,9 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	// 솔리드/와이어프레임 래스터라이저를 고른다.
 	mViewModeIndex = InViewMode;
 	mRenderer->SetViewModeIndex(mViewModeIndex);
-
-	mRenderer->Prepare(view * projection_u);
+	ViewConstants.ViewProjectionMatrix = view * projection_u;
+	ViewConstants.CameraPosition = mCamera->Transform.GetLocation();
+	mRenderer->Prepare(ViewConstants);
 
 	float orthoHeight = mCamera->mOrthoHeight;
 	float orthoWidth = orthoHeight * mAspect;
@@ -272,10 +275,13 @@ void FGraphicsManager::Render()
 			const FRenderInfo& Info = RenderInfos[Index];
 
 			const auto& Pipeline = Info.Pipeline ? Info.Pipeline : mMeshPipeline.get();
+			FViewConstants ViewConstants;
+			ViewConstants.CameraPosition = mCameraLocation;
+			ViewConstants.ViewProjectionMatrix = mViewUnifiedProjectionMatrix;
 
 			if (Pipeline != LastViewPipeline)
 			{
-				Pipeline->UpdateConstantBuffer(1, mViewUnifiedProjectionMatrix);
+				Pipeline->UpdateConstantBuffer(1, ViewConstants);
 				Pipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
 			}
 
