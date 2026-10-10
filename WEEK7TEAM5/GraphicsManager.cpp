@@ -17,7 +17,6 @@
 #include "UPointLightComponent.h"
 #include "USpotLightComponent.h"
 
-
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 
@@ -32,18 +31,16 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 	mAspect = mRenderer->GetWidth() / static_cast<float>(mRenderer->GetHeight());
 
+	mGlobalLightInfoBuffer = mRenderer->CreateConstantBuffer<FGlobalLightInfo>();
 	mLightInfoBuffer = mRenderer->CreateStructuredBuffer<FLightInfo>(1);
-
-	//Ambient, Directional Light Constant Buffer 생성
-	mAmbientLightBuffer = mRenderer->CreateLightConstantBuffer<FAmbientInfo>();
-	mDirectionalLightBuffer = mRenderer->CreateLightConstantBuffer<FDirectionalLightInfo>();
-		
+	
 	mMeshPipeline = mRenderer->CreateRenderPipeline();
 	mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe });
 	mMeshPipeline->SetDepthStencilState(true, true);
 	mMeshPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
 	mMeshPipeline->AddConstantBuffer<FMeshContants>();
 	mMeshPipeline->AddConstantBuffer<FViewConstants>();
+	mMeshPipeline->SetConstantBuffer(2, mGlobalLightInfoBuffer->Buffer.Get());
 
 	mHighlightMarkPipeline = mRenderer->CreateRenderPipeline();
 	mHighlightMarkPipeline->SetRasterRizerState(D3D11_CULL_BACK);
@@ -82,6 +79,7 @@ FGraphicsManager::~FGraphicsManager()
 	mHighlightIndexBuffer.reset();
 	mHighlightMarkPipeline.reset();
 	mHighlightDrawPipeline.reset();
+	mGlobalLightInfoBuffer.reset();
 	mMeshPipeline.reset();
 	mRenderCollector.Clear();
 	mRenderer->Release();
@@ -151,6 +149,21 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 				continue;
 			}
 
+			if (USpotLightComponent* SpotLight = Light->Cast<USpotLightComponent>())
+			{
+				FLightInfo& Info = mLightInfos.Emplace();
+				Info.Type = ELightType::Spot;
+				Info.Position = SpotLight->GetWorldLocation();
+				Info.Direction = SpotLight->GetForwardVector();
+				Info.Color = SpotLight->GetColor();
+				Info.Intensity = SpotLight->GetIntensity();
+				Info.Range = SpotLight->GetRadius();
+				Info.FallOf = SpotLight->GetRadiusFallOff();
+				Info.InnerConeAngle = SpotLight->GetInnerConeAngle();
+				Info.OuterConeAngle = SpotLight->GetOuterConeAngle();
+				continue;
+			}
+
 			if (!DirectionalLight)
 			{
 				if (UDirectionalLightComponent* Found = Light->Cast<UDirectionalLightComponent>())
@@ -168,29 +181,7 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 					continue;
 				}
 			}
-
-			// TODO: Spot Light는 FLightInfo / 셰이더에 방향, 콘 정보가 생기면 수집한다.
 		}
-	}
-
-	for (TObjectIterator<USpotLightComponent> It; It; ++It)
-	{
-		USpotLightComponent* SpotLight = *It;
-		if (SpotLight->GetOwner()->GetWorld() != World)
-		{
-			continue;
-		}
-
-		FLightInfo& Info = mLightInfos.Emplace();
-		Info.Type = ELightType::Spot;
-		Info.Position = SpotLight->GetWorldLocation();
-		Info.Direction = SpotLight->GetForwardVector();
-		Info.Color = SpotLight->GetColor();
-		Info.Intensity = SpotLight->GetIntensity();
-		Info.Range = SpotLight->GetRadius();
-		Info.FallOf = SpotLight->GetRadiusFallOff();
-		Info.InnerConeAngle = SpotLight->GetInnerConeAngle();
-		Info.OuterConeAngle = SpotLight->GetOuterConeAngle();
 	}
 
 	if (mLightInfos.Num() * sizeof(FLightInfo) > mLightInfoBuffer->GetBufferSize())
@@ -203,24 +194,14 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 		mLightInfoBuffer->UpdateBuffer(mLightInfos.Data(), mLightInfos.Num());
 	}
 
-	FDirectionalLightInfo DL_Info = {};
-	if (DirectionalLight)
-	{
-		DL_Info.DL_Direction = DirectionalLight->GetForwardVector();
-		DL_Info.DL_Intensity = DirectionalLight->GetIntensity();
-		DL_Info.DL_Color = DirectionalLight->GetColor();
-	}
-
-	FAmbientInfo AL_Info = {};
-	if (AmbientLight)
-	{
-		AL_Info.Color = AmbientLight->GetColor();
-		AL_Info.Intensity = AmbientLight->GetIntensity();
-	}
-
-	mAmbientLightBuffer->UpdateBuffer(&AL_Info, sizeof(AL_Info));
-	mDirectionalLightBuffer->UpdateBuffer(&DL_Info, sizeof(DL_Info));
-
+	FGlobalLightInfo GlobalLightConstants;
+	GlobalLightConstants.AmbientColor = AmbientLight ? AmbientLight->GetColor() : FLinearColor();
+	GlobalLightConstants.AmbientIntensity = AmbientLight ? AmbientLight->GetIntensity() : 0.0f;
+	GlobalLightConstants.DirectionalColor = DirectionalLight ? DirectionalLight->GetColor() : FLinearColor();
+	GlobalLightConstants.DirectionalIntensity = DirectionalLight ? DirectionalLight->GetIntensity() : 0.0f;
+	GlobalLightConstants.DirectionalDirection = DirectionalLight ? DirectionalLight->GetForwardVector() : FVector();
+	mGlobalLightInfoBuffer->UpdateBuffer(&GlobalLightConstants, sizeof(FGlobalLightInfo));
+	
 	mRenderer->BindRenderTarget(Viewport.GetFrontRenderTarget(), Viewport.GetDepthStencil());
 }
 
@@ -259,12 +240,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 
 	{
 		PROFILE_SCOPE("Viewport/GraphicsRender/SubmitMeshes");
-
-		// Ambient, Directional Light Constant Buffer 바인딩. 슬롯 번호는 StaticMeshShader.hlsl의 register와 맞춘다.
-		mAmbientLightBuffer->BindBuffer(AmbientLightCBSlot);
-		mDirectionalLightBuffer->BindBuffer(DirectionalLightCBSlot);
-
-
+		
 		// 카메라 상수 갱신은 Renderer의 영속 바인딩 캐시와 별도로 뷰마다 수행합니다.
 		FRenderPipeline* LastViewPipeline = nullptr;
 
@@ -299,8 +275,6 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			Constants.UVOffset = Info.UVOffset;
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.HasTexture = Info.Texture ? 1 : 0;
-			Constants.AmbientColor = mAmbientColor;
-			Constants.AmbientIntensity = mAmbientIntensity;
 			Constants.LightCount = mLightInfos.Num();
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);
@@ -482,8 +456,6 @@ void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primi
 		Constants.HasTexture = 0;
 		Constants.UseVertexColor = 0;
 		Constants.UVOffset = FVector2(0.f, 0.f);
-		Constants.AmbientColor = mAmbientColor;
-		Constants.AmbientIntensity = mAmbientIntensity;
 		Constants.LightCount = 0;
 
 		mHighlightMarkPipeline->UpdateConstantBuffer(0, Constants);

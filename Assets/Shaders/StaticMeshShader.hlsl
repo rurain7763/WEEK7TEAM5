@@ -21,10 +21,8 @@ cbuffer ModelConstants : register(b0) // FConstants
     float2 uv_offset;
 	int UseVertexColor;
     int HasTexture;
-    float4 ambient_color;
-    float ambient_intensity;
     int light_count;
-    int2 padding;
+    float3 padding;
 }
 
 cbuffer ViewConstants : register(b1) // FConstants
@@ -34,17 +32,14 @@ cbuffer ViewConstants : register(b1) // FConstants
     float view_constants_padding;
 }
 
-cbuffer AmbientConstants : register(b10) 
+cbuffer GlobalLightConstants : register(b2) 
 {
-    float4 AmbientColor;
-    float AmbientIntensity;
-}
-
-cbuffer DirectionalLightConstants : register(b11) 
-{
-    float3 DL_Direction;
-    float DL_Intensity;
-    float4 DL_Color;
+    float4 ambient_color;
+    float3 dl_directional;
+    float ambient_intensity;
+    float4 dl_color;
+    float dl_intensity;
+    float3 global_light_constants_padding;
 }
 
 struct VS_INPUT
@@ -75,11 +70,11 @@ StructuredBuffer<LightInfo> lights : register(t1);
 
 SamplerState default_sampler : register(s0);
 
-void calculate_diretional(float3 N, float3 V, LightInfo light, out float3 diffuse, out float3 specular)
+void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, out float3 diffuse, out float3 specular)
 {
-    float3 light_color = light.color.rgb * light.intensity;
+    float3 light_color = p_light_color * light_intensity;
     
-    float3 L = normalize(-light.direction);
+    float3 L = normalize(-light_direction);
     float NdotL = max(dot(N, L), 0.0);
 
     diffuse = light_color * NdotL;
@@ -175,17 +170,19 @@ PS_INPUT mainVS(VS_INPUT input)
     float3 ambient = ambient_color.rgb * ambient_intensity;
     float3 total_diffuse = float3(0.0, 0.0, 0.0);
     float3 total_specular = float3(0.0, 0.0, 0.0);
+
+    float3 diffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
+    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
+    
+    total_diffuse += diffuse;
+    total_specular += specular;
+    
     for (int i = 0; i < light_count; ++i)
     {
         LightInfo light = lights[i];        
 
-        float3 diffuse = float3(0.0, 0.0, 0.0);
-        float3 specular = float3(0.0, 0.0, 0.0);
-        if (light.type == 0)
-        {
-            calculate_diretional(N, V, light, diffuse, specular);
-        }
-        else if (light.type == 1)
+        if (light.type == 1)
         {
             calculate_point(N, V, light, world_position.xyz, diffuse, specular);
         }
@@ -198,7 +195,6 @@ PS_INPUT mainVS(VS_INPUT input)
         total_specular += specular;
     }
     
-
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
 #endif
     
@@ -230,28 +226,30 @@ PS_OUTPUT mainPS(PS_INPUT input)
     }
     
     float3 N = normalize(input.normal);
-    float3 V = normalize(view_position - input.world_position.xyz);
-	
+    float3 V = normalize(view_position - input.world_position);
+    
     float3 ambient = ambient_color.rgb * ambient_intensity;
     float3 total_diffuse = float3(0.0, 0.0, 0.0);
     float3 total_specular = float3(0.0, 0.0, 0.0);
+
+    float3 diffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
+    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
+    
+    total_diffuse += diffuse;
+    total_specular += specular;
+    
     for (int i = 0; i < light_count; ++i)
     {
-        LightInfo light = lights[i];
-        
-        float3 diffuse = float3(0.0, 0.0, 0.0);
-        float3 specular = float3(0.0, 0.0, 0.0);
-        if (light.type == 0)
+        LightInfo light = lights[i];        
+
+        if (light.type == 1)
         {
-            calculate_diretional(N, V, light, diffuse, specular);
-        }
-        else if (light.type == 1)
-        {
-            calculate_point(N, V, light, input.world_position.xyz, diffuse, specular);
+            calculate_point(N, V, light, input.world_position, diffuse, specular);
         }
         else if (light.type == 2)
         {
-            calculate_spot(N, V, light, input.world_position.xyz, diffuse, specular);
+            calculate_spot(N, V, light, input.world_position, diffuse, specular);
         }
         
         total_diffuse += diffuse;

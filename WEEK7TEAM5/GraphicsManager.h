@@ -119,10 +119,14 @@ private:
 		FLinearColor DL_Color = FLinearColor();
 	};
 
-	struct FAmbientInfo
+	struct FGlobalLightInfo
 	{
-		FLinearColor Color;
-		float Intensity;
+		FLinearColor AmbientColor;
+		FVector DirectionalDirection;
+		float AmbientIntensity;
+		FLinearColor DirectionalColor;
+		float DirectionalIntensity;
+		float GlobalLightConstantsPadding[3];
 	};
 
 	struct FMeshContants
@@ -133,10 +137,8 @@ private:
 		FVector2 UVOffset;
 		int32 UseVertexColor;
 		int32 HasTexture;
-		FLinearColor AmbientColor;
-		float AmbientIntensity;
 		int32 LightCount;
-		int32 Padding[2];
+		int32 Padding[3];
 	};
 
 	struct FViewConstants
@@ -176,17 +178,10 @@ private:
 	float mProjectionDuration = 1.0f;
 	bool mbProjectionTransitioning = false;
 
-	FLinearColor mAmbientColor;
-	float mAmbientIntensity;
+	TSharedPtr<FConstantBuffer> mGlobalLightInfoBuffer;
+
 	TArray<FLightInfo> mLightInfos;
 	TSharedPtr<FStructuredBuffer> mLightInfoBuffer;
-	//Ambient, Directional Light 등 버퍼들
-	// StaticMeshShader.hlsl: AmbientConstants : register(b10), DirectionalLightConstants : register(b11)
-	static constexpr uint32 AmbientLightCBSlot = 10;
-	static constexpr uint32 DirectionalLightCBSlot = 11;
-	TSharedPtr<FLightBuffer> mAmbientLightBuffer;
-	TSharedPtr<FLightBuffer> mDirectionalLightBuffer;
-
 	TSharedPtr<FRenderPipeline> mMeshPipeline;
 
 	TSharedPtr<FRenderPipeline> mHighlightMarkPipeline;

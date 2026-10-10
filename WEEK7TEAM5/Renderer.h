@@ -6,6 +6,7 @@
 #include "RenderInfo.h"
 #include "FRenderPipeline.h"
 #include "NvapiHelpers.h"
+#include "RenderUtils.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
 #include <wrl/client.h>
@@ -462,146 +463,21 @@ struct FBindRenderTargetsDesc
 	}
 };
 
-namespace RenderUtils
+struct FConstantBuffer
 {
-	static Microsoft::WRL::ComPtr<IDXGIAdapter1> FindHighPerformanceAdapter()
+	ID3D11DeviceContext* DeviceContext;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
+	UINT Size;
+
+	void UpdateBuffer(const void* Data, uint32 DataSize)
 	{
-		Microsoft::WRL::ComPtr<IDXGIFactory1> Factory1;
-		if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&Factory1))))
-		{
-			return {};
-		}
-
-		Microsoft::WRL::ComPtr<IDXGIFactory6> Factory6;
-		if (FAILED(Factory1.As(&Factory6)))
-		{
-			return {};
-		}
-
-		for (UINT Index = 0; Index < 16; ++Index)
-		{
-			Microsoft::WRL::ComPtr<IDXGIAdapter1> Adapter;
-			const HRESULT Hr = Factory6->EnumAdapterByGpuPreference(
-				Index,
-				DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-				IID_PPV_ARGS(&Adapter));
-			if (Hr == DXGI_ERROR_NOT_FOUND)
-			{
-				break;
-			}
-			if (FAILED(Hr))
-			{
-				continue;
-			}
-
-			DXGI_ADAPTER_DESC1 Description{};
-			if (SUCCEEDED(Adapter->GetDesc1(&Description)) &&
-				(Description.Flags & DXGI_ADAPTER_FLAG_SOFTWARE) == 0)
-			{
-				return Adapter;
-			}
-		}
-
-		return {};
+		D3D11_MAPPED_SUBRESOURCE Mapped{};
+		DeviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
+		std::memcpy(Mapped.pData, Data, DataSize);
+		DeviceContext->Unmap(Buffer.Get(), 0);
 	}
-
-	static UINT GetByteSizeFromFormat(DXGI_FORMAT Format)
-	{
-		switch (Format)
-		{
-			case DXGI_FORMAT_R32G32B32A32_FLOAT:
-				return 16;
-			case DXGI_FORMAT_R32G32B32_FLOAT:
-				return 12;
-			case DXGI_FORMAT_R16G16B16A16_FLOAT:
-				return 8;
-			case DXGI_FORMAT_R8G8B8A8_UNORM:
-				return 4;
-			default:
-				return 0; // Unknown format
-		}
-	}
-
-	static void CompileShaderFromMemory(ID3D11Device* Device, const FString& Memory, Microsoft::WRL::ComPtr<ID3D11VertexShader>& VertexShader, Microsoft::WRL::ComPtr<ID3D11PixelShader>& PixelShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& InputLayout, uint32& Stride)
-	{
-		ID3DBlob* VertexShaderCSO;
-		ID3DBlob* PixelShaderCSO;
-		HRESULT Result;
-
-		UINT compileFlags = 0;
-
-#if defined(_DEBUG)
-		// 디버그 모드일 때는 셰이더 디버그 정보 포함 및 최적화 비활성화
-		compileFlags |= D3DCOMPILE_DEBUG;
-		//compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-//#else
-//		// 릴리즈 모드일 때는 최적화 레벨 설정 (기본값 또는 최대 최적화)
-//		compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
-#endif
-		ID3DBlob* VSErrorBlob;
-		//Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, &VSErrorBlob);
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", compileFlags, 0, &VertexShaderCSO, &VSErrorBlob);
-		if (SUCCEEDED(Result))
-		{
-			Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, VertexShader.GetAddressOf());
-		}
-		else if (VSErrorBlob)
-		{
-			OutputDebugStringA((char*)VSErrorBlob->GetBufferPointer());
-			VSErrorBlob->Release();
-		}
-
-		ID3DBlob* PSErrorBlob;
-		//Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, &PSErrorBlob);
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainPS", "ps_5_0", compileFlags, 0, &PixelShaderCSO, &PSErrorBlob);
-		if (SUCCEEDED(Result))
-		{
-			Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, PixelShader.GetAddressOf());
-		}
-		else if (PSErrorBlob)
-		{
-			OutputDebugStringA((char*)PSErrorBlob->GetBufferPointer());
-			PSErrorBlob->Release();
-		}
-
-		if (VertexShaderCSO)
-		{
-			// NOTE: 나중에 HLSL Reflection을 이용해서 InputLayout을 자동으로 생성하도록 개선, 추가로 캐싱해서 재사용 가능하도록 Pool을 만들어도 좋음
-			D3D11_INPUT_ELEMENT_DESC Layout[] =
-			{
-				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-			};
-
-			Device->CreateInputLayout(Layout, ARRAYSIZE(Layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), InputLayout.GetAddressOf());
-			Stride = sizeof(FVertex);
-
-			VertexShaderCSO->Release();
-		}
-
-		if (PixelShaderCSO)
-		{
-			PixelShaderCSO->Release();
-		}
-	}
-
-	static void CompileShader(ID3D11Device* Device, const FString& ShaderPath, Microsoft::WRL::ComPtr<ID3D11VertexShader>& VertexShader, Microsoft::WRL::ComPtr<ID3D11PixelShader>& PixelShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& InputLayout, uint32& Stride)
-	{
-		std::ifstream FileStream(ShaderPath.ToString(), std::ios::in | std::ios::binary);
-		if (!FileStream)
-		{
-			return;
-		}
-
-		std::stringstream Buffer;
-		Buffer << FileStream.rdbuf();
-
-		FString Memory(Buffer.str());
-		CompileShaderFromMemory(Device, Memory, VertexShader, PixelShader, InputLayout, Stride);
-	}
-}
+};
 
 class URenderer
 {
@@ -644,6 +520,23 @@ public:
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> CreateShaderResourceView(Microsoft::WRL::ComPtr<ID3D11Texture2D> Texture, const D3D11_SHADER_RESOURCE_VIEW_DESC* Desc = nullptr);
 
 	template <typename T>
+	TSharedPtr<FConstantBuffer> CreateConstantBuffer()
+	{
+		TSharedPtr<FConstantBuffer> ConstantBuffer = MakeShared<FConstantBuffer>();
+		ConstantBuffer->DeviceContext = DeviceContext;
+		ConstantBuffer->Size = sizeof(T);
+
+		D3D11_BUFFER_DESC ConstantBufferDesc = {};
+		ConstantBufferDesc.ByteWidth = sizeof(T) + 0xf & 0xfffffff0;
+		ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+		Device->CreateBuffer(&ConstantBufferDesc, nullptr, ConstantBuffer->Buffer.GetAddressOf());
+
+		return ConstantBuffer;
+	}
+
+	template <typename T>
 	TSharedPtr<FStructuredBuffer> CreateStructuredBuffer(uint32 ElementCount)
 	{
 		TSharedPtr<FStructuredBuffer> StructuredBuffer = MakeShared<FStructuredBuffer>();
@@ -670,29 +563,6 @@ public:
 		StructuredBuffer->ElementCount = ElementCount;
 
 		return StructuredBuffer;
-	}
-
-	template <typename T>
-	TSharedPtr<FLightBuffer> CreateLightConstantBuffer()
-	{
-		if (Device == nullptr) return nullptr;
-
-		TSharedPtr<FLightBuffer> LightBuffer = MakeShared<FLightBuffer>();
-		LightBuffer->DeviceContext = DeviceContext;
-
-		D3D11_BUFFER_DESC ConstantBufferDesc = {};
-		//무조건 16 배수 만들기. 15를 더한 뒤 하위 4비트 지우기.
-		ConstantBufferDesc.ByteWidth = (sizeof(T) + 0xf) & 0xfffffff0;
-		ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-		ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-
-		HRESULT Hr = Device->CreateBuffer(&ConstantBufferDesc, nullptr, LightBuffer->Buffer.GetAddressOf());
-		if (SUCCEEDED(Hr))
-		{			
-			return LightBuffer;
-		}
-		return nullptr;
 	}
 
 	TSharedPtr<FRenderTarget2D> CreateRenderTarget2D(uint32 Width, uint32 Height, DXGI_FORMAT Format);
