@@ -8,6 +8,7 @@ struct LightInfo
     float range;
     float intensity;
     float falloff;
+    float padding;
 };
 
 cbuffer ModelConstants : register(b0) // FConstants
@@ -18,12 +19,26 @@ cbuffer ModelConstants : register(b0) // FConstants
 	int UseVertexColor;
     int HasTexture;
     int light_count;
-    int padding[3];
+    //int padding[3];
+    float3 padding;
 }
 
 cbuffer ViewConstants : register(b1) // FConstants
 {
 	row_major matrix view_projection;
+}
+
+cbuffer AmbientConstants : register(b10) 
+{
+    float4 AmbientColor;
+    float AmbientIntensity;
+}
+
+cbuffer DirectionalLightConstants : register(b11) 
+{
+    float3 DL_Direction;
+    float DL_Intensity;
+    float4 DL_Color;
 }
 
 struct VS_INPUT
@@ -69,7 +84,7 @@ PS_INPUT mainVS(VS_INPUT input)
 	
     output.uv = input.uv + uv_offset;
     
-    output.world_position = world_position;
+    output.world_position = world_position.xyz;
 	
 	return output;
 }
@@ -77,19 +92,31 @@ PS_INPUT mainVS(VS_INPUT input)
 // Pixel Shader
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    float4 final_color = input.color;
+    float4 BaseColor = input.color;
     if (HasTexture != 0)
     {
-        final_color *= main_texture.Sample(default_sampler, input.uv);
+        BaseColor *= main_texture.Sample(default_sampler, input.uv);
     }
     
     float3 N = normalize(input.normal);
 	
-    float3 light_color = float3(0.0, 0.0, 0.0);
+    float3 lighting = float3(0.0, 0.0, 0.0);
+    
+    //Ambient
+    lighting += AmbientColor.rgb * AmbientIntensity;
+    //Directional Light    
+    float3 L = normalize(-DL_Direction);
+    float NdotL = max(dot(N, L), 0.0);
+
+    float3 DirectionalLight = DL_Color.rgb * DL_Intensity * NdotL;
+    lighting += DirectionalLight;
+    
+    
     for (int i = 0; i < light_count; ++i)
     {
         LightInfo light = lights[i];
         
+        //PointLight
         if (light.type == 1)
         {
             float3 to_light = light.position - input.world_position;
@@ -102,11 +129,11 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
             
             float3 diffuse = light.color.rgb * NdotL * light.intensity * attenuation;
             
-            light_color += diffuse;
+            lighting += diffuse;
         }
     }
     
-    final_color.rgb += light_color;
+    BaseColor.rgb = BaseColor.rgb * lighting;
 	
-    return final_color;
+    return BaseColor;
 }

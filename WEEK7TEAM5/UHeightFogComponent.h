@@ -29,6 +29,13 @@ public:
 		FogProcess->UnregisterFogComponent();
 	}
 
+	void CreateEditorComponents() override
+	{
+		Super::CreateEditorComponents();
+
+		CreateEditorIcon(BuiltInAssetID::HeightFogIcon, FName("HeightFogIcon"));
+	}
+
 	inline void SetFogDensity(float Density) { FogProcess->FogConstants.FogDensity = Density; }
 	inline float GetFogDensity() const { return FogProcess->FogConstants.FogDensity; }
 

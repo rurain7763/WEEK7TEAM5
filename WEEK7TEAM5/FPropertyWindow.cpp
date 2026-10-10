@@ -18,6 +18,10 @@
 #include "Assets.h"
 #include "SceneComponent.h"
 #include "ActorComponent.h"
+#include "UDirectionalLightComponent.h"
+#include "UAmbientLightComponent.h"
+#include "USpotLightComponent.h"
+#include "UPointLightComponent.h"
 
 void FPropertyWindow::Render(const FGuiReference& GuiReference)
 {
@@ -159,6 +163,14 @@ void FPropertyWindow::Render(const FGuiReference& GuiReference)
 			else if (mSelectedComponent->IsA<UBillboardComponent>())
 			{
 				RenderBillboardComponent(mSelectedComponent->Cast<UBillboardComponent>());
+			}
+			else if (mSelectedComponent->IsA<UDirectionalLightComponent>())
+			{
+				RenderDirectionalLightComponent(mSelectedComponent->Cast<UDirectionalLightComponent>());
+			}
+			else if (mSelectedComponent->IsA<UAmbientLightComponent>())
+			{
+				RenderAmbientLightComponent(mSelectedComponent->Cast<UAmbientLightComponent>());
 			}
 		}
 
@@ -382,11 +394,11 @@ void FPropertyWindow::RenderText3DComponent(UText3DComponent* text3DComponent)
 
 void FPropertyWindow::RenderSpotLightComponent(USpotLightComponent* spotLightComponent)
 {
-	FVector4 colorInput = spotLightComponent->GetColor();
+	FVector4 colorInput = spotLightComponent->GetColor().ToFVector4();
 	if (ImGui::ColorPicker3("Color", &colorInput.x,
 		ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
 	{
-		spotLightComponent->SetColor(colorInput);
+		spotLightComponent->SetColor(colorInput.ToLinearColor());
 	}
 
 	float innerAngleInput = spotLightComponent->GetInnerConeAngle();
@@ -570,6 +582,13 @@ void FPropertyWindow::RenderStaticMeshComponent(UStaticMeshComponent* StaticMesh
 			StaticMeshComponent->SetUVOffset(i, UVOffset);
 		}
 		ImGui::PopID();
+
+		FVector4 MeshColor = StaticMeshComponent->GetColor();
+		FLinearColor ColorInput = FLinearColor(MeshColor.x, MeshColor.y, MeshColor.z, MeshColor.w);
+		if (ImGui::ColorPicker3("Color", ColorInput.V, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
+		{
+			StaticMeshComponent->SetColor(FVector4(ColorInput.R, ColorInput.G, ColorInput.B, ColorInput.A));
+		}
 	}
 }
 
@@ -760,5 +779,35 @@ void FPropertyWindow::RenderBillboardComponent(UBillboardComponent* BillboardCom
 	if (ImGui::Checkbox("EnableDepthWrite", &EnableDepthWrite))
 	{
 		BillboardComponent->SetEnbaleDepthWrite(EnableDepthWrite);
+	}
+}
+
+void FPropertyWindow::RenderDirectionalLightComponent(UDirectionalLightComponent* DirectionalLightComponent)
+{
+	FLinearColor ColorInput = DirectionalLightComponent->GetColor();
+	if (ImGui::ColorPicker3("Color", ColorInput.V, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
+	{
+		DirectionalLightComponent->SetColor(ColorInput);
+	}
+
+	float IntensityInput = DirectionalLightComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &IntensityInput, 0.01f, 0.f, 5.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+	{
+		DirectionalLightComponent->SetIntensity(IntensityInput);
+	}
+}
+
+void FPropertyWindow::RenderAmbientLightComponent(UAmbientLightComponent* AmbientLightComponent)
+{
+	FLinearColor ColorInput = AmbientLightComponent->GetColor();
+	if (ImGui::ColorPicker3("Color", ColorInput.V, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
+	{
+		AmbientLightComponent->SetColor(ColorInput);
+	}
+
+	float IntensityInput = AmbientLightComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &IntensityInput, 0.01f, 0.f, 5.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+	{
+		AmbientLightComponent->SetIntensity(IntensityInput);
 	}
 }

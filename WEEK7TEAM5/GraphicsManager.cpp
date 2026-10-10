@@ -13,6 +13,10 @@
 //#include "FInstrumentor.h"
 #include <algorithm>
 #include "FHiZOcclusionManager.h"
+#include "UDirectionalLightComponent.h"
+#include "UAmbientLightComponent.h"
+#include "UPointLightComponent.h"
+#include "USpotLightComponent.h"
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
@@ -30,6 +34,10 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 	mLightInfoBuffer = mRenderer->CreateStructuredBuffer<FLightInfo>(1);
 
+	//Ambient, Directional Light Constant Buffer 생성
+	mAmbientLightBuffer = mRenderer->CreateLightConstantBuffer<FAmbientInfo>();
+	mDirectionalLightBuffer = mRenderer->CreateLightConstantBuffer<FDirectionalLightInfo>();
+		
 	mMeshPipeline = mRenderer->CreateRenderPipeline();
 	mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe });
 	mMeshPipeline->SetDepthStencilState(true, true);
@@ -122,23 +130,48 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	mCameraNear = mCamera->mNear;
 	mCameraFar = mCamera->mFar;
 
-	// NOTE: LightInfos를 모으고 StructuredBuffer에 업데이트합니다.
+	// 월드에 등록된 라이트 목록에서 라이트 데이터를 모읍니다.
+	// Directional / Ambient는 등록 순서상 첫 번째 것만 사용합니다.
 	mLightInfos.Empty();
-	for (TObjectIterator<UPointLightComponent> It; It; ++It)
-	{
-		UPointLightComponent* PointLight = *It;
-		if (PointLight->GetOwner()->GetWorld() != World)
-		{
-			continue;
-		}
+	UDirectionalLightComponent* DirectionalLight = nullptr;
+	UAmbientLightComponent* AmbientLight = nullptr;
 
-		FLightInfo& Info = mLightInfos.Emplace();
-		Info.Type = ELightType::Point;
-		Info.Position = PointLight->GetWorldLocation();
-		Info.Color = PointLight->GetColor();
-		Info.Intensity = PointLight->GetIntensity();
-		Info.Range = PointLight->GetRadius();
-		Info.FallOf = PointLight->GetRadiusFallOff();
+	if (World)
+	{
+		for (ULightComponentBase* Light : World->GetLightComponents())
+		{
+			if (UPointLightComponent* PointLight = Light->Cast<UPointLightComponent>())
+			{
+				FLightInfo& Info = mLightInfos.Emplace();
+				Info.Type = ELightType::Point;
+				Info.Position = PointLight->GetWorldLocation();
+				Info.Color = PointLight->GetColor();
+				Info.Intensity = PointLight->GetIntensity();
+				Info.Range = PointLight->GetRadius();
+				Info.FallOf = PointLight->GetRadiusFallOff();
+				continue;
+			}
+
+			if (!DirectionalLight)
+			{
+				if (UDirectionalLightComponent* Found = Light->Cast<UDirectionalLightComponent>())
+				{
+					DirectionalLight = Found;
+					continue;
+				}
+			}
+
+			if (!AmbientLight)
+			{
+				if (UAmbientLightComponent* Found = Light->Cast<UAmbientLightComponent>())
+				{
+					AmbientLight = Found;
+					continue;
+				}
+			}
+
+			// TODO: Spot Light는 FLightInfo / 셰이더에 방향, 콘 정보가 생기면 수집한다.
+		}
 	}
 
 	if (mLightInfos.Num() * sizeof(FLightInfo) > mLightInfoBuffer->GetBufferSize())
@@ -150,6 +183,24 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	{
 		mLightInfoBuffer->UpdateBuffer(mLightInfos.Data(), mLightInfos.Num());
 	}
+
+	FDirectionalLightInfo DL_Info = {};
+	if (DirectionalLight)
+	{
+		DL_Info.DL_Direction = DirectionalLight->GetForwardVector();
+		DL_Info.DL_Intensity = DirectionalLight->GetIntensity();
+		DL_Info.DL_Color = DirectionalLight->GetColor();
+	}
+
+	FAmbientInfo AL_Info = {};
+	if (AmbientLight)
+	{
+		AL_Info.Color = AmbientLight->GetColor();
+		AL_Info.Intensity = AmbientLight->GetIntensity();
+	}
+
+	mAmbientLightBuffer->UpdateBuffer(&AL_Info, sizeof(AL_Info));
+	mDirectionalLightBuffer->UpdateBuffer(&DL_Info, sizeof(DL_Info));
 
 	mRenderer->BindRenderTarget(Viewport.GetFrontRenderTarget(), Viewport.GetDepthStencil());
 }
@@ -243,7 +294,6 @@ void FGraphicsManager::Render()
 	FRGTextureRef BackRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetBackRenderTarget());
 	FRGTextureRef DepthStencilHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetDepthStencil());
 
-	// TODO: 후에 아래 코드들을 ScenePass로 옮기고, ScenePass에서 RenderCollector를 받아서 처리하도록 한다.
     PROFILE_SCOPE("Viewport/GraphicsRender");
     {
         PROFILE_SCOPE("Viewport/GraphicsRender/RenderLines");
@@ -263,6 +313,11 @@ void FGraphicsManager::Render()
 
 	{
 		PROFILE_SCOPE("Viewport/GraphicsRender/SubmitMeshes");
+
+		// Ambient, Directional Light Constant Buffer 바인딩. 슬롯 번호는 StaticMeshShader.hlsl의 register와 맞춘다.
+		mAmbientLightBuffer->BindBuffer(AmbientLightCBSlot);
+		mDirectionalLightBuffer->BindBuffer(DirectionalLightCBSlot);
+
 
 		// 카메라 상수 갱신은 Renderer의 영속 바인딩 캐시와 별도로 뷰마다 수행합니다.
 		FRenderPipeline* LastViewPipeline = nullptr;

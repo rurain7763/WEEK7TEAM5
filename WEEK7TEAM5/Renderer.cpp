@@ -538,14 +538,14 @@ void URenderer::BindPipeline(const FRenderPipeline* Pipeline, uint32 StencilRef)
 	if (bShouldSetCBs)
 	{
 		const int32 BindCount = FPlatformMath::Max(NewCBCount, CurrentCBCount);
-
+		CurrentCBs.Reset(BindCount);
 		for (int32 i = 0; i < BindCount; ++i)
 		{
-			CurrentCBs[i] = i < NewCBCount ? Pipeline->ConstantBuffers[i] : nullptr;
+			CurrentCBs.Emplace(i < NewCBCount ? Pipeline->ConstantBuffers[i] : nullptr);
 		}
 
-		DeviceContext->VSSetConstantBuffers(0, BindCount, CurrentCBs);
-		DeviceContext->PSSetConstantBuffers(0, BindCount, CurrentCBs);
+		DeviceContext->VSSetConstantBuffers(0, BindCount, CurrentCBs.Data());
+		DeviceContext->PSSetConstantBuffers(0, BindCount, CurrentCBs.Data());
 
 		CurrentCBCount = NewCBCount;
 	}

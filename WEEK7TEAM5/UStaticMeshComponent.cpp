@@ -198,7 +198,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
 			RenderInfo.UVOffset = mUVOffsets[SectionIndex];
             RenderInfo.Model = GetWorldMatrix();
 			RenderInfo.Color = Color;
-			RenderInfo.UseVertexColor = true;
+			RenderInfo.UseVertexColor = false;
 			RenderInfo.ObjectInternalIndex = mOwner->InternalIndex;
         }
     }

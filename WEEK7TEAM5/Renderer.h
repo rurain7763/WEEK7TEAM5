@@ -170,7 +170,7 @@ struct FDepthStencilStateKey
 	bool bEnableStencil = false;
 	D3D11_COMPARISON_FUNC StencilFunc = D3D11_COMPARISON_ALWAYS;
 	D3D11_STENCIL_OP StencilPassOp = D3D11_STENCIL_OP_KEEP;
-	
+
 	bool operator==(const FDepthStencilStateKey& Other) const
 	{
 		return bEnableDepthTest == Other.bEnableDepthTest
@@ -277,22 +277,22 @@ public:
 
 		switch (Key.BlendMode)
 		{
-		case ERenderBlendMode::Opaque:
-		case ERenderBlendMode::Masked:
-			BlendDesc.RenderTarget[0].BlendEnable = FALSE;
-			break;
-		case ERenderBlendMode::Transparent:
-			BlendDesc.RenderTarget[0].BlendEnable = TRUE;
-			BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-			BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
-			BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			break;
-		case ERenderBlendMode::Additive:
-			BlendDesc.RenderTarget[0].BlendEnable = TRUE;
-			BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
-			BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
-			BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
-			break;
+			case ERenderBlendMode::Opaque:
+			case ERenderBlendMode::Masked:
+				BlendDesc.RenderTarget[0].BlendEnable = FALSE;
+				break;
+			case ERenderBlendMode::Transparent:
+				BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+				BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+				BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
+				BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+				break;
+			case ERenderBlendMode::Additive:
+				BlendDesc.RenderTarget[0].BlendEnable = TRUE;
+				BlendDesc.RenderTarget[0].SrcBlend = D3D11_BLEND_SRC_ALPHA;
+				BlendDesc.RenderTarget[0].DestBlend = D3D11_BLEND_ONE;
+				BlendDesc.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
+				break;
 		}
 
 		ID3D11BlendState* BlendState = nullptr;
@@ -336,7 +336,7 @@ struct FDepthStencil : public FTexture2D
 struct FVertexBuffer
 {
 	ID3D11DeviceContext* DeviceContext;
-	
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
 	UINT VertexSize;
 	UINT VertexCount;
@@ -358,7 +358,7 @@ struct FVertexBuffer
 struct FIndexBuffer
 {
 	ID3D11DeviceContext* DeviceContext;
-	
+
 	Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
 	UINT IndexCount;
 
@@ -403,6 +403,34 @@ struct FStructuredBuffer
 		return ElementSize * ElementCount;
 	}
 };
+
+
+
+struct FLightBuffer
+{
+	ID3D11DeviceContext* DeviceContext = nullptr;
+
+	Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
+
+	void UpdateBuffer(const void* Data, uint32 DataSize)
+	{
+		if (DeviceContext == nullptr) return;
+
+		D3D11_MAPPED_SUBRESOURCE Mapped{};
+		DeviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
+		std::memcpy(Mapped.pData, Data, DataSize);
+		DeviceContext->Unmap(Buffer.Get(), 0);
+	}
+
+	void BindBuffer(uint32 SlotIndex)
+	{
+		if (DeviceContext == nullptr) return;
+
+		DeviceContext->VSSetConstantBuffers(SlotIndex, 1, Buffer.GetAddressOf());
+		DeviceContext->PSSetConstantBuffers(SlotIndex, 1, Buffer.GetAddressOf());
+	}
+};
+
 
 struct FShader
 {
@@ -459,16 +487,16 @@ namespace RenderUtils
 	{
 		switch (Format)
 		{
-		case DXGI_FORMAT_R32G32B32A32_FLOAT:
-			return 16;
-		case DXGI_FORMAT_R32G32B32_FLOAT:
-			return 12;
-		case DXGI_FORMAT_R16G16B16A16_FLOAT:
-			return 8;
-		case DXGI_FORMAT_R8G8B8A8_UNORM:
-			return 4;
-		default:
-			return 0; // Unknown format
+			case DXGI_FORMAT_R32G32B32A32_FLOAT:
+				return 16;
+			case DXGI_FORMAT_R32G32B32_FLOAT:
+				return 12;
+			case DXGI_FORMAT_R16G16B16A16_FLOAT:
+				return 8;
+			case DXGI_FORMAT_R8G8B8A8_UNORM:
+				return 4;
+			default:
+				return 0; // Unknown format
 		}
 	}
 
@@ -478,8 +506,19 @@ namespace RenderUtils
 		ID3DBlob* PixelShaderCSO;
 		HRESULT Result;
 
+		UINT compileFlags = 0;
+
+#if defined(_DEBUG)
+		// 디버그 모드일 때는 셰이더 디버그 정보 포함 및 최적화 비활성화
+		compileFlags |= D3DCOMPILE_DEBUG;
+		//compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+//#else
+//		// 릴리즈 모드일 때는 최적화 레벨 설정 (기본값 또는 최대 최적화)
+//		compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+#endif
 		ID3DBlob* VSErrorBlob;
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, &VSErrorBlob);
+		//Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, &VSErrorBlob);
+		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", compileFlags, 0, &VertexShaderCSO, &VSErrorBlob);
 		if (SUCCEEDED(Result))
 		{
 			Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, VertexShader.GetAddressOf());
@@ -491,7 +530,8 @@ namespace RenderUtils
 		}
 
 		ID3DBlob* PSErrorBlob;
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, &PSErrorBlob);
+		//Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, &PSErrorBlob);
+		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainPS", "ps_5_0", compileFlags, 0, &PixelShaderCSO, &PSErrorBlob);
 		if (SUCCEEDED(Result))
 		{
 			Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, PixelShader.GetAddressOf());
@@ -610,12 +650,35 @@ public:
 		return StructuredBuffer;
 	}
 
+	template <typename T>
+	TSharedPtr<FLightBuffer> CreateLightConstantBuffer()
+	{
+		if (Device == nullptr) return nullptr;
+
+		TSharedPtr<FLightBuffer> LightBuffer = MakeShared<FLightBuffer>();
+		LightBuffer->DeviceContext = DeviceContext;
+
+		D3D11_BUFFER_DESC ConstantBufferDesc = {};
+		//무조건 16 배수 만들기. 15를 더한 뒤 하위 4비트 지우기.
+		ConstantBufferDesc.ByteWidth = (sizeof(T) + 0xf) & 0xfffffff0;
+		ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
+		ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+		HRESULT Hr = Device->CreateBuffer(&ConstantBufferDesc, nullptr, LightBuffer->Buffer.GetAddressOf());
+		if (SUCCEEDED(Hr))
+		{			
+			return LightBuffer;
+		}
+		return nullptr;
+	}
+
 	TSharedPtr<FRenderTarget2D> CreateRenderTarget2D(uint32 Width, uint32 Height, DXGI_FORMAT Format);
 	TSharedPtr<FDepthStencil> CreateDepthStencil(uint32 Width, uint32 Height);
 
 	TSharedPtr<FShader> CreateShader(const FString& ShaderPath);
 	TSharedPtr<FShader> CreateShaderFromMemory(const FString& ShaderMemory);
-	
+
 	//Rendering
 	void Prepare(const FMatrix& ViewProjectionMatrix);
 
@@ -671,6 +734,7 @@ public:
 	uint64 GetDrawCallCount() const { return DrawCallCount; }
 	void ResetDrawCallCount() { DrawCallCount = 0; }
 
+
 private:
 	void CreateDeviceAndSwapChain(HWND hWindow);
 	void ReleaseDeviceAndSwapChain();
@@ -685,17 +749,17 @@ private:
 	void BindIndexBuffer(ID3D11Buffer* IndexBuffer);
 
 private:
-    ID3D11Device* Device = nullptr;
-    ID3D11DeviceContext* DeviceContext = nullptr;
-    IDXGISwapChain* SwapChain = nullptr;
+	ID3D11Device* Device = nullptr;
+	ID3D11DeviceContext* DeviceContext = nullptr;
+	IDXGISwapChain* SwapChain = nullptr;
 	bool bNvapiSleepEnabled = false;
 
 	FSamplerStatePool SamplerStatePool;
 	FDepthStencilStatePool DepthStencilStatePool;
 	FBlendStatePool BlendStatePool;
 
-    ID3D11Texture2D* FrameBuffer = nullptr;
-    ID3D11RenderTargetView* FrameBufferRTV = nullptr;
+	ID3D11Texture2D* FrameBuffer = nullptr;
+	ID3D11RenderTargetView* FrameBufferRTV = nullptr;
 
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
@@ -716,8 +780,8 @@ private:
 	TSharedPtr<FRenderPipeline> Quad2DPipeline;
 
 	UINT Width, Height;
-    FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
-    D3D11_VIEWPORT ViewportInfo;
+	FLOAT ClearColor[4] = { 0.025f, 0.025f, 0.025f, 1.0f };
+	D3D11_VIEWPORT ViewportInfo;
 	FMatrix Projection2D;
 
 	// 와이어프레임 여부. Prepare에서 갱신하고 BindPipeline이 읽는다.
@@ -738,7 +802,8 @@ private:
 	ID3D11VertexShader* CurrentVertexShader = nullptr;
 	ID3D11PixelShader* CurrentPixelShader = nullptr;
 
-	ID3D11Buffer* CurrentCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
+	//ID3D11Buffer* CurrentCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
+	TArray<ID3D11Buffer*> CurrentCBs;
 	ID3D11ShaderResourceView* CurrentSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
 	ID3D11SamplerState* CurrentSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = {};
 	int32 CurrentCBCount = 0;
@@ -749,4 +814,7 @@ private:
 	UINT CurrentVertexStride = 0;
 
 	ID3D11Buffer* CurrentIndexBuffer = nullptr;
+
+	//Directional Light, Ambient 등 라이트 관련 버퍼 모음
+	//FLightBuffer LightBuffer;
 };

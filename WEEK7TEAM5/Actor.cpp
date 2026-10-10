@@ -173,7 +173,15 @@ void AActor::AddOwnedComponent(UActorComponent* actorComponent)
 
 	if (mLevel)
 	{
-		mLevel->GetWorld()->RegisterComponent(actorComponent);
+		UWorld* World = mLevel->GetWorld();
+		World->RegisterComponent(actorComponent);
+
+		// 레벨에 들어간 뒤 추가된 컴포넌트(Add Component 등)는 여기서 에디터 보조 요소를 만든다.
+		// 레벨에 들어가기 전 컴포넌트는 ULevel::AddActor -> CreateEditorComponents에서 처리된다.
+		if (World->GetWorldType() == EWorldType::Editor && !actorComponent->IsEditorOnly())
+		{
+			actorComponent->CreateEditorComponents();
+		}
 	}
 }
 
@@ -237,28 +245,20 @@ void AActor::CreateEditorComponents()
 
 	AddOwnedComponent(Text3DComponent);
 
-	TArray<UPointLightComponent*> PointLightComponents;
+	// 아이콘처럼 컴포넌트별로 필요한 에디터 보조 요소는 각 컴포넌트가 직접 만든다.
+	// 보조 요소를 추가하면 mComponents가 바뀌므로 복사본을 순회한다.
+	TArray<UActorComponent*> TargetComponents;
 	for (UActorComponent* Component : mComponents)
 	{
-		UPointLightComponent* PointLightComponent = Component->Cast<UPointLightComponent>();
-		if (PointLightComponent)
+		if (!Component->IsEditorOnly())
 		{
-			PointLightComponents.Add(PointLightComponent);
+			TargetComponents.Add(Component);
 		}
 	}
 
-	for (UPointLightComponent* PointLightComponent : PointLightComponents)
+	for (UActorComponent* Component : TargetComponents)
 	{
-		UBillboardComponent* BillboardComponent = CreateDefaultSubobject<UBillboardComponent>(FName("PointLightIcon"));
-		BillboardComponent->SetTexture(FAssetManager::Get().GetAssetAs<FTexture2DAsset>(BuiltInAssetID::PointLightIcon, true));
-		BillboardComponent->SetBlendState(ERenderBlendMode::Transparent);
-		BillboardComponent->SetDepthState(false, false);
-		BillboardComponent->SetEditorOnly(true);
-		BillboardComponent->SetDoNotSerialize(true);
-		BillboardComponent->SetVisualizeProxy(true);
-		BillboardComponent->SetupAttachment(PointLightComponent, false);
-
-		AddOwnedComponent(BillboardComponent);
+		Component->CreateEditorComponents();
 	}
 }
 

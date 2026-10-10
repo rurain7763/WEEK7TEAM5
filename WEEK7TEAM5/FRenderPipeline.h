@@ -44,6 +44,7 @@ public:
 	// SRV와 상수 내용은 제외하며, 파이프라인 바인딩 설정의 변경을 식별합니다.
 	inline uint32 GetBindingVersion() const { return BindingVersion; }
 
+
 	template <typename T>
 	void AddConstantBuffer()
 	{

@@ -138,7 +138,7 @@ public:
 
 		FRenderQuadInfo& QuadInfo = mRenderProxy->GetRenderTransparentQuadInfo(0);
 		QuadInfo.Model = PivotMatrix;
-		QuadInfo.Color = FVector4(1.f, 1.f, 1.f, 1.f);
+		QuadInfo.Color = mColor;
 		QuadInfo.TextureSRV = mTextureAsset ? mTextureAsset->GetSRV() : nullptr;
 		QuadInfo.TextureFormat = mTextureAsset ? mTextureAsset->GetFormat() : DXGI_FORMAT_UNKNOWN;
 		QuadInfo.SubUV = mSubUV + FVector4(mSubUVOffset.X, mSubUVOffset.Y, 0.f, 0.f);
@@ -182,6 +182,9 @@ public:
 	inline void SetTexture(const TSharedPtr<FTexture2DAsset>& textureAsset) { mTextureAsset = textureAsset; }
 	inline const TSharedPtr<FTexture2DAsset>& GetTexture() const { return mTextureAsset; }
 
+	inline void SetColor(const FVector4& InColor) { mColor = InColor; MarkRenderDirty(); }
+	inline const FVector4& GetColor() const { return mColor; }
+
 	inline void SetDepthState(bool enableDepthTest, bool enableDepthWrite) { mEnableDepthTest = enableDepthTest; mEnableDepthWrite = enableDepthWrite; }
 	void SetBlendState(ERenderBlendMode InBlendMode) { mBlendMode = InBlendMode; }
 
@@ -206,6 +209,8 @@ protected:
 	FVector4 mSubUV = { 0.f, 0.f, 1.f, 1.f };
 	FVector2 mSubUVOffset = { 0.f, 0.f };
 
+	// 텍스처에 곱해지는 색. 라이트 아이콘은 라이트 색을 넣는다. 직렬화하지 않는다.
+	FVector4 mColor = { 1.f, 1.f, 1.f, 1.f };
 	ERenderBlendMode mBlendMode = ERenderBlendMode::Transparent;
 	bool mEnableDepthTest = true;
 	bool mEnableDepthWrite = true;

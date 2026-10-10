@@ -21,6 +21,10 @@
 #include "FEditorUIManager.h"
 #include "enum.h"
 #include "GraphicsManager.h"
+#include "UDirectionalLightComponent.h"
+#include "UAmbientLightComponent.h"
+#include "UPointLightComponent.h"
+#include "USpotLightComponent.h"
 
 void FControlWindow::Render(const FGuiReference& GuiReference)
 {
@@ -58,6 +62,7 @@ void FControlWindow::RenderSpawnActorControl(const FGuiReference& GuiReference)
 		"HeightFog",
 		"FireBall",
 		"Text",
+		"Directional Light",
 	};
 
 	ImGui::Combo("Actor Type", &mSelectedTargetSpawnIndex, ActorTypeNames, IM_ARRAYSIZE(ActorTypeNames));
@@ -139,6 +144,18 @@ void FControlWindow::RenderSpawnActorControl(const FGuiReference& GuiReference)
 				TextComponent->SetDepthState(false, false);
 
 				NewActor->SetRootComponent(TextComponent);
+			}
+			else if (strcmp(ActorTypeName, "Directional Light") == 0)
+			{
+				NewActor = FObjectFactory::ConstructObject<AActor>();
+				NewActor->Rename(FName("DirectionalLightActor"));
+
+				UDirectionalLightComponent* DLComponent = NewActor->CreateDefaultSubobject<UDirectionalLightComponent>(FName("DirectionalLightComponent"));
+				NewActor->SetRootComponent(DLComponent);
+
+				UAmbientLightComponent* AmbientComponent = NewActor->CreateDefaultSubobject<UAmbientLightComponent>(FName("AmbientComponent"));
+				AmbientComponent->SetupAttachment(DLComponent);
+				NewActor->AddOwnedComponent(AmbientComponent);
 			}
 			else
 			{

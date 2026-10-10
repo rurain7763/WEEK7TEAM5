@@ -36,6 +36,7 @@ enum class ERenderBlendMode
 //    "Additive"
 //};
 
+
 struct FRenderInfo
 {
 	uint64 SortKey = 0;
@@ -59,6 +60,7 @@ struct FRenderInfo
 		return SortKey < Other.SortKey;
 	}
 };
+
 
 struct FRenderQuadInfo
 {

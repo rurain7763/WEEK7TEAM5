@@ -2,6 +2,9 @@
 #include "Transform.h"
 #include "JsonUtil.h"
 #include "Serializers.h"
+#include "UBillboardComponent.h"
+#include "Actor.h"
+#include "ObjectFactory.h"
 #include <format>
 
 void USceneComponent::Initialize(FVector location, FRotator rotation, FVector scale3D)
@@ -15,6 +18,20 @@ void USceneComponent::Initialize(FVector location, FRotator rotation, FVector sc
 
 void USceneComponent::BeginDestroy()
 {
+	// 아이콘이 먼저 소멸되는 경우: 주인이 끊어진 포인터를 들고 있지 않게 비운다.
+	if (mParentComponent && mParentComponent->mEditorIcon == this)
+	{
+		mParentComponent->mEditorIcon = nullptr;
+	}
+
+	// 주인이 먼저 소멸되는 경우: 아이콘도 함께 제거한다.
+	if (mEditorIcon)
+	{
+		USceneComponent* EditorIcon = mEditorIcon;
+		mEditorIcon = nullptr;
+		EditorIcon->DestroyComponent();
+	}
+
 	while (mChildComponents.Num())
 	{
 		mChildComponents.Last()->DetachFromParent(true);
@@ -234,6 +251,7 @@ FQuaternion USceneComponent::GetRelativeRotation() const
 void USceneComponent::SetRelativeRotation(FQuaternion rotation)
 {
 	mRelativeTransform.SetRotation(rotation);
+	
 	PostWorldMatrixChanged();
 }
 
@@ -310,4 +328,45 @@ const FMatrix& USceneComponent::GetWorldMatrix() const
 	}
 
 	return mWorldMatrix;
+}
+
+FVector USceneComponent::GetForwardVector() const
+{
+	FMatrix Rot = ToMatrix(GetTransform().GetRotation());
+	return  Rot.GetUnitAxis(EAxis::X);
+	//return CacheForwardVector;	
+}
+
+UBillboardComponent* USceneComponent::CreateEditorIcon(const FGuid& IconTextureID, const FName& IconName)
+{
+	if (mEditorIcon)
+	{
+		return GetEditorIcon();
+	}
+
+	AActor* Owner = GetOwner();
+	if (!Owner)
+	{
+		return nullptr;
+	}
+
+	UBillboardComponent* EditorIcon = CreateDefaultSubobject<UBillboardComponent>(IconName);
+	EditorIcon->SetTexture(FAssetManager::Get().GetAssetAs<FTexture2DAsset>(IconTextureID, true));
+	EditorIcon->SetBlendState(ERenderBlendMode::Transparent);
+	EditorIcon->SetDepthState(true, false);
+	EditorIcon->SetEditorOnly(true);
+	EditorIcon->SetDoNotSerialize(true);
+	// 아이콘을 클릭하면 아이콘이 아니라 이 컴포넌트가 선택되도록 한다.
+	EditorIcon->SetVisualizeProxy(true);
+	EditorIcon->SetupAttachment(this, false);
+
+	mEditorIcon = EditorIcon;
+	Owner->AddOwnedComponent(EditorIcon);
+
+	return EditorIcon;
+}
+
+UBillboardComponent* USceneComponent::GetEditorIcon() const
+{
+	return static_cast<UBillboardComponent*>(mEditorIcon);
 }
