@@ -127,7 +127,8 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "ULightComponent.h"
 #include "UAmbientLightComponent.h"
 #include "UDirectionalLightComponent.h"
-
+#include "UPointLightComponent.h"
+#include "USpotLightComponent.h"
 
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetStaticClass },

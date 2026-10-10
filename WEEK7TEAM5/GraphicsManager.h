@@ -105,7 +105,8 @@ private:
 
 		float Range;
 		float FallOff;
-		float Padding[2];
+		float InnerConeCos;
+		float OuterConeCos;
 	};
 
 	struct FMeshContants

@@ -68,7 +68,6 @@ PS_INPUT mainVS(VS_INPUT input)
 	}
 	
     output.uv = input.uv + uv_offset;
-    
     output.world_position = world_position;
 	
 	return output;

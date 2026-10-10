@@ -8,6 +8,5 @@ class UDirectionalLightComponent final : public ULightComponent
 
 public:
 	UDirectionalLightComponent();
-	FVector GetDirection();
 };
 

@@ -18,6 +18,8 @@
 #include "ULightComponentBase.h"
 #include "UDirectionalLightComponent.h"
 #include "UAmbientLightComponent.h"
+#include "UPointLightComponent.h"
+#include "USpotLightComponent.h"
 
 void FPropertyWindow::Render(const FGuiReference& GuiReference)
 {
@@ -140,12 +142,10 @@ void FPropertyWindow::Render(const FGuiReference& GuiReference)
 			{
 				RenderHeightFogComponent(mSelectedComponent->Cast<UHeightFogComponent>());
 			}
-			/*
 			else if (mSelectedComponent->IsA<UPointLightComponent>())
 			{
 				RenderPointLightComponent(mSelectedComponent->Cast<UPointLightComponent>());
 			}
-			*/
 			else if (mSelectedComponent->IsA<UTextRenderComponent>())
 			{
 				RenderTextRenderComponent(mSelectedComponent->Cast<UTextRenderComponent>());
@@ -270,7 +270,6 @@ void FPropertyWindow::RenderAddComponentPopup()
 			ImGui::CloseCurrentPopup();
 		}
 
-		/*
 		if (ImGui::MenuItem("PointLightComponent"))
 		{
 			UPointLightComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UPointLightComponent>(FName(MakeUniqueName("PointLightComponent", mSelectedActor->GetComponents())));
@@ -284,7 +283,6 @@ void FPropertyWindow::RenderAddComponentPopup()
 
 			ImGui::CloseCurrentPopup();
 		}
-		*/
 
 		if (ImGui::MenuItem("TextRenderComponent"))
 		{
@@ -334,6 +332,30 @@ void FPropertyWindow::RenderAddComponentPopup()
 			UDirectionalLightComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UDirectionalLightComponent>(FName(MakeUniqueName("DirectionalLightComponent", mSelectedActor->GetComponents())));
 			
 			USceneComponent* Parent = mSelectedActor->GetRootComponent();
+			if (mSelectedComponent && mSelectedComponent->IsA<USceneComponent>())
+			{
+				Parent = mSelectedComponent->Cast<USceneComponent>();
+			}
+
+			if (Parent != nullptr)
+			{
+				mSelectedActor->AddOwnedComponent(NewComponent);
+				NewComponent->SetupAttachment(Parent, false);
+			}
+			else
+			{
+				mSelectedActor->SetRootComponent(NewComponent);
+			}
+
+			mSelectedComponent = NewComponent;
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (ImGui::MenuItem("SpotLightComponent"))
+		{
+			USpotLightComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<USpotLightComponent>(FName(MakeUniqueName("SpotLightComponent", mSelectedActor->GetComponents())));
+			USceneComponent* Parent = mSelectedActor->GetRootComponent();
+
 			if (mSelectedComponent && mSelectedComponent->IsA<USceneComponent>())
 			{
 				Parent = mSelectedComponent->Cast<USceneComponent>();
@@ -440,6 +462,7 @@ void FPropertyWindow::RenderText3DComponent(UText3DComponent* text3DComponent)
 	}
 }
 
+/*
 void FPropertyWindow::RenderSpotLightComponent(USpotLightComponent* spotLightComponent)
 {
 	FVector4 colorInput = spotLightComponent->GetColor();
@@ -461,6 +484,9 @@ void FPropertyWindow::RenderSpotLightComponent(USpotLightComponent* spotLightCom
 		spotLightComponent->SetOuterConeAngle(outerAngleInput);
 	}
 }
+*/
+
+
 
 void FPropertyWindow::RenderAtlasAnimationComponent(UAtlasAnimationComponent* atlasAnimationComponent)
 {
@@ -706,6 +732,7 @@ void FPropertyWindow::RenderPointLightComponent(UPointLightComponent* PointLight
 	}
 }
 */
+
 void FPropertyWindow::RenderTextRenderComponent(UTextRenderComponent* TextRenderComponent)
 {
 	char textBuffer[1024 * 16] = {};
@@ -849,5 +876,71 @@ void FPropertyWindow::RenderLightComponent(ULightComponentBase* LightComponent)
 		ImGuiSliderFlags_AlwaysClamp))
 	{
 		LightComponent->SetIntensity(Intensity);
+	}
+}
+
+void FPropertyWindow::RenderPointLightComponent(UPointLightComponent* PointLightComponent)
+{
+	// 새 클래스가 상속받은 공통 조명 속성
+	RenderLightComponent(PointLightComponent);
+
+	float Radius = PointLightComponent->GetAttenuationRadius();
+	if (ImGui::DragFloat(
+		"Attenuation Radius", &Radius,
+		0.1f, 0.f, 10.f,
+		"%.3f", ImGuiSliderFlags_AlwaysClamp))
+	{
+		PointLightComponent->SetAttenuationRadius(Radius);
+	}
+
+	float Exponent = PointLightComponent->GetRadiusFallOffExponent();
+	if (ImGui::DragFloat(
+		"Light Falloff Exponent", &Exponent,
+		0.1f, 0.001f, 16.f,
+		"%.3f", ImGuiSliderFlags_AlwaysClamp))
+	{
+		PointLightComponent->SetLightFallOffExponent(Exponent);
+	}
+}
+
+void FPropertyWindow::RenderSpotLightComponent(USpotLightComponent* SpotLightComponent)
+{
+	// Enabled, Color, Intensity
+	RenderLightComponent(SpotLightComponent);
+
+	float Range = SpotLightComponent->GetRange();
+	if (ImGui::DragFloat(
+		"Range", &Range,
+		0.1f, 0.f, 10.f, "%.3f",
+		ImGuiSliderFlags_AlwaysClamp))
+	{
+		SpotLightComponent->SetRange(Range);
+	}
+
+	float Exponent = SpotLightComponent->GetRadiusFallOffExponent();
+	if (ImGui::DragFloat(
+		"Light Falloff Exponent", &Exponent,
+		0.1f, 0.001f, 16.f, "%.3f",
+		ImGuiSliderFlags_AlwaysClamp))
+	{
+		SpotLightComponent->SetLightFallOffExponent(Exponent);
+	}
+
+	float InnerAngle = SpotLightComponent->GetInnerConeAngle();
+	if (ImGui::DragFloat(
+		"InnerAngle", &InnerAngle,
+		0.1f, 0.f, SpotLightComponent->GetOuterConeAngle(), "%.3f",
+		ImGuiSliderFlags_AlwaysClamp))
+	{
+		SpotLightComponent->SetInnerConeAngle(InnerAngle);
+	}
+
+	float OuterAngle = SpotLightComponent->GetOuterConeAngle();
+	if (ImGui::DragFloat(
+		"OuterAngle", &OuterAngle,
+		0.1f, 0.f, 89.f, "%.3f",
+		ImGuiSliderFlags_AlwaysClamp))
+	{
+		SpotLightComponent->SetOuterConeAngle(OuterAngle);
 	}
 }

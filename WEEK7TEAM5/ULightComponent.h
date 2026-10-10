@@ -14,6 +14,7 @@ public:
     virtual ~ULightComponent() = default;
 
     ELightType GetLightType() const;
+    FVector GetDirection();
 
 protected:
     ULightComponent(ELightType LightType);

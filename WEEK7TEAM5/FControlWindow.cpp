@@ -18,6 +18,8 @@
 #include "enum.h"
 #include "GraphicsManager.h"
 
+#include "UPointLightComponent.h"
+
 void FControlWindow::Render(const FGuiReference& GuiReference)
 {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;

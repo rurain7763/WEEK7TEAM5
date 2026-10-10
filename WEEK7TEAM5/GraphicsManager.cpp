@@ -16,6 +16,10 @@
 
 #include "UAmbientLightComponent.h"
 #include "UDirectionalLightComponent.h"
+#include "UPointLightComponent.h"
+#include "USpotLightComponent.h"
+#include "EngineMathLibrary.h"
+
 #include "Actor.h"
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
@@ -160,18 +164,38 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 
 		case ELightType::Directional:
 		{
-			UDirectionalLightComponent* DirectionalComponent =
-				LightComponent->Cast<UDirectionalLightComponent>();
-
-			if (DirectionalComponent == nullptr)
-			{
-				continue;
-			}
+			UDirectionalLightComponent* DirectionalComponent = LightComponent->Cast<UDirectionalLightComponent>();
+			assert(DirectionalComponent != nullptr);
 
 			LightInfo.Direction = DirectionalComponent->GetDirection();
 			break;
 		}
+		case ELightType::Point:
+		{
+			UPointLightComponent* PointComponent = LightComponent->Cast<UPointLightComponent>();
+			assert(PointComponent != nullptr);
 
+			LightInfo.Position = PointComponent->GetWorldLocation();
+			LightInfo.Range = PointComponent->GetAttenuationRadius();
+			LightInfo.FallOff = PointComponent->GetRadiusFallOffExponent();
+
+			break;
+		}
+		case ELightType::Spot:
+		{
+			USpotLightComponent* SpotComponent = LightComponent->Cast<USpotLightComponent>();
+			assert(SpotComponent != nullptr);
+
+			LightInfo.Position = SpotComponent->GetWorldLocation();
+			LightInfo.Direction = SpotComponent->GetDirection();
+			LightInfo.Range = SpotComponent->GetRange();
+			LightInfo.FallOff = SpotComponent->GetRadiusFallOffExponent();
+
+			LightInfo.InnerConeCos = FMath::Cos(FMath::DegreesToRadians(SpotComponent->GetInnerConeAngle()));
+			LightInfo.OuterConeCos = FMath::Cos(FMath::DegreesToRadians(SpotComponent->GetOuterConeAngle()));
+
+			break;
+		}
 		default:
 			assert(false);
 		}
