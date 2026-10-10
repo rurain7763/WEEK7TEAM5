@@ -181,7 +181,6 @@ private:
 	bool mEnableDepthWrite = true;
 };
 
-
 class UTextRenderComponent : public UPrimitiveComponent
 {
 	REFLECT_CLASS(UTextRenderComponent, UPrimitiveComponent)
