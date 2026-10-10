@@ -150,6 +150,24 @@ typedef struct FVector
 		z /= len;
 	}
 
+	void SafeNormalize(float Tolerance = KINDA_SMALL_NUMBER)
+	{
+		float lenSq = LengthSquared();
+		if (lenSq > Tolerance)
+		{
+			float len = FMath::Sqrt(lenSq);
+			x /= len;
+			y /= len;
+			z /= len;
+		}
+		else
+		{
+			x = 0.0f;
+			y = 0.0f;
+			z = 0.0f;
+		}
+	}
+
 	inline bool IsNearlyZero(float Tolerance = KINDA_SMALL_NUMBER) const
 	{
 		return LengthSquared() < Tolerance;

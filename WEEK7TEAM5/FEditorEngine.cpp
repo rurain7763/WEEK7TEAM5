@@ -421,7 +421,7 @@ void FEditorEngine::Render(float DeltaTime)
 								FRenderLineInfo LineInfo;
 								LineInfo.Start = WorldStart.ToVec3();
 								LineInfo.End = WorldEnd.ToVec3();
-								LineInfo.Color = FVector4(1.f, 0.f, 0.f, 1.f); // 빨간색
+								LineInfo.Color = FLinearColor(1.f, 0.f, 0.f, 1.f); // 빨간색
 								LineInfo.Thickness = 5.0f;
 
 								RenderCollector.LineInfos.Add(LineInfo);
@@ -447,10 +447,9 @@ void FEditorEngine::Render(float DeltaTime)
 				PROFILE_SCOPE("Viewport/Render");
 				CurrentViewport->Viewport->Resize(*mGraphicsManager->GetRenderer(), static_cast<uint32>(ViewportRect.Width), static_cast<uint32>(ViewportRect.Height));
 				mGraphicsManager->Prepare(&CurrentViewport->Client->mCamera, CurrentRatio, ViewProjection, InvViewProjection, *CurrentViewport->Viewport, World, CurrentViewport->Client->GetViewMode(), CurrentViewport->Client->GetViewportType());
-				mGraphicsManager->RenderHighLight(HighlightedComponents);
-				mGraphicsManager->Render();
+				mGraphicsManager->Render(HighlightedComponents);
 
-				CurrentViewport->Client->mGizmo.Render(SelectedComponent, CurrentViewport->Client->mCamera.Transform.GetLocation(), CurrentViewport->Window->Rect, ViewProjection, CurrentViewport->Client->IsOrtho(), CurrentViewport->Client->GetCamera().mOrthoDistance);
+				CurrentViewport->Client->mGizmo.Render(SelectedComponent, CurrentViewport->Client->mCamera.Transform.GetLocation(), CurrentViewport->Client->mCamera.GetForwardVector(), CurrentViewport->Window->Rect, ViewProjection, CurrentViewport->Client->IsOrtho(), CurrentViewport->Client->GetCamera().mOrthoDistance);
 			}
 		}
 	}

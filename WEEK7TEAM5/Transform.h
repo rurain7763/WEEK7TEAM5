@@ -1,9 +1,11 @@
 #pragma once
+
 #include "Vector.h"
 #include "Rotator.h"
 #include "Matrix.h"
 #include "FQuaternion.h"
 #include "EngineMathLibrary.h"
+#include "enum.h"
 #include <cassert>
 
 // 스케일 하한. 0에 가까워지면 MakeMatrix()의 행렬식(세 축 스케일의 곱)이 무너져
@@ -92,6 +94,14 @@ public:
 	inline void MarkTransformDirty() { mbTransformDirty = true; mbInverseTransformDirty = true; ++TransformVersion; }
 
 	inline uint32 GetTransformVersion() const { return TransformVersion; }
+
+	inline FVector GetUnitAxis(EAxis AxisType) const
+	{
+		FMatrix TransformMatrix = MakeMatrix();
+		FVector Axis = TransformMatrix.GetUnitAxis(AxisType);
+		Axis.Normalize();
+		return Axis;
+	}
 
 private:
 	void EnsureUpdateTransformMatrix() const

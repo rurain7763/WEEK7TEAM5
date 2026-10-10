@@ -1,3 +1,4 @@
+
 #include "Gizmo.h"
 #include "Actor.h"
 #include "Renderer.h"
@@ -192,7 +193,7 @@ void FGizmo::Tick(UActorComponent* TargetComponent, const FRect& ViewportRect, b
     PrevMousePos = MousePosInScreen;
 }
 
-void FGizmo::Render(UActorComponent* TargetComponent, const FVector& CameraPosition, const FRect& ViewportRect, const FMatrix& ViewProjection, bool bIsOrtho, float OrthoDistance)
+void FGizmo::Render(UActorComponent* TargetComponent, const FVector& CameraPosition, const FVector& CameraForward, const FRect& ViewportRect, const FMatrix& ViewProjection, bool bIsOrtho, float OrthoDistance)
 {
     HandleScreenSegments.Empty();
 
@@ -277,16 +278,25 @@ void FGizmo::Render(UActorComponent* TargetComponent, const FVector& CameraPosit
             Points[Index] = SceneComponent->GetWorldLocation() + U * Point.X + V * Point.Y;
         }, AxisLength, NumSegments);
 
-        for (int32 I = 0; I < NumSegments; ++I)
+        FVector AxisWorld = FVector::cross(V, U);
+		AxisWorld.Normalize();
+        
+        constexpr float ClipTolerance = 0.0f;
+
+        for (int32 i = 0; i < NumSegments; ++i)
         {
-            const FVector& StartWorld = Points[I];
-            const FVector& EndWorld = Points[(I + 1) % NumSegments];
-			if (!bNoClipping && FVector::dot(Lerp(StartWorld, EndWorld, 0.5f) - SceneComponent->GetWorldLocation(), CenterToCamera) < 0.f)
+            const FVector& StartWorld = Points[i];
+            const FVector& EndWorld = Points[(i + 1) % NumSegments];
+
+            FVector CenterPoint = Lerp(StartWorld, EndWorld, 0.5f);
+            FVector LineNormal = CenterPoint - SceneComponent->GetWorldLocation();
+			if (!bNoClipping && FVector::dot(LineNormal, CenterToCamera) < -ClipTolerance)
 			{
 				continue;
 			}
             const FVector2 Start = WorldToScreen(StartWorld, ViewProjection, static_cast<float>(ScreenWidth), static_cast<float>(ScreenHeight));
             const FVector2 End = WorldToScreen(EndWorld, ViewProjection, static_cast<float>(ScreenWidth), static_cast<float>(ScreenHeight));
+
             
 			if (FVector2::LengthSquared(Start, End) < 0.01f) 
 			{
@@ -312,9 +322,35 @@ void FGizmo::Render(UActorComponent* TargetComponent, const FVector& CameraPosit
     }
     else if (CurrentOperation == EGIZMO_TYPE::ROTATE)
     {
-        DrawCircleAxis(RightAxis, UpAxis, FVector4(1, 0, 0, 1), false, EAxisNumber::X);
-        DrawCircleAxis(UpAxis, ForwardAxis, FVector4(0, 1, 0, 1), false, EAxisNumber::Y);
-        DrawCircleAxis(ForwardAxis, RightAxis, FVector4(0, 0, 1, 1), false, EAxisNumber::Z);
+		struct FAxisInfo
+		{
+			FVector U;
+            FVector V;
+			FVector4 Color;
+			EAxisNumber AxisNumber;
+		};
+
+		FAxisInfo Axes[3] = {
+			{ RightAxis, UpAxis, FVector4(1, 0, 0, 1), EAxisNumber::X },
+			{ UpAxis, ForwardAxis, FVector4(0, 1, 0, 1), EAxisNumber::Y },
+			{ ForwardAxis, RightAxis, FVector4(0, 0, 1, 1), EAxisNumber::Z }
+		};
+
+        const float FaceOnThreshold = FMath::Cos(FMath::DegreesToRadians(0.1f));
+		bool bAnyRingFaceOn = false;
+		for (int32 i = 0; i < 3; ++i)
+		{
+			const FAxisInfo& AxisInfo = Axes[i];
+
+            FVector AxisWorld = FVector::cross(AxisInfo.V, AxisInfo.U);
+            AxisWorld.SafeNormalize();
+
+            float Alignment = FMath::Abs(FVector::dot(AxisWorld, CameraForward));
+            bool bRingFaceOn = Alignment > FaceOnThreshold;
+			bAnyRingFaceOn |= bRingFaceOn;
+
+			DrawCircleAxis(AxisInfo.U, AxisInfo.V, AxisInfo.Color, bRingFaceOn, AxisInfo.AxisNumber);
+		}
 
         FVector CameraAxisU = FVector::cross(CenterToCamera, Up);
         if (CameraAxisU.IsNearlyZero())
@@ -329,7 +365,10 @@ void FGizmo::Render(UActorComponent* TargetComponent, const FVector& CameraPosit
             FVector CameraAxisV = FVector::cross(CameraAxisU, CenterToCamera);
             CameraAxisV.Normalize();
 
-            DrawCircleAxis(CameraAxisU, CameraAxisV, FVector4(1, 1, 1, 1), true, EAxisNumber::Cameara);
+            if (!bAnyRingFaceOn)
+            {
+                DrawCircleAxis(CameraAxisU, CameraAxisV, FVector4(1, 1, 1, 1), true, EAxisNumber::Camera);
+            }
         }
     }
     else if (CurrentOperation == EGIZMO_TYPE::SCALE)

@@ -22,6 +22,7 @@
 #include "UAmbientLightComponent.h"
 #include "USpotLightComponent.h"
 #include "UPointLightComponent.h"
+#include "MathUtility.h"
 
 void FPropertyWindow::Render(const FGuiReference& GuiReference)
 {
@@ -117,58 +118,59 @@ void FPropertyWindow::Render(const FGuiReference& GuiReference)
 
 			if (mSelectedComponent->IsA<USceneComponent>())
 			{
-				ImGui::SeparatorText(mSelectedComponent->GetClass()->Name.c_str());
+				ImGui::SeparatorText("Transform");
 
 				RenderTransformProperties(mSelectedComponent->Cast<USceneComponent>());
 			}
 
 			ImGui::SeparatorText(mSelectedComponent->GetClass()->Name.c_str());
 
-			if (mSelectedComponent->IsA<UText3DComponent>())
+			const FClassInfo* ComponentClassInfo = mSelectedComponent->GetClass();
+			if (ComponentClassInfo == UText3DComponent::GetStaticClass())
 			{
 				RenderText3DComponent(mSelectedComponent->Cast<UText3DComponent>());
 			}
-			else if (mSelectedComponent->IsA<USpotLightComponent>())
-			{
-				RenderSpotLightComponent(mSelectedComponent->Cast<USpotLightComponent>());
-			}
-			else if (mSelectedComponent->IsA<UAtlasAnimationComponent>())
+			else if (ComponentClassInfo == UAtlasAnimationComponent::GetStaticClass())
 			{
 				RenderAtlasAnimationComponent(mSelectedComponent->Cast<UAtlasAnimationComponent>());
 			}
-			else if (mSelectedComponent->IsA<UStaticMeshComponent>())
+			else if (ComponentClassInfo == UStaticMeshComponent::GetStaticClass())
 			{
 				RenderStaticMeshComponent(mSelectedComponent->Cast<UStaticMeshComponent>());
 			}
-			else if (mSelectedComponent->IsA<UHeightFogComponent>())
+			else if (ComponentClassInfo == UHeightFogComponent::GetStaticClass())
 			{
 				RenderHeightFogComponent(mSelectedComponent->Cast<UHeightFogComponent>());
 			}
-			else if (mSelectedComponent->IsA<UPointLightComponent>())
-			{
-				RenderPointLightComponent(mSelectedComponent->Cast<UPointLightComponent>());
-			}
-			else if (mSelectedComponent->IsA<UTextRenderComponent>())
+			else if (ComponentClassInfo == UTextRenderComponent::GetStaticClass())
 			{
 				RenderTextRenderComponent(mSelectedComponent->Cast<UTextRenderComponent>());
 			}
-			else if (mSelectedComponent->IsA<UProjectileMovementComponent>())
+			else if (ComponentClassInfo == UProjectileMovementComponent::GetStaticClass())
 			{
 				RenderProjectileMovementComponent(mSelectedComponent->Cast<UProjectileMovementComponent>());
 			}
-			else if (mSelectedComponent->IsA<URotationMovementComponent>())
+			else if (ComponentClassInfo == URotationMovementComponent::GetStaticClass())
 			{
 				RenderRotationMovementComponent(mSelectedComponent->Cast<URotationMovementComponent>());
 			}
-			else if (mSelectedComponent->IsA<UBillboardComponent>())
+			else if (ComponentClassInfo == UBillboardComponent::GetStaticClass())
 			{
 				RenderBillboardComponent(mSelectedComponent->Cast<UBillboardComponent>());
 			}
-			else if (mSelectedComponent->IsA<UDirectionalLightComponent>())
+			else if (ComponentClassInfo == UDirectionalLightComponent::GetStaticClass())
 			{
 				RenderDirectionalLightComponent(mSelectedComponent->Cast<UDirectionalLightComponent>());
 			}
-			else if (mSelectedComponent->IsA<UAmbientLightComponent>())
+			else if (ComponentClassInfo == UPointLightComponent::GetStaticClass())
+			{
+				RenderPointLightComponent(mSelectedComponent->Cast<UPointLightComponent>());
+			}
+			else if (ComponentClassInfo == USpotLightComponent::GetStaticClass())
+			{
+				RenderSpotLightComponent(mSelectedComponent->Cast<USpotLightComponent>());
+			}
+			else if (ComponentClassInfo == UAmbientLightComponent::GetStaticClass())
 			{
 				RenderAmbientLightComponent(mSelectedComponent->Cast<UAmbientLightComponent>());
 			}
@@ -230,82 +232,77 @@ void FPropertyWindow::RenderAddComponentPopup()
 
 	if (ImGui::BeginPopup("Add Component"))
 	{
+		UActorComponent* NewComponent = nullptr;
+
 		if (ImGui::MenuItem("StaticMeshComponent"))
 		{
-			UStaticMeshComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UStaticMeshComponent>(FName(MakeUniqueName("StaticMeshComponent", mSelectedActor->GetComponents())));
-
-			if (mSelectedComponent && mSelectedComponent->IsA<USceneComponent>())
-			{
-				NewComponent->SetupAttachment(mSelectedComponent->Cast<USceneComponent>(), false);
-			}
-
-			mSelectedActor->AddOwnedComponent(NewComponent);
-
+			NewComponent = mSelectedActor->CreateDefaultSubobject<UStaticMeshComponent>(FName(MakeUniqueName("StaticMeshComponent", mSelectedActor->GetComponents())));
 			ImGui::CloseCurrentPopup();
 		}
 
 		if (ImGui::MenuItem("BillboardComponent"))
 		{
-			UBillboardComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UBillboardComponent>(FName(MakeUniqueName("BillboardComponent", mSelectedActor->GetComponents())));
-
-			if (mSelectedComponent && mSelectedComponent->IsA<USceneComponent>())
-			{
-				NewComponent->SetupAttachment(mSelectedComponent->Cast<USceneComponent>(), false);
-			}
-
-			mSelectedActor->AddOwnedComponent(NewComponent);
-
+			NewComponent = mSelectedActor->CreateDefaultSubobject<UBillboardComponent>(FName(MakeUniqueName("BillboardComponent", mSelectedActor->GetComponents())));
 			ImGui::CloseCurrentPopup();
 		}
 
 		if (ImGui::MenuItem("ProjectileMovementComponent"))
 		{
-			UProjectileMovementComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UProjectileMovementComponent>(FName(MakeUniqueName("ProjectileMovementComponent", mSelectedActor->GetComponents())));
-
-			mSelectedActor->AddOwnedComponent(NewComponent);
-
+			NewComponent = mSelectedActor->CreateDefaultSubobject<UProjectileMovementComponent>(FName(MakeUniqueName("ProjectileMovementComponent", mSelectedActor->GetComponents())));
 			ImGui::CloseCurrentPopup();
 		}
 
 		if (ImGui::MenuItem("RotationMovementComponent"))
 		{
-			URotationMovementComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<URotationMovementComponent>(FName(MakeUniqueName("RotationMovementComponent", mSelectedActor->GetComponents())));
-
-			mSelectedActor->AddOwnedComponent(NewComponent);
-
+			NewComponent = mSelectedActor->CreateDefaultSubobject<URotationMovementComponent>(FName(MakeUniqueName("RotationMovementComponent", mSelectedActor->GetComponents())));
 			ImGui::CloseCurrentPopup();
 		}
 
 		if (ImGui::MenuItem("PointLightComponent"))
 		{
-			UPointLightComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UPointLightComponent>(FName(MakeUniqueName("PointLightComponent", mSelectedActor->GetComponents())));
-
-			if (mSelectedComponent && mSelectedComponent->IsA<USceneComponent>())
-			{
-				NewComponent->SetupAttachment(mSelectedComponent->Cast<USceneComponent>(), false);
-			}
-
-			mSelectedActor->AddOwnedComponent(NewComponent);
-
+			NewComponent = mSelectedActor->CreateDefaultSubobject<UPointLightComponent>(FName(MakeUniqueName("PointLightComponent", mSelectedActor->GetComponents())));
 			ImGui::CloseCurrentPopup();
 		}
 
 		if (ImGui::MenuItem("TextRenderComponent"))
 		{
-			UTextRenderComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UTextRenderComponent>(FName(MakeUniqueName("TextRenderComponent", mSelectedActor->GetComponents())));
+			UTextRenderComponent* TextRenderComp = mSelectedActor->CreateDefaultSubobject<UTextRenderComponent>(FName(MakeUniqueName("TextRenderComponent", mSelectedActor->GetComponents())));
+			TextRenderComp->SetFontAtlasAsset(FAssetManager::Get().GetAssetAs<FFontAtlasAsset>(FName("TestFontAtlas"), true));
+			NewComponent = TextRenderComp;
+			ImGui::CloseCurrentPopup();
+		}
 
-			if (mSelectedComponent && mSelectedComponent->IsA<USceneComponent>())
+		if (ImGui::MenuItem("DirectionalLightComponent"))
+		{
+			NewComponent = mSelectedActor->CreateDefaultSubobject<UDirectionalLightComponent>(FName(MakeUniqueName("DirectionalLightComponent", mSelectedActor->GetComponents())));
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (ImGui::MenuItem("AmbientLightComponent"))
+		{
+			NewComponent = mSelectedActor->CreateDefaultSubobject<UAmbientLightComponent>(FName(MakeUniqueName("AmbientLightComponent", mSelectedActor->GetComponents())));
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (ImGui::MenuItem("SpotLightComponent"))
+		{
+			NewComponent = mSelectedActor->CreateDefaultSubobject<USpotLightComponent>(FName(MakeUniqueName("SpotLightComponent", mSelectedActor->GetComponents())));
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (NewComponent)
+		{
+			USceneComponent* SelectedSceneComp = mSelectedComponent->Cast<USceneComponent>();
+			USceneComponent* NewSceneComp = NewComponent->Cast<USceneComponent>();
+			if (SelectedSceneComp && NewSceneComp)
 			{
-				NewComponent->SetupAttachment(mSelectedComponent->Cast<USceneComponent>(), false);
+				NewSceneComp->SetupAttachment(SelectedSceneComp, false);
 			}
 
 			mSelectedActor->AddOwnedComponent(NewComponent);
-			NewComponent->SetFontAtlasAsset(FAssetManager::Get().GetAssetAs<FFontAtlasAsset>(FName("TestFontAtlas"), true));
-
-			ImGui::CloseCurrentPopup();
 		}
-		ImGui::EndPopup();
 
+		ImGui::EndPopup();
 	}
 }
 
@@ -392,27 +389,6 @@ void FPropertyWindow::RenderText3DComponent(UText3DComponent* text3DComponent)
 	}
 }
 
-void FPropertyWindow::RenderSpotLightComponent(USpotLightComponent* spotLightComponent)
-{
-	FVector4 colorInput = spotLightComponent->GetColor().ToFVector4();
-	if (ImGui::ColorPicker3("Color", &colorInput.x,
-		ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
-	{
-		spotLightComponent->SetColor(colorInput.ToLinearColor());
-	}
-
-	float innerAngleInput = spotLightComponent->GetInnerConeAngle();
-	if (ImGui::DragFloat("InnerAngle", &innerAngleInput, 0.1f, 0.f, spotLightComponent->GetOuterConeAngle(), "%.3f", ImGuiSliderFlags_AlwaysClamp))
-	{
-		spotLightComponent->SetInnerConeAngle(innerAngleInput);
-	}
-
-	float outerAngleInput = spotLightComponent->GetOuterConeAngle();
-	if (ImGui::DragFloat("OuterAngle", &outerAngleInput, 0.1f, 0.f, 89.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
-	{
-		spotLightComponent->SetOuterConeAngle(outerAngleInput);
-	}
-}
 
 void FPropertyWindow::RenderAtlasAnimationComponent(UAtlasAnimationComponent* atlasAnimationComponent)
 {
@@ -637,33 +613,6 @@ void FPropertyWindow::RenderHeightFogComponent(UHeightFogComponent* HeightFogCom
 	}
 }
 
-void FPropertyWindow::RenderPointLightComponent(UPointLightComponent* PointLightComponent)
-{
-	FLinearColor ColorInput = PointLightComponent->GetColor();
-	if (ImGui::ColorPicker3("Color", ColorInput.V, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
-	{
-		PointLightComponent->SetColor(ColorInput);
-	}
-
-	float IntensityInput = PointLightComponent->GetIntensity();
-	if (ImGui::DragFloat("Intensity", &IntensityInput, 0.1f, 0.f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
-	{
-		PointLightComponent->SetIntensity(IntensityInput);
-	}
-
-	float RadiusInput = PointLightComponent->GetRadius();
-	if (ImGui::DragFloat("Radius", &RadiusInput, 0.1f, 0.f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
-	{
-		PointLightComponent->SetRadius(RadiusInput);
-	}
-
-	float RadiusFallOffInput = PointLightComponent->GetRadiusFallOff();
-	if (ImGui::DragFloat("Radius Falloff", &RadiusFallOffInput, 0.1f, 0.001f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
-	{
-		PointLightComponent->SetRadiusFallOff(RadiusFallOffInput);
-	}
-}
-
 void FPropertyWindow::RenderTextRenderComponent(UTextRenderComponent* TextRenderComponent)
 {
 	char textBuffer[1024 * 16] = {};
@@ -782,32 +731,61 @@ void FPropertyWindow::RenderBillboardComponent(UBillboardComponent* BillboardCom
 	}
 }
 
-void FPropertyWindow::RenderDirectionalLightComponent(UDirectionalLightComponent* DirectionalLightComponent)
+void FPropertyWindow::RenderLightComponent(ULightComponent* LightComponent)
 {
-	FLinearColor ColorInput = DirectionalLightComponent->GetColor();
-	if (ImGui::ColorPicker3("Color", ColorInput.V, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
+	FLinearColor ColorInput = LightComponent->GetColor();
+	if (ImGui::ColorPicker3("Color", &ColorInput.R, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
 	{
-		DirectionalLightComponent->SetColor(ColorInput);
+		LightComponent->SetColor(ColorInput);
 	}
 
-	float IntensityInput = DirectionalLightComponent->GetIntensity();
-	if (ImGui::DragFloat("Intensity", &IntensityInput, 0.01f, 0.f, 5.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+	float IntensityInput = LightComponent->GetIntensity();
+	if (ImGui::DragFloat("Intensity", &IntensityInput, 0.1f, 0.f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 	{
-		DirectionalLightComponent->SetIntensity(IntensityInput);
+		LightComponent->SetIntensity(IntensityInput);
+	}
+}
+
+void FPropertyWindow::RenderDirectionalLightComponent(UDirectionalLightComponent* DirectionalLightComponent)
+{
+	RenderLightComponent(DirectionalLightComponent);
+}
+
+void FPropertyWindow::RenderPointLightComponent(UPointLightComponent* PointLightComponent)
+{
+	RenderLightComponent(PointLightComponent);
+
+	float RadiusInput = PointLightComponent->GetRadius();
+	if (ImGui::DragFloat("Radius", &RadiusInput, 0.1f, 0.f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+	{
+		PointLightComponent->SetRadius(RadiusInput);
+	}
+
+	float RadiusFallOffInput = PointLightComponent->GetRadiusFallOff();
+	if (ImGui::DragFloat("Radius Falloff", &RadiusFallOffInput, 0.1f, 0.001f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+	{
+		PointLightComponent->SetRadiusFallOff(RadiusFallOffInput);
 	}
 }
 
 void FPropertyWindow::RenderAmbientLightComponent(UAmbientLightComponent* AmbientLightComponent)
 {
-	FLinearColor ColorInput = AmbientLightComponent->GetColor();
-	if (ImGui::ColorPicker3("Color", ColorInput.V, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))
+	RenderLightComponent(AmbientLightComponent);
+}
+
+void FPropertyWindow::RenderSpotLightComponent(USpotLightComponent* SpotLightComponent)
+{
+	RenderPointLightComponent(SpotLightComponent);
+
+	float InnerAngleInput = FMath::RadiansToDegrees(SpotLightComponent->GetInnerConeAngle());
+	if (ImGui::DragFloat("InnerAngle", &InnerAngleInput, 0.1f, 0.f, 89.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 	{
-		AmbientLightComponent->SetColor(ColorInput);
+		SpotLightComponent->SetInnerConeAngle(FMath::DegreesToRadians(InnerAngleInput));
 	}
 
-	float IntensityInput = AmbientLightComponent->GetIntensity();
-	if (ImGui::DragFloat("Intensity", &IntensityInput, 0.01f, 0.f, 5.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+	float OuterAngleInput = FMath::RadiansToDegrees(SpotLightComponent->GetOuterConeAngle());
+	if (ImGui::DragFloat("OuterAngle", &OuterAngleInput, 0.1f, InnerAngleInput, 89.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 	{
-		AmbientLightComponent->SetIntensity(IntensityInput);
+		SpotLightComponent->SetOuterConeAngle(FMath::DegreesToRadians(OuterAngleInput));
 	}
 }

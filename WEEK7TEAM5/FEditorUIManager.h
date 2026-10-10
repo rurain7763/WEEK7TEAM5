@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Core.h"
-#include "FControlWindow.h"
+#include "FMainToolbar.h"
 #include "FOutlinerWindow.h"
 #include "FContentBrowser.h"
 #include "FPropertyWindow.h"
@@ -50,7 +50,10 @@ public:
 	inline float GetViewportHeight() const { return mViewportHeight; }
 
 private:
+	void RenderMenuBar(FGuiReference& GuiReference);
+	void RenderViewport(FGuiReference& GuiReference, ImGuiID DockspaceID);
 	void RenderBottomBar();
+	void RenderCameraControl(FCamera& Camera);
 
 	void OnNewAssetFile(const FAssetFileHeader& Header, const std::filesystem::path& FilePath) override;
 	void OnDeleteAssetFile(const std::filesystem::path& FilePath) override;
@@ -67,9 +70,9 @@ private:
 
 	URenderer& mRenderer;
 
+	FMainToolbar mMainToolbar;
 	FContentBrowser mContentBrowser;
 	FPropertyWindow mPropertyWindow;
-	FControlWindow mControlWindow;
 	FOutlinerWindow mOutlinerWindow;
 
 	float mViewportX;

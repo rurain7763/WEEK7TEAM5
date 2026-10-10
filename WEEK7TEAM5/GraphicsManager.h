@@ -12,6 +12,7 @@
 #include "ShowFlags.h"
 #include "FFogProcess.h"
 #include "FDepthPreviewProcess.h"
+#include "FNormalPreviewProcess.h"
 #include "FFXAAProcess.h"
 #include "FRenderGraph.h"
 
@@ -34,8 +35,7 @@ public:
 
 	void Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, const EViewModeIndex InViewMode, const EViewportType InViewportType);
 
-	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
-	void Render();
+	void Render(const TArray<UPrimitiveComponent*>& Primitives);
 
 	void Display();
 
@@ -64,7 +64,6 @@ public:
 
 	inline FRenderCollector& GetRenderCollector() { return mRenderCollector; }
 	inline FFogProcess& GetFogProcess() { return mFogProcess; }
-	inline FDepthPreviewProcess& GetDepthPreviewProcess() { return mDepthPreviewProcess; }
 
 	inline int32 GetGridGap() { return GridGap; }
 	void SetGridGap(int32 GridGap);
@@ -87,6 +86,9 @@ public:
 	float GetGpuRenderTime() { return GpuRenderTime; }
 
 private:
+	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
+
+private:
 	struct FOutlineConstants
 	{
 		FVector4 OutlineColor;
@@ -102,10 +104,12 @@ private:
 		FVector Position;
 		ELightType Type;
 		FLinearColor Color;
+		FVector Direction;
 		float Range;
 		float Intensity;
 		float FallOf;
-		float padding;
+		float InnerConeAngle;
+		float OuterConeAngle;
 	};
 
 	struct FDirectionalLightInfo
@@ -124,12 +128,22 @@ private:
 	struct FMeshContants
 	{
 		FMatrix Matrix;
+		FMatrix InvMatrix;
 		FVector4 Color;
 		FVector2 UVOffset;
 		int32 UseVertexColor;
 		int32 HasTexture;
+		FLinearColor AmbientColor;
+		float AmbientIntensity;
 		int32 LightCount;
-		int32 Padding[3];
+		int32 Padding[2];
+	};
+
+	struct FViewConstants
+	{
+		FMatrix ViewProjectionMatrix;
+		FVector ViewPosition;
+		float Padding;
 	};
 
 	URenderer* mRenderer;
@@ -162,6 +176,8 @@ private:
 	float mProjectionDuration = 1.0f;
 	bool mbProjectionTransitioning = false;
 
+	FLinearColor mAmbientColor;
+	float mAmbientIntensity;
 	TArray<FLightInfo> mLightInfos;
 	TSharedPtr<FStructuredBuffer> mLightInfoBuffer;
 	//Ambient, Directional Light 등 버퍼들
@@ -183,6 +199,7 @@ private:
 	FFogProcess mFogProcess;
 	FFXAAProcess mFXAAProcess;
 	FDepthPreviewProcess mDepthPreviewProcess;
+	FNormalPreviewProcess mNormalPreviewProcess;
 
 	int32 GridGap = 1;
 	bool bGpuTimerActive = false;

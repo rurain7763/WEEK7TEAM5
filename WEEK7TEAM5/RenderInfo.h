@@ -88,7 +88,7 @@ struct FRenderQuad2DInfo
 
 struct FRenderLineInfo
 {
-	FVector4 Color;
+	FLinearColor Color;
 	FVector3 Start;
 	float Thickness;
 	FVector3 End;

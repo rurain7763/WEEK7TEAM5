@@ -16,6 +16,7 @@
 #include "Serializers.h"
 #include "Vector.h"
 
+
 class UText3DComponent : public USceneComponent
 {
 	REFLECT_CLASS(UText3DComponent, USceneComponent)
@@ -180,6 +181,7 @@ private:
 	bool mEnableDepthTest = true;
 	bool mEnableDepthWrite = true;
 };
+
 
 class UTextRenderComponent : public UPrimitiveComponent
 {
@@ -397,7 +399,7 @@ private:
 	TSharedPtr<FFontAtlasAsset> mFontAtlasAsset;
 	FVector4 mColor = FVector4(1, 1, 1, 1);
 	bool mEnableDepthTest = true;
-	bool mEnableDepthWrite = true;
+	bool mEnableDepthWrite = false;
 
 	bool mbBoundingBoxDirty = true;
 	FAABB mBoundingBox;
