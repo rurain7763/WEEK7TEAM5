@@ -251,8 +251,8 @@ public:
 	}
 
 private:
-	static constexpr float MAX_CONE_ANGLE = 89.f;
+	static constexpr float MAX_CONE_ANGLE = PI * 0.5f; // 90 degrees in radians
 
-	float mInnerConeAngle = 30.0f;
-	float mOuterConeAngle = 45.0f;
+	float mInnerConeAngle = FMath::DegreesToRadians(30.0f);
+	float mOuterConeAngle = FMath::DegreesToRadians(45.0f);
 };

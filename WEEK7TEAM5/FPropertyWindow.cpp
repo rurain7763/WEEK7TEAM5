@@ -15,6 +15,7 @@
 #include "SceneComponent.h"
 #include "ActorComponent.h"
 #include "LightComponents.h"
+#include "MathUtility.h"
 
 void FPropertyWindow::Render(const FGuiReference& GuiReference)
 {
@@ -761,15 +762,15 @@ void FPropertyWindow::RenderSpotLightComponent(USpotLightComponent* SpotLightCom
 {
 	RenderPointLightComponent(SpotLightComponent);
 
-	float InnerAngleInput = SpotLightComponent->GetInnerConeAngle();
+	float InnerAngleInput = FMath::RadiansToDegrees(SpotLightComponent->GetInnerConeAngle());
 	if (ImGui::DragFloat("InnerAngle", &InnerAngleInput, 0.1f, 0.f, 89.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 	{
-		SpotLightComponent->SetInnerConeAngle(InnerAngleInput);
+		SpotLightComponent->SetInnerConeAngle(FMath::DegreesToRadians(InnerAngleInput));
 	}
 
-	float OuterAngleInput = SpotLightComponent->GetOuterConeAngle();
+	float OuterAngleInput = FMath::RadiansToDegrees(SpotLightComponent->GetOuterConeAngle());
 	if (ImGui::DragFloat("OuterAngle", &OuterAngleInput, 0.1f, InnerAngleInput, 89.f, "%.3f", ImGuiSliderFlags_AlwaysClamp))
 	{
-		SpotLightComponent->SetOuterConeAngle(OuterAngleInput);
+		SpotLightComponent->SetOuterConeAngle(FMath::DegreesToRadians(OuterAngleInput));
 	}
 }

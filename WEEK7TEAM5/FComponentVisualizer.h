@@ -40,8 +40,8 @@ public:
 			return; 
 		}
 
-		const float OuterAngle = FMath::Clamp(SpotLightComponent->GetOuterConeAngle(), 0.f, 89.f);
-		const float InnerAngle = FMath::Clamp(SpotLightComponent->GetInnerConeAngle(), 0.f, OuterAngle);
+		const float OuterAngle = SpotLightComponent->GetOuterConeAngle(); 
+		const float InnerAngle = SpotLightComponent->GetInnerConeAngle();
 
 		constexpr int32 CircleSegments = 32;
 		constexpr int32 ArcSegments = 16;
@@ -56,9 +56,9 @@ public:
 			RenderCollector.LineInfos.Add(Line);
 		};
 
-		auto DrawCone = [&](float AngleDegrees, const FLinearColor& Color)
+		auto DrawCone = [&](float AngleRadians, const FLinearColor& Color)
 		{
-			const float Theta = FMath::DegreesToRadians(AngleDegrees);
+			const float Theta = AngleRadians;
 			const float Height = Range * FMath::Cos(Theta);
 			const float Radius = Range * FMath::Sin(Theta);
 
