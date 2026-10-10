@@ -447,8 +447,7 @@ void FEditorEngine::Render(float DeltaTime)
 				PROFILE_SCOPE("Viewport/Render");
 				CurrentViewport->Viewport->Resize(*mGraphicsManager->GetRenderer(), ViewportRect.Width, ViewportRect.Height);
 				mGraphicsManager->Prepare(&CurrentViewport->Client->mCamera, CurrentRatio, ViewProjection, InvViewProjection, *CurrentViewport->Viewport, World, CurrentViewport->Client->GetViewMode(), CurrentViewport->Client->GetViewportType());
-				mGraphicsManager->RenderHighLight(HighlightedComponents);
-				mGraphicsManager->Render();
+				mGraphicsManager->Render(HighlightedComponents);
 
 				CurrentViewport->Client->mGizmo.Render(SelectedComponent, CurrentViewport->Client->mCamera.Transform.GetLocation(), CurrentViewport->Window->Rect, ViewProjection, CurrentViewport->Client->IsOrtho(), CurrentViewport->Client->GetCamera().mOrthoDistance);
 			}

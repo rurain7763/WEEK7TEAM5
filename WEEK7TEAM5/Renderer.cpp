@@ -607,8 +607,8 @@ void URenderer::BindFrameBuffer()
 
 	Projection2D = FMatrix::Ortho(0.f, Width, Height, 0.f, 0.0f, 1.0f);
 
-	BindedRenderTarget = nullptr;
-	BindedDepthStencil = nullptr;
+	BindedRenderTargetCount = 0;
+;	BindedDepthStencil = nullptr;
 }
 
 void URenderer::BindRenderTarget(const TSharedPtr<FRenderTarget2D>& RenderTarget, const TSharedPtr<FDepthStencil>& DepthStencil, bool bClear)
@@ -618,10 +618,12 @@ void URenderer::BindRenderTarget(const TSharedPtr<FRenderTarget2D>& RenderTarget
 
 void URenderer::BindRenderTarget(FRenderTarget2D* RenderTarget, FDepthStencil* DepthStencil, bool bClear)
 {
-	DeviceContext->OMSetRenderTargets(1, RenderTarget->RTV.GetAddressOf(), DepthStencil ? DepthStencil->DSV.Get() : nullptr);
 	if (bClear)
 	{
-		DeviceContext->ClearRenderTargetView(RenderTarget->RTV.Get(), ClearColor);
+		if (RenderTarget)
+		{
+			DeviceContext->ClearRenderTargetView(RenderTarget->RTV.Get(), ClearColor);
+		}
 
 		if (DepthStencil)
 		{
@@ -629,20 +631,72 @@ void URenderer::BindRenderTarget(FRenderTarget2D* RenderTarget, FDepthStencil* D
 		}
 	}
 
+	DeviceContext->OMSetRenderTargets(RenderTarget ? 1 : 0, RenderTarget ? RenderTarget->RTV.GetAddressOf() : nullptr, DepthStencil ? DepthStencil->DSV.Get() : nullptr);
+
+	if (RenderTarget)
+	{
+		D3D11_VIEWPORT Viewport = {};
+		Viewport.TopLeftX = 0.0f;
+		Viewport.TopLeftY = 0.0f;
+		Viewport.Width = static_cast<float>(RenderTarget->Width);
+		Viewport.Height = static_cast<float>(RenderTarget->Height);
+		Viewport.MinDepth = 0.0f;
+		Viewport.MaxDepth = 1.0f;
+
+		DeviceContext->RSSetViewports(1, &Viewport);
+
+		Projection2D = FMatrix::Ortho(0.f, RenderTarget->Width, RenderTarget->Height, 0.f, 0.0f, 1.0f);
+
+		BindedRenderTargets[0] = RenderTarget;
+		BindedRenderTargetCount = 1;
+	}
+	else
+	{
+		BindedRenderTargetCount = 0;
+	}
+
+	BindedDepthStencil = DepthStencil;
+}
+
+void URenderer::BindRenderTargets(const FBindRenderTargetsDesc& Desc)
+{
+	ID3D11RenderTargetView* RenderTargetViews[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT] = {};
+	for (int32 i = 0; i < Desc.NumRenderTargets; ++i)
+	{
+		RenderTargetViews[i] = Desc.RenderTargets[i]->RTV.Get();
+		BindedRenderTargets[i] = Desc.RenderTargets[i];
+		if (Desc.bClearRenderTargets[i])
+		{
+			DeviceContext->ClearRenderTargetView(RenderTargetViews[i], ClearColor);
+		}
+	}
+	BindedRenderTargetCount = Desc.NumRenderTargets;
+
+	if (Desc.DepthStencil)
+	{
+		if (Desc.bClearDepthStencil)
+		{
+			DeviceContext->ClearDepthStencilView(Desc.DepthStencil->DSV.Get(), D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f, 0);
+		}
+		BindedDepthStencil = Desc.DepthStencil;
+	}
+
+	DeviceContext->OMSetRenderTargets(Desc.NumRenderTargets, RenderTargetViews, Desc.DepthStencil ? Desc.DepthStencil->DSV.Get() : nullptr);
+
+	// NOTE: 어차피 모든 RenderTarget의 크기가 동일하여야 한다. 따라서 첫 번째 RenderTarget의 크기를 기준으로 Viewport를 설정한다.
+	float Width = static_cast<float>(Desc.RenderTargets[0]->Width);
+	float Height = static_cast<float>(Desc.RenderTargets[0]->Height);
+
 	D3D11_VIEWPORT Viewport = {};
 	Viewport.TopLeftX = 0.0f;
 	Viewport.TopLeftY = 0.0f;
-	Viewport.Width = static_cast<float>(RenderTarget->Width);
-	Viewport.Height = static_cast<float>(RenderTarget->Height);
+	Viewport.Width = Width;
+	Viewport.Height = Height;
 	Viewport.MinDepth = 0.0f;
 	Viewport.MaxDepth = 1.0f;
-
 	DeviceContext->RSSetViewports(1, &Viewport);
 
-	Projection2D = FMatrix::Ortho(0.f, RenderTarget->Width, RenderTarget->Height, 0.f, 0.0f, 1.0f);
-
-	BindedRenderTarget = RenderTarget;
-	BindedDepthStencil = DepthStencil;
+	Projection2D = FMatrix::Ortho(0.f, Width, Height, 0.f, 0.0f, 1.0f);
 }
 
 void URenderer::Render(const FRenderPipeline* Pipeline, UINT NumVertices)

@@ -236,6 +236,31 @@ public:
 		Ar << mOuterConeAngle;
 	}
 
+	void SerializeClass(json::JSON& outJson) const override
+	{
+		Super::SerializeClass(outJson);
+
+		outJson["Properties"]["InnerConeAngle"] = mInnerConeAngle;
+		outJson["Properties"]["OuterConeAngle"] = mOuterConeAngle;
+	}
+
+	void DeserializeClass(const json::JSON& inJson) override
+	{
+		Super::DeserializeClass(inJson);
+
+		const json::JSON& PropertiesJson = inJson.at("Properties");
+
+		if (PropertiesJson.hasKey("InnerConeAngle"))
+		{
+			mInnerConeAngle = JsonUtils::FromJson<float>(PropertiesJson.at("InnerConeAngle"));
+		}
+
+		if (PropertiesJson.hasKey("OuterConeAngle"))
+		{
+			mOuterConeAngle = JsonUtils::FromJson<float>(PropertiesJson.at("OuterConeAngle"));
+		}
+	}
+
 	inline float GetInnerConeAngle() const { return mInnerConeAngle; }
 	inline float GetOuterConeAngle() const { return mOuterConeAngle; }
 

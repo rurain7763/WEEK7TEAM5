@@ -412,6 +412,28 @@ struct FShader
 	uint32 Stride;
 };
 
+struct FBindRenderTargetsDesc
+{
+	FRenderTarget2D* RenderTargets[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+	bool bClearRenderTargets[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+	int32 NumRenderTargets = 0;
+	FDepthStencil* DepthStencil = nullptr;
+	bool bClearDepthStencil = true;
+
+	inline void AddRenderTarget(FRenderTarget2D* RenderTarget, bool bClear = true)
+	{
+		RenderTargets[NumRenderTargets] = RenderTarget;
+		bClearRenderTargets[NumRenderTargets] = bClear;
+		++NumRenderTargets;
+	}
+
+	inline void SetDepthStencil(FDepthStencil* InDepthStencil, bool bClear = true)
+	{
+		DepthStencil = InDepthStencil;
+		bClearDepthStencil = bClear;
+	}
+};
+
 namespace RenderUtils
 {
 	static Microsoft::WRL::ComPtr<IDXGIAdapter1> FindHighPerformanceAdapter()
@@ -624,6 +646,7 @@ public:
 	void BindFrameBuffer();
 	void BindRenderTarget(const TSharedPtr<FRenderTarget2D>& RenderTarget, const TSharedPtr<FDepthStencil>& DepthStencil, bool bClear = true);
 	void BindRenderTarget(FRenderTarget2D* RenderTarget, FDepthStencil* DepthStencil, bool bClear = true);
+	void BindRenderTargets(const FBindRenderTargetsDesc& Desc);
 
 	void Render(const FRenderPipeline* Pipeline, UINT NumVertices);
 
@@ -664,7 +687,7 @@ public:
 	FORCEINLINE ID3D11Device* GetDevice() const { return Device; }
 	FORCEINLINE ID3D11DeviceContext* GetDeviceContext() const { return DeviceContext; }
 	FORCEINLINE void SetViewModeIndex(EViewModeIndex InViewModeIndex) { ViewModeIndex = InViewModeIndex; }
-	FORCEINLINE FRenderTarget2D* GetBindedRenderTarget() const { return BindedRenderTarget; }
+	FORCEINLINE FRenderTarget2D* GetBindedRenderTarget(int32 Index = 0) const { return BindedRenderTargets[Index]; }
 	FORCEINLINE FDepthStencil* GetBindedDepthStencil() const { return BindedDepthStencil; }
 
 	mutable uint64 DrawCallCount = 0;
@@ -700,7 +723,8 @@ private:
 	ID3D11Texture2D* DepthStencilBuffer = nullptr;			// 실제 깊이값이 저장될 메모리
 	ID3D11DepthStencilView* DepthStencilView = nullptr;		// 그 메모리를 "출력 대상"으로 보는 뷰
 
-	FRenderTarget2D* BindedRenderTarget;
+	FRenderTarget2D* BindedRenderTargets[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
+	int32 BindedRenderTargetCount = 0;
 	FDepthStencil* BindedDepthStencil;
 
 	TSharedPtr<FStructuredBuffer> LineStructuredBuffer;

@@ -40,17 +40,16 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 	mHighlightMarkPipeline = mRenderer->CreateRenderPipeline();
 	mHighlightMarkPipeline->SetRasterRizerState(D3D11_CULL_BACK);
-	mHighlightMarkPipeline->SetDepthStencilState(true, false, D3D11_COMPARISON_ALWAYS, D3D11_STENCIL_OP_REPLACE);
+	mHighlightMarkPipeline->SetDepthStencilState(false, true, D3D11_COMPARISON_ALWAYS, D3D11_STENCIL_OP_REPLACE);
 	mHighlightMarkPipeline->SetBlendState(ERenderBlendMode::Opaque, false);
-	mHighlightMarkPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
+	mHighlightMarkPipeline->SetShader("Assets/Shaders/PreOutline.hlsl");
 	mHighlightMarkPipeline->AddConstantBuffer<FMeshContants>();
 	mHighlightMarkPipeline->AddConstantBuffer<FViewConstants>();
-	mHighlightMarkPipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
 
 	mHighlightDrawPipeline = mRenderer->CreateRenderPipeline();
 	mHighlightDrawPipeline->SetRasterRizerState(D3D11_CULL_BACK);
 	mHighlightDrawPipeline->SetDepthStencilState(false, false, D3D11_COMPARISON_NOT_EQUAL, D3D11_STENCIL_OP_KEEP);
-	mHighlightDrawPipeline->SetShader("Assets/Shaders/Outline.hlsl");
+	mHighlightDrawPipeline->SetShader("Assets/Shaders/PostOutline.hlsl");
 	mHighlightDrawPipeline->AddConstantBuffer<FOutlineConstants>();
 
 	mHighlightVertexBuffer = mRenderer->CreateVertexBuffer<FVertex>(nullptr, 1024, D3D11_USAGE_DYNAMIC); // 초기 용량 1024개, 필요하면 늘어난다
@@ -206,100 +205,13 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	mRenderer->BindRenderTarget(Viewport.GetFrontRenderTarget(), Viewport.GetDepthStencil());
 }
 
-void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives)
-{
-	//PROFILE_SCOPE("Viewport/RenderHighLight");
-
-	if (Primitives.Num() == 0)
-	{
-		return;
-	}
-
-	FRenderTarget2D* CurrentRenderTarget = mRenderer->GetBindedRenderTarget();
-	FDepthStencil* CurrentDepthStencil = mRenderer->GetBindedDepthStencil();
-
-	if (CurrentDepthStencil == nullptr)
-	{
-		UE_DEBUG_LOG_WARN("RenderHighLight: CurrentDepthStencil is nullptr. Skipping highlight rendering.");
-		return;
-	}
-
-	FViewConstants ViewConstants;
-	ViewConstants.ViewProjectionMatrix = mViewUnifiedProjectionMatrix;
-	ViewConstants.ViewPosition = mCameraLocation;
-
-	mHighlightMarkPipeline->UpdateConstantBuffer(1, ViewConstants);
-	mHighlightDrawPipeline->UpdateConstantBuffer(1, ViewConstants);
-
-	// Mark Pass: 스텐실에 마크만 찍는다.
-	for (UPrimitiveComponent* Primitive : Primitives)
-	{
-		const TArray<FVertex>& Vertices = Primitive->GetMeshVertices();
-		const TArray<uint32>& Indices = Primitive->GetMeshIndices();
-
-		if (Vertices.Num() * sizeof(FVertex) > mHighlightVertexBuffer->GetBufferSize())
-		{
-			mHighlightVertexBuffer = mRenderer->CreateVertexBuffer<FVertex>(Vertices.Data(), Vertices.Num(), D3D11_USAGE_DYNAMIC);
-		}
-
-		if (Indices.Num() * sizeof(uint32) > mHighlightIndexBuffer->GetBufferSize())
-		{
-			mHighlightIndexBuffer = mRenderer->CreateIndexBuffer(Indices.Data(), Indices.Num(), D3D11_USAGE_DYNAMIC);
-		}
-
-		mHighlightVertexBuffer->UpdateBuffer(Vertices.Data(), Vertices.Num());
-		mHighlightIndexBuffer->UpdateBuffer(Indices.Data(), Indices.Num());
-
-		FMeshContants Constants{};
-		Constants.Matrix = Primitive->GetWorldMatrix();
-		Constants.InvMatrix = Primitive->GetWorldMatrix().AffineInverse();
-		Constants.Color = FVector4(0.f, 0.f, 0.f, 0.f);
-		Constants.HasTexture = 0;
-		Constants.UseVertexColor = 0;
-		Constants.UVOffset = FVector2(0.f, 0.f);
-		Constants.AmbientColor = mAmbientColor;
-		Constants.AmbientIntensity = mAmbientIntensity;
-		Constants.LightCount = 0;
-
-		mHighlightMarkPipeline->UpdateConstantBuffer(0, Constants);
-
-		FRenderInfo RenderInfo{};
-		RenderInfo.VertexBuffer = mHighlightVertexBuffer->Buffer.Get();
-		RenderInfo.VertexCount = static_cast<uint32>(Vertices.Num());
-		RenderInfo.IndexBuffer = mHighlightIndexBuffer->Buffer.Get();
-		RenderInfo.StartIndex = 0;
-		RenderInfo.IndexCount = static_cast<uint32>(Indices.Num());
-		RenderInfo.Model = Primitive->GetWorldMatrix();
-
-		mRenderer->RenderPrimitiveIndexed(mHighlightMarkPipeline.get(), RenderInfo, 1);
-	}
-
-	// Draw Pass: 잠시 DepthStencil을 해제
-	mRenderer->BindRenderTarget(CurrentRenderTarget, nullptr, false);
-	mHighlightDrawPipeline->SetShaderResource(0, CurrentDepthStencil->StencilSRV);
-
-	// Draw Pass: 스텐실에 마크가 찍힌 영역만 그린다.
-	FOutlineConstants OutlineConstants{};
-	OutlineConstants.OutlineColor = FVector4(1.f, 0.6f, 0.f, 1.f);
-	OutlineConstants.StencilTexWidth = CurrentDepthStencil->Width;
-	OutlineConstants.StencilTexHeight = CurrentDepthStencil->Height;
-	OutlineConstants.OutlineRadius = 5;
-	
-	mHighlightDrawPipeline->UpdateConstantBuffer(0, OutlineConstants);
-
-	mRenderer->Render(mHighlightDrawPipeline.get(), 6);
-
-	// Draw Pass가 끝나면 원래 DepthStencil을 복원한다.
-	mRenderer->ClearAllShaderResources();
-	mRenderer->BindRenderTarget(CurrentRenderTarget, CurrentDepthStencil, false);
-}
-
-void FGraphicsManager::Render()
+void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 {
 	mRenderGraph.Clear();
 
 	FRGTextureRef FrontRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetFrontRenderTarget());
 	FRGTextureRef BackRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetBackRenderTarget());
+	FRGTextureRef NormalRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetGBuffer()->Normal.get());
 	FRGTextureRef DepthStencilHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetDepthStencil());
 
 	// TODO: 후에 아래 코드들을 ScenePass로 옮기고, ScenePass에서 RenderCollector를 받아서 처리하도록 한다.
@@ -319,6 +231,13 @@ void FGraphicsManager::Render()
 			return RenderInfos[A].SortKey < RenderInfos[B].SortKey;
 		});
     }
+
+	FBindRenderTargetsDesc BindDesc;
+	BindDesc.AddRenderTarget(mViewport->GetFrontRenderTarget(), false);
+	BindDesc.AddRenderTarget(mViewport->GetGBuffer()->Normal.get(), true);
+	BindDesc.SetDepthStencil(mViewport->GetDepthStencil(), true);
+
+	mRenderer->BindRenderTargets(BindDesc);
 
 	{
 		PROFILE_SCOPE("Viewport/GraphicsRender/SubmitMeshes");
@@ -414,11 +333,13 @@ void FGraphicsManager::Render()
 	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent());
 	mFXAAProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::FXAA));
 	mDepthPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_SceneDepth);
+	mNormalPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_WorldNormal);
 
 	FPostProcess* PostProcesses[] = { 
 		&mFogProcess,
 		&mFXAAProcess,
 		&mDepthPreviewProcess,
+		&mNormalPreviewProcess,
 	};
 
 	FPostProcessContext PostProcessContext;
@@ -438,6 +359,7 @@ void FGraphicsManager::Render()
 
 		FPostProcessInputs PostProcessInputs;
 		PostProcessInputs.InputColorTexture = FrontRenderTargetHandle;
+		PostProcessInputs.InputNormalTexture = NormalRenderTargetHandle;
 		PostProcessInputs.InputDepthTexture = DepthStencilHandle;
 		PostProcessInputs.OverrideOutputTexture = BackRenderTargetHandle;
 
@@ -469,6 +391,8 @@ void FGraphicsManager::Render()
 		mRenderer->RenderWorldGrid(GridWorldMatrix * mViewUnifiedProjectionMatrix, mCameraLocation, GridGap);
 	}
 
+	RenderHighLight(Primitives);
+
 	const auto& RenderOverlayQuadInfoPool = mRenderCollector.GetRenderOverlayQuadInfoPool();
 	const auto& RenderOverlayQuadInfos = RenderOverlayQuadInfoPool.GetPool();
 	const auto& VisibleRenderOverlayInfoIndices = mRenderCollector.GetVisibleRenderOverlayQuadInfoIndices();
@@ -482,6 +406,94 @@ void FGraphicsManager::Render()
 	{
 		mRenderer->RenderQuad2D(Quad2DInfo);
 	}
+}
+
+
+void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives)
+{
+	if (Primitives.Num() == 0)
+	{
+		return;
+	}
+
+	FRenderTarget2D* CurrentRenderTarget = mRenderer->GetBindedRenderTarget();
+	FDepthStencil* CurrentDepthStencil = mRenderer->GetBindedDepthStencil();
+
+	if (!CurrentRenderTarget || !CurrentDepthStencil)
+	{
+		return;
+	}
+
+	mRenderer->BindRenderTarget(nullptr, CurrentDepthStencil, false);
+
+	FViewConstants ViewConstants;
+	ViewConstants.ViewProjectionMatrix = mViewUnifiedProjectionMatrix;
+	ViewConstants.ViewPosition = mCameraLocation;
+
+	mHighlightMarkPipeline->UpdateConstantBuffer(1, ViewConstants);
+	mHighlightDrawPipeline->UpdateConstantBuffer(1, ViewConstants);
+
+	// Mark Pass: 스텐실에 마크만 찍는다.
+	for (UPrimitiveComponent* Primitive : Primitives)
+	{
+		const TArray<FVertex>& Vertices = Primitive->GetMeshVertices();
+		const TArray<uint32>& Indices = Primitive->GetMeshIndices();
+
+		if (Vertices.Num() * sizeof(FVertex) > mHighlightVertexBuffer->GetBufferSize())
+		{
+			mHighlightVertexBuffer = mRenderer->CreateVertexBuffer<FVertex>(Vertices.Data(), Vertices.Num(), D3D11_USAGE_DYNAMIC);
+		}
+
+		if (Indices.Num() * sizeof(uint32) > mHighlightIndexBuffer->GetBufferSize())
+		{
+			mHighlightIndexBuffer = mRenderer->CreateIndexBuffer(Indices.Data(), Indices.Num(), D3D11_USAGE_DYNAMIC);
+		}
+
+		mHighlightVertexBuffer->UpdateBuffer(Vertices.Data(), Vertices.Num());
+		mHighlightIndexBuffer->UpdateBuffer(Indices.Data(), Indices.Num());
+
+		FMeshContants Constants{};
+		Constants.Matrix = Primitive->GetWorldMatrix();
+		Constants.InvMatrix = Primitive->GetWorldMatrix().AffineInverse();
+		Constants.Color = FVector4(0.f, 0.f, 0.f, 0.f);
+		Constants.HasTexture = 0;
+		Constants.UseVertexColor = 0;
+		Constants.UVOffset = FVector2(0.f, 0.f);
+		Constants.AmbientColor = mAmbientColor;
+		Constants.AmbientIntensity = mAmbientIntensity;
+		Constants.LightCount = 0;
+
+		mHighlightMarkPipeline->UpdateConstantBuffer(0, Constants);
+
+		FRenderInfo RenderInfo{};
+		RenderInfo.VertexBuffer = mHighlightVertexBuffer->Buffer.Get();
+		RenderInfo.VertexCount = static_cast<uint32>(Vertices.Num());
+		RenderInfo.IndexBuffer = mHighlightIndexBuffer->Buffer.Get();
+		RenderInfo.StartIndex = 0;
+		RenderInfo.IndexCount = static_cast<uint32>(Indices.Num());
+		RenderInfo.Model = Primitive->GetWorldMatrix();
+
+		mRenderer->RenderPrimitiveIndexed(mHighlightMarkPipeline.get(), RenderInfo, 1);
+	}
+
+	// Draw Pass: 잠시 DepthStencil을 해제
+	mRenderer->BindRenderTarget(CurrentRenderTarget, nullptr, false);
+	mHighlightDrawPipeline->SetShaderResource(0, CurrentDepthStencil->StencilSRV);
+
+	// Draw Pass: 스텐실에 마크가 찍힌 영역만 그린다.
+	FOutlineConstants OutlineConstants{};
+	OutlineConstants.OutlineColor = FVector4(1.f, 0.6f, 0.f, 1.f);
+	OutlineConstants.StencilTexWidth = CurrentDepthStencil->Width;
+	OutlineConstants.StencilTexHeight = CurrentDepthStencil->Height;
+	OutlineConstants.OutlineRadius = 5;
+
+	mHighlightDrawPipeline->UpdateConstantBuffer(0, OutlineConstants);
+
+	mRenderer->Render(mHighlightDrawPipeline.get(), 6);
+
+	// Draw Pass가 끝나면 원래 DepthStencil을 복원한다.
+	mRenderer->ClearAllShaderResources();
+	mRenderer->BindRenderTarget(CurrentRenderTarget, CurrentDepthStencil, false);
 }
 
 void FGraphicsManager::Display()

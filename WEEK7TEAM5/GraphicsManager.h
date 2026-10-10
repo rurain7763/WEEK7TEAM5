@@ -12,6 +12,7 @@
 #include "ShowFlags.h"
 #include "FFogProcess.h"
 #include "FDepthPreviewProcess.h"
+#include "FNormalPreviewProcess.h"
 #include "FFXAAProcess.h"
 #include "FRenderGraph.h"
 
@@ -33,8 +34,7 @@ public:
 
 	void Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, const EViewModeIndex InViewMode, const EViewportType InViewportType);
 
-	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
-	void Render();
+	void Render(const TArray<UPrimitiveComponent*>& Primitives);
 
 	void Display();
 
@@ -63,7 +63,6 @@ public:
 
 	inline FRenderCollector& GetRenderCollector() { return mRenderCollector; }
 	inline FFogProcess& GetFogProcess() { return mFogProcess; }
-	inline FDepthPreviewProcess& GetDepthPreviewProcess() { return mDepthPreviewProcess; }
 
 	inline int32 GetGridGap() { return GridGap; }
 	void SetGridGap(int32 GridGap);
@@ -84,6 +83,9 @@ public:
 	void EndGpuRenderTimer();
 	void UpdateGpuRenderTime();
 	float GetGpuRenderTime() { return GpuRenderTime; }
+
+private:
+	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
 
 private:
 	struct FOutlineConstants
@@ -176,6 +178,7 @@ private:
 	FFogProcess mFogProcess;
 	FFXAAProcess mFXAAProcess;
 	FDepthPreviewProcess mDepthPreviewProcess;
+	FNormalPreviewProcess mNormalPreviewProcess;
 
 	int32 GridGap = 1;
 	bool bGpuTimerActive = false;
