@@ -118,6 +118,13 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "CubeComponent.h"
 #include "SphereComponent.h"
 #include "UTextComponent.h"
+#include "UPlaneComponent.h"
+#include "UBillboardComponent.h"
+#include "ASpotLight.h"
+#include "UHeightFogComponent.h"
+#include "AHeightFog.h"
+#include "UProjectileMovementComponent.h"
+#include "URotationMovementComponent.h"
 #include "World.h"
 #include "UStaticMeshComponent.h"
 

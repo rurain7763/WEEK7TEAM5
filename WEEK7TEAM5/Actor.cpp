@@ -3,6 +3,7 @@
 #include "RenderInfo.h"
 #include "SceneComponent.h"
 #include "UTextComponent.h"
+#include "UBillboardComponent.h"
 #include "ObjectFactory.h"
 #include "World.h"
 #include "Serializers.h"
