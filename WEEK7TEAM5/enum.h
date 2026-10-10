@@ -69,6 +69,8 @@ enum ELightType
 	Directional,
 	Point,
 	Spot,
+	Ambient,
+	None
 };
 
 enum class ELevelTick

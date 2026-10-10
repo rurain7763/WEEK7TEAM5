@@ -236,6 +236,7 @@ void AActor::CreateEditorComponents()
 
 	AddOwnedComponent(Text3DComponent);
 
+	/*
 	TArray<UPointLightComponent*> PointLightComponents;
 	for (UActorComponent* Component : mComponents)
 	{
@@ -259,6 +260,7 @@ void AActor::CreateEditorComponents()
 
 		AddOwnedComponent(BillboardComponent);
 	}
+	*/
 }
 
 const FTransform& AActor::GetTransform() const

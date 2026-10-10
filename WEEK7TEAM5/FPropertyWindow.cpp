@@ -15,6 +15,10 @@
 #include "SceneComponent.h"
 #include "ActorComponent.h"
 
+#include "ULightComponentBase.h"
+#include "UDirectionalLightComponent.h"
+#include "UAmbientLightComponent.h"
+
 void FPropertyWindow::Render(const FGuiReference& GuiReference)
 {
 	ImGuiWindowFlags flags = ImGuiWindowFlags_NoCollapse;
@@ -136,10 +140,12 @@ void FPropertyWindow::Render(const FGuiReference& GuiReference)
 			{
 				RenderHeightFogComponent(mSelectedComponent->Cast<UHeightFogComponent>());
 			}
+			/*
 			else if (mSelectedComponent->IsA<UPointLightComponent>())
 			{
 				RenderPointLightComponent(mSelectedComponent->Cast<UPointLightComponent>());
 			}
+			*/
 			else if (mSelectedComponent->IsA<UTextRenderComponent>())
 			{
 				RenderTextRenderComponent(mSelectedComponent->Cast<UTextRenderComponent>());
@@ -155,6 +161,10 @@ void FPropertyWindow::Render(const FGuiReference& GuiReference)
 			else if (mSelectedComponent->IsA<UBillboardComponent>())
 			{
 				RenderBillboardComponent(mSelectedComponent->Cast<UBillboardComponent>());
+			}
+			else if (mSelectedComponent->IsA<ULightComponentBase>())
+			{
+				RenderLightComponent(mSelectedComponent->Cast<ULightComponentBase>());
 			}
 		}
 
@@ -260,6 +270,7 @@ void FPropertyWindow::RenderAddComponentPopup()
 			ImGui::CloseCurrentPopup();
 		}
 
+		/*
 		if (ImGui::MenuItem("PointLightComponent"))
 		{
 			UPointLightComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UPointLightComponent>(FName(MakeUniqueName("PointLightComponent", mSelectedActor->GetComponents())));
@@ -273,6 +284,7 @@ void FPropertyWindow::RenderAddComponentPopup()
 
 			ImGui::CloseCurrentPopup();
 		}
+		*/
 
 		if (ImGui::MenuItem("TextRenderComponent"))
 		{
@@ -288,8 +300,60 @@ void FPropertyWindow::RenderAddComponentPopup()
 
 			ImGui::CloseCurrentPopup();
 		}
-		ImGui::EndPopup();
 
+		// Todo: Lighting, Check later
+		// Todo: Code duplication
+		if (ImGui::MenuItem("AmbientLightComponent"))
+		{
+			UAmbientLightComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UAmbientLightComponent>(FName(MakeUniqueName("AmbientLightComponent", mSelectedActor->GetComponents())));
+
+			USceneComponent* Parent = mSelectedActor->GetRootComponent();
+			if (mSelectedComponent && mSelectedComponent->IsA<USceneComponent>())
+			{
+				Parent = mSelectedComponent->Cast<USceneComponent>();
+			}
+
+			if (Parent != nullptr)
+			{
+				mSelectedActor->AddOwnedComponent(NewComponent);
+
+				NewComponent->SetupAttachment(Parent, false);
+			}
+			else
+			{
+				mSelectedActor->SetRootComponent(NewComponent);
+			}
+
+			mSelectedComponent = NewComponent;
+
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (ImGui::MenuItem("DirectionalLightComponent"))
+		{
+			UDirectionalLightComponent* NewComponent = mSelectedActor->CreateDefaultSubobject<UDirectionalLightComponent>(FName(MakeUniqueName("DirectionalLightComponent", mSelectedActor->GetComponents())));
+			
+			USceneComponent* Parent = mSelectedActor->GetRootComponent();
+			if (mSelectedComponent && mSelectedComponent->IsA<USceneComponent>())
+			{
+				Parent = mSelectedComponent->Cast<USceneComponent>();
+			}
+
+			if (Parent != nullptr)
+			{
+				mSelectedActor->AddOwnedComponent(NewComponent);
+				NewComponent->SetupAttachment(Parent, false);
+			}
+			else
+			{
+				mSelectedActor->SetRootComponent(NewComponent);
+			}
+
+			mSelectedComponent = NewComponent;
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
 	}
 }
 
@@ -614,6 +678,7 @@ void FPropertyWindow::RenderHeightFogComponent(UHeightFogComponent* HeightFogCom
 	}
 }
 
+/*
 void FPropertyWindow::RenderPointLightComponent(UPointLightComponent* PointLightComponent)
 {
 	FLinearColor ColorInput = PointLightComponent->GetColor();
@@ -640,7 +705,7 @@ void FPropertyWindow::RenderPointLightComponent(UPointLightComponent* PointLight
 		PointLightComponent->SetRadiusFallOff(RadiusFallOffInput);
 	}
 }
-
+*/
 void FPropertyWindow::RenderTextRenderComponent(UTextRenderComponent* TextRenderComponent)
 {
 	char textBuffer[1024 * 16] = {};
@@ -756,5 +821,33 @@ void FPropertyWindow::RenderBillboardComponent(UBillboardComponent* BillboardCom
 	if (ImGui::Checkbox("EnableDepthWrite", &EnableDepthWrite))
 	{
 		BillboardComponent->SetEnbaleDepthWrite(EnableDepthWrite);
+	}
+}
+
+void FPropertyWindow::RenderLightComponent(ULightComponentBase* LightComponent)
+{
+	bool bEnabled = LightComponent->IsVisible();
+	if (ImGui::Checkbox("Enabled", &bEnabled))
+	{
+		LightComponent->SetVisible(bEnabled);
+	}
+
+	FLinearColor LightColor = LightComponent->GetLightColor();
+	if (ImGui::ColorEdit3("Color", LightColor.V))
+	{
+		LightComponent->SetLightColor(LightColor);
+	}
+
+	float Intensity = LightComponent->GetIntensity();
+	if (ImGui::DragFloat(
+		"Intensity",
+		&Intensity,
+		0.1f,
+		0.f,
+		10.f,
+		"%.3f",
+		ImGuiSliderFlags_AlwaysClamp))
+	{
+		LightComponent->SetIntensity(Intensity);
 	}
 }

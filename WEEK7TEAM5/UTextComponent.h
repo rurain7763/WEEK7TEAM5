@@ -787,6 +787,7 @@ public:
 	}
 };
 
+/*
 class UPointLightComponent : public USceneComponent
 {
 	REFLECT_CLASS(UPointLightComponent, USceneComponent)
@@ -865,6 +866,8 @@ private:
 	float RadiusFallOff = 1.f;
 	FLinearColor Color = FLinearColor(1.f, 1.f, 1.f, 1.f);
 };
+
+*/
 
 class UProjectileMovementComponent : public UActorComponent
 {

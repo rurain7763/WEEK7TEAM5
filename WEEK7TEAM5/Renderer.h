@@ -14,6 +14,20 @@
 #include <fstream>
 #include <filesystem>
 
+// Todo: Lighting
+struct FAmbientLightInfo
+{
+	float Intensity = 0.f;
+	float Padding[3] = {};
+	FLinearColor Color = FLinearColor(1.f, 1.f, 1.f, 1.f);
+};
+
+struct FLightingConstants
+{
+	FAmbientLightInfo Ambient;
+	//FDirectionalLightInfo Directional;
+};
+
 struct FCameraConstants
 {
 	FMatrix ViewProjectionMatrix;

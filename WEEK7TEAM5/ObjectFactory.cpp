@@ -7,6 +7,7 @@
 #include "UAtlasAnimationComponent.h"
 #include "EngineStatics.h"
 
+
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
 	if (!classInfo || !classInfo->Constructor)
@@ -121,6 +122,13 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "World.h"
 #include "UStaticMeshComponent.h"
 
+// Todo: Lighting
+#include "ULightComponentBase.h"
+#include "ULightComponent.h"
+#include "UAmbientLightComponent.h"
+#include "UDirectionalLightComponent.h"
+
+
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetStaticClass },
 	{"AActor", &AActor::GetStaticClass },
@@ -142,5 +150,10 @@ TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap
 	{"URotationMovementComponent", &URotationMovementComponent::GetStaticClass},
 	{"UPointLightComponent", &UPointLightComponent::GetStaticClass },
 	{"UBillboardComponent", &UBillboardComponent::GetStaticClass},
-	{"UTextRenderComponent", &UTextRenderComponent::GetStaticClass }
+	{"UTextRenderComponent", &UTextRenderComponent::GetStaticClass },
+
+	{ "ULightComponentBase",& ULightComponentBase::GetStaticClass },
+	{ "ULightComponent", &ULightComponent::GetStaticClass},
+	{ "UAmbientLightComponent", &UAmbientLightComponent::GetStaticClass},
+	{ "UDirectionalLightComponent", &UDirectionalLightComponent::GetStaticClass },
 };

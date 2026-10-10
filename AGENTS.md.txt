@@ -1,0 +1,19 @@
+The goal of KRAFTON Jungle is not to build a perfect engine, but to help trainees independently explore the objectives of each assignment, learn firsthand through the process, and make that knowledge their own.
+
+Permitted AI Use
+1. Understanding existing engine code.
+2. Researching and understanding concepts and algorithms.
+
+Prohibited AI Use
+1. Using AI to write code, including any direct code generation.
+2. Using AI to debug or fix errors.
+AI Use Permitted with Restrictions
+
+1. Limited Code Generation
+AI must not directly access files to generate code that solves an assignment.
+However, AI may generate simple code examples to help explain concepts and algorithms, or code used to explain an existing engine or library.
+Code generation is also permitted for questions and performance improvements intended to enhance the engine’s overall capabilities, provided they are unrelated to the current week’s assignment.
+
+2. Limited Debugging and Error Correction
+AI may answer questions about issues outside the scope of the assignment itself, such as compilation errors—including syntax errors, type errors, and undeclared identifiers—or linker errors, such as undefined references and duplicate symbols.
+If critical runtime errors or bugs are discovered—such as memory leaks, dangling pointers, buffer overflows, segmentation faults, undefined behavior, race conditions, or stack overflows—AI should explain the issue and provide guidance that encourages trainees to reason through it and make the corrections themselves.

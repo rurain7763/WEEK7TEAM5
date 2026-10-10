@@ -14,6 +14,10 @@
 #include <algorithm>
 #include "FHiZOcclusionManager.h"
 
+#include "UAmbientLightComponent.h"
+#include "UDirectionalLightComponent.h"
+#include "Actor.h"
+
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 
@@ -33,7 +37,9 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mMeshPipeline = mRenderer->CreateRenderPipeline();
 	mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe });
 	mMeshPipeline->SetDepthStencilState(true, true);
-	mMeshPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
+
+	// Todo: Light Shading
+	mMeshPipeline->SetShader("Assets/Shaders/UberLit.hlsl");
 	mMeshPipeline->AddConstantBuffer<FMeshContants>();
 	mMeshPipeline->AddConstantBuffer<FMatrix>();
 
@@ -122,23 +128,55 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	mCameraNear = mCamera->mNear;
 	mCameraFar = mCamera->mFar;
 
-	// NOTE: LightInfos를 모으고 StructuredBuffer에 업데이트합니다.
+	// Todo: Lighting
 	mLightInfos.Empty();
-	for (TObjectIterator<UPointLightComponent> It; It; ++It)
+
+	for (TObjectIterator<ULightComponent> ObjectIter(true); ObjectIter; ++ObjectIter)
 	{
-		UPointLightComponent* PointLight = *It;
-		if (PointLight->GetOwner()->GetWorld() != World)
+		ULightComponent* LightComponent = *ObjectIter;
+		assert(LightComponent != nullptr);
+
+		AActor* OwnerOrNull = LightComponent->GetOwner();
+
+		if (OwnerOrNull == nullptr || OwnerOrNull->GetWorld() != World)
 		{
 			continue;
 		}
 
-		FLightInfo& Info = mLightInfos.Emplace();
-		Info.Type = ELightType::Point;
-		Info.Position = PointLight->GetWorldLocation();
-		Info.Color = PointLight->GetColor();
-		Info.Intensity = PointLight->GetIntensity();
-		Info.Range = PointLight->GetRadius();
-		Info.FallOf = PointLight->GetRadiusFallOff();
+		if (LightComponent->IsVisible() == false)
+		{
+			continue;
+		}
+
+		FLightInfo LightInfo{};
+		LightInfo.Type = LightComponent->GetLightType();
+		LightInfo.Color = LightComponent->GetLightColor();
+		LightInfo.Intensity = LightComponent->GetIntensity();
+
+		switch (LightInfo.Type)
+		{
+		case ELightType::Ambient:
+			break;
+
+		case ELightType::Directional:
+		{
+			UDirectionalLightComponent* DirectionalComponent =
+				LightComponent->Cast<UDirectionalLightComponent>();
+
+			if (DirectionalComponent == nullptr)
+			{
+				continue;
+			}
+
+			LightInfo.Direction = DirectionalComponent->GetDirection();
+			break;
+		}
+
+		default:
+			assert(false);
+		}
+
+		mLightInfos.Add(LightInfo);
 	}
 
 	if (mLightInfos.Num() * sizeof(FLightInfo) > mLightInfoBuffer->GetBufferSize())
@@ -276,6 +314,8 @@ void FGraphicsManager::Render()
 			if (Pipeline != LastViewPipeline)
 			{
 				Pipeline->UpdateConstantBuffer(1, mViewUnifiedProjectionMatrix);
+
+				//Pipeline->UpdateConstantBuffer(1, mViewUnifiedProjectionMatrix);
 				Pipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
 			}
 
@@ -284,17 +324,23 @@ void FGraphicsManager::Render()
 				Pipeline->SetShaderResource(0, Info.Texture->GetSRV());
 			}
 
-			Pipeline->SetShaderResource(1, mLightInfoBuffer->SRV);
+			// Todo: Lighting, check for better code
+			if (Pipeline == mMeshPipeline.get())
+			{
+				Pipeline->SetShaderResource(1, mLightInfoBuffer->SRV);
+			}
 			
 			// 개별 Draw의 상수는 기존 동적 상수 버퍼에 Map/Unmap으로 갱신합니다.
-			FMeshContants Constants;
+			FMeshContants Constants{};
 			Constants.Matrix = Info.Model;
+			Constants.ModelInversedTranspose = Info.Model.AffineInverse().Transpose();
+
 			Constants.Color = Info.Color;
 			Constants.UVOffset = Info.UVOffset;
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.HasTexture = Info.Texture ? 1 : 0;
 			Constants.LightCount = mLightInfos.Num();
-			
+
 			Pipeline->UpdateConstantBuffer(0, Constants);
 
 			if (Info.IndexBuffer)

@@ -32,7 +32,6 @@ public:
 	~FGraphicsManager();
 
 	void Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, const EViewModeIndex InViewMode, const EViewportType InViewportType);
-
 	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
 	void Render();
 
@@ -100,9 +99,13 @@ private:
 		FVector Position;
 		ELightType Type;
 		FLinearColor Color;
-		float Range;
+
+		FVector Direction = FVector(1.f, 0.f, 0.f);
 		float Intensity;
-		float FallOf;
+
+		float Range;
+		float FallOff;
+		float Padding[2];
 	};
 
 	struct FMeshContants
@@ -112,8 +115,11 @@ private:
 		FVector2 UVOffset;
 		int32 UseVertexColor;
 		int32 HasTexture;
+
 		int32 LightCount;
 		int32 Padding[3];
+
+		FMatrix ModelInversedTranspose;
 	};
 
 	URenderer* mRenderer;
