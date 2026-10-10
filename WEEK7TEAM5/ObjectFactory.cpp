@@ -118,8 +118,19 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 #include "CubeComponent.h"
 #include "SphereComponent.h"
 #include "UTextComponent.h"
+#include "UPlaneComponent.h"
+#include "UBillboardComponent.h"
+#include "ASpotLight.h"
+#include "UHeightFogComponent.h"
+#include "AHeightFog.h"
+#include "UProjectileMovementComponent.h"
+#include "URotationMovementComponent.h"
 #include "World.h"
 #include "UStaticMeshComponent.h"
+#include "UPointLightComponent.h"
+#include "USpotLightComponent.h"
+#include "UDirectionalLightComponent.h"
+#include "UAmbientLightComponent.h"
 
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetStaticClass },
@@ -142,5 +153,7 @@ TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap
 	{"URotationMovementComponent", &URotationMovementComponent::GetStaticClass},
 	{"UPointLightComponent", &UPointLightComponent::GetStaticClass },
 	{"UBillboardComponent", &UBillboardComponent::GetStaticClass},
-	{"UTextRenderComponent", &UTextRenderComponent::GetStaticClass }
+	{"UTextRenderComponent", &UTextRenderComponent::GetStaticClass },
+	{"UDirectionalLightComponent", &UDirectionalLightComponent::GetStaticClass },
+	{"UAmbientLightComponent", &UAmbientLightComponent::GetStaticClass }
 };

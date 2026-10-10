@@ -1,6 +1,6 @@
 #pragma once
 
-#include "UTextComponent.h"
+#include "UBillboardComponent.h"
 #include <wrl/client.h>
 #include "Assets.h"
 

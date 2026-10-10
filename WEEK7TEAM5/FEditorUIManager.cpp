@@ -10,14 +10,18 @@
 #include "Camera.h"
 #include "FInstrumentor.h"
 #include "ShowFlags.h"
+#include "PrimitiveComponent.h"
+#include "USpotLightComponent.h"
+#include "World.h"
+#include "FEngine.h"
 
 FEditorUIManager::FEditorUIManager(URenderer& InRenderer)
 	: mRenderer(InRenderer)
 {
 	mViewportX = 0;
 	mViewportY = 0;
-	mViewportWidth = WindowApplication.PendingWidth;
-	mViewportHeight = WindowApplication.PendingHeight;
+	mViewportWidth = static_cast<float>(WindowApplication.PendingWidth);
+	mViewportHeight = static_cast<float>(WindowApplication.PendingHeight);
 
 	mContentBrowser.Initialize(kDefaultAssetsPath);
 	mContentBrowser.SetEventHandler(this);
@@ -335,12 +339,21 @@ void FEditorUIManager::Render(FGuiReference& GuiReference)
 			}
 			ImGui::Text("Primitives: %u", PrimitiveCount);
 
+			UINT LightCount = 0;
 			UINT SpotLightCount = 0;
-			for (TObjectIterator<USpotLightComponent> It(false); It; ++It)
+			UWorld* World = GuiReference.WorldContext ? GuiReference.WorldContext->World() : nullptr;
+			if (World)
 			{
-				++SpotLightCount;
+				for (ULightComponentBase* Light : World->GetLightComponents())
+				{
+					++LightCount;
+					if (Light->IsA<USpotLightComponent>())
+					{
+						++SpotLightCount;
+					}
+				}
 			}
-			ImGui::Text("Spot Lights: %u", SpotLightCount);
+			ImGui::Text("Lights: %u (Spot: %u)", LightCount, SpotLightCount);
 		}
 		ImGui::End();
 	}

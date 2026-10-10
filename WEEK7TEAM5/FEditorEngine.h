@@ -19,7 +19,7 @@ inline constexpr std::string_view kSceneDataSuffix = ".Scene";
 
 class FFileManager;
 class FFrameTimer;
-class FEditorViewportClient;
+struct FEditorViewportClient;
 class FGraphicsManager;
 class UWorld;
 class URenderer;

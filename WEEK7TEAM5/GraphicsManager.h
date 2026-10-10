@@ -18,6 +18,7 @@
 class FAssetManager;
 struct FViewport;
 class UWorld;
+class UPrimitiveComponent;
 
 struct FBuffer
 {
@@ -95,6 +96,7 @@ private:
 		int32 Padding;
 	};
 
+
 	struct FLightInfo
 	{
 		FVector Position;
@@ -103,6 +105,20 @@ private:
 		float Range;
 		float Intensity;
 		float FallOf;
+		float padding;
+	};
+
+	struct FDirectionalLightInfo
+	{
+		FVector DL_Direction = FVector(1.f, 0.f, 0.f);
+		float DL_Intensity = 0.f;
+		FLinearColor DL_Color = FLinearColor();
+	};
+
+	struct FAmbientInfo
+	{
+		FLinearColor Color;
+		float Intensity;
 	};
 
 	struct FMeshContants
@@ -148,6 +164,12 @@ private:
 
 	TArray<FLightInfo> mLightInfos;
 	TSharedPtr<FStructuredBuffer> mLightInfoBuffer;
+	//Ambient, Directional Light 등 버퍼들
+	// StaticMeshShader.hlsl: AmbientConstants : register(b10), DirectionalLightConstants : register(b11)
+	static constexpr uint32 AmbientLightCBSlot = 10;
+	static constexpr uint32 DirectionalLightCBSlot = 11;
+	TSharedPtr<FLightBuffer> mAmbientLightBuffer;
+	TSharedPtr<FLightBuffer> mDirectionalLightBuffer;
 
 	TSharedPtr<FRenderPipeline> mMeshPipeline;
 

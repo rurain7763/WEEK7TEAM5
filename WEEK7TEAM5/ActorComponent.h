@@ -3,7 +3,7 @@
 #include "Object.h"
 
 struct FRenderInfo;
-class FRenderCollector;
+struct FRenderCollector;
 class FRenderProxy;
 
 enum EActorComponentFlags
@@ -38,6 +38,9 @@ public:
 	virtual void BeginPlay() {}
 	virtual void EndPlay(const EEndPlayReason EndPlayReason) {}
 	virtual void Tick(float deltaTime);
+
+	// 에디터 월드에 등록된 직후 호출됩니다. 아이콘처럼 이 컴포넌트를 보여주기 위한 EditorOnly 보조 컴포넌트를 만듭니다.
+	virtual void CreateEditorComponents() {}
 
     // 생성자에서는 플래그만 지정하고, 월드에 등록된 뒤에는 활성 목록도 갱신합니다.
     void SetTickable(bool bTickable);

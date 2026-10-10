@@ -11,7 +11,7 @@ namespace json { class JSON; }
 
 class UObject;
 class AActor;
-class FClassInfo;
+struct FClassInfo;
 
 struct FObjectFactory
 {

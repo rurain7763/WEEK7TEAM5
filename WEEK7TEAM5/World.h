@@ -8,6 +8,8 @@
 #include "TActiveTickList.h"
 #include "enum.h"
 
+class ULightComponentBase;
+
 class ULevel : public UObject
 {
 	REFLECT_CLASS(ULevel, UObject)
@@ -67,6 +69,9 @@ public:
 	void SetAABBsClean() { mbAABBsDirty = false; }
 	const TArray<FAABB>& GetCachedEntryAABBs() const { return mCachedEntryAABBs; }
 
+	// 이 월드에 등록된 라이트. 등록 순서를 유지하므로 "첫 번째 Directional" 같은 정책을 쓸 수 있다.
+	inline const TArray<ULightComponentBase*>& GetLightComponents() const { return mLightComponents; }
+
 	inline EWorldType GetWorldType() const { return mWorldType; }
 	inline ULevel* GetLevel() const { return mLevel; }
 
@@ -86,11 +91,13 @@ private:
 	TArray<UPrimitiveComponent*> mPrimitiveComponents;
 	TArray<UActorComponent*> mNonPrimitiveRenderableComponents; // Primitive는 아닌데 렌더링 기능이 있는 컴포넌트.
 	TActiveTickList<UActorComponent> mTickableComponents;
+	TArray<ULightComponentBase*> mLightComponents; // 렌더러가 매 프레임 라이트 데이터를 모을 때 사용한다.
 
 	// 소멸 중 가상 타입 정보가 바뀌어도 등록 당시 목록에서 제거할 수 있게 보관합니다.
 	struct FComponentRegistration
 	{
 		UPrimitiveComponent* Primitive = nullptr;
+		ULightComponentBase* Light = nullptr;
 		bool bRenderable = false;
 	};
 	TMap<UActorComponent*, FComponentRegistration> ComponentRegistrations;

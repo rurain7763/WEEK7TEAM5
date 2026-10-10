@@ -122,7 +122,7 @@ namespace JsonUtils
 			throw std::runtime_error("Json Array expected for FVector2");
 		}
 
-		return FVector2(json.at(0).ToFloat(), json.at(1).ToFloat());
+		return FVector2(static_cast<float>(json.at(0).ToFloat()), static_cast<float>(json.at(1).ToFloat()));
 	}
 
 	template <>
@@ -133,7 +133,7 @@ namespace JsonUtils
 			throw std::runtime_error("Json Array expected for FVector");
 		}
 
-		return FVector(json.at(0).ToFloat(), json.at(1).ToFloat(), json.at(2).ToFloat());
+		return FVector(static_cast<float>(json.at(0).ToFloat()), static_cast<float>(json.at(1).ToFloat()), static_cast<float>(json.at(2).ToFloat()));
 	}
 
 	template <>
@@ -144,7 +144,7 @@ namespace JsonUtils
 			throw std::runtime_error("Json Array expected for FVector4");
 		}
 
-		return FVector4(json.at(0).ToFloat(), json.at(1).ToFloat(), json.at(2).ToFloat(), json.at(3).ToFloat());
+		return FVector4(static_cast<float>(json.at(0).ToFloat()), static_cast<float>(json.at(1).ToFloat()), static_cast<float>(json.at(2).ToFloat()), static_cast<float>(json.at(3).ToFloat()));
 	}
 
 	template <>
@@ -155,7 +155,7 @@ namespace JsonUtils
 			throw std::runtime_error("Json Array expected for FRotator");
 		}
 
-		return FRotator(json.at(0).ToFloat(), json.at(1).ToFloat(), json.at(2).ToFloat());
+		return FRotator(static_cast<float>(json.at(0).ToFloat()), static_cast<float>(json.at(1).ToFloat()), static_cast<float>(json.at(2).ToFloat()));
 	}
 
 	template <>
@@ -259,7 +259,7 @@ namespace JsonUtils
 			throw std::runtime_error("Json Array expected for FLinearColor");
 		}
 
-		return FLinearColor(json.at(0).ToFloat(), json.at(1).ToFloat(), json.at(2).ToFloat(), json.at(3).ToFloat());
+		return FLinearColor(static_cast<float>(json.at(0).ToFloat()), static_cast<float>(json.at(1).ToFloat()), static_cast<float>(json.at(2).ToFloat()), static_cast<float>(json.at(3).ToFloat()));
 	}
 
 	template <>

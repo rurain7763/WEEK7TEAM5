@@ -237,7 +237,7 @@ void FGizmo::Render(UActorComponent* TargetComponent, const FVector& CameraPosit
         Circle 
     };
 
-    const FVector2 Center = WorldToScreen(SceneComponent->GetWorldLocation(), ViewProjection, ScreenWidth, ScreenHeight);
+    const FVector2 Center = WorldToScreen(SceneComponent->GetWorldLocation(), ViewProjection, static_cast<float>(ScreenWidth), static_cast<float>(ScreenHeight));
     auto AxisColor = [&](EAxisNumber Axis, const FVector4& Color)
     {
         return Axis == (bIsSelected ? SelectedAxis : HoveredAxis) ? FVector4(1,1,0,1) : Color;
@@ -245,7 +245,7 @@ void FGizmo::Render(UActorComponent* TargetComponent, const FVector& CameraPosit
 
     auto DrawLineAxis = [&](const FVector& DrawAxis, const FVector& ApplyAxis, const FVector4& Color, EAxisEndPointStyle Style, EAxisNumber Axis)
     {
-        const FVector2 End = WorldToScreen(SceneComponent->GetWorldLocation() + DrawAxis * AxisLength, ViewProjection, ScreenWidth, ScreenHeight);
+        const FVector2 End = WorldToScreen(SceneComponent->GetWorldLocation() + DrawAxis * AxisLength, ViewProjection, static_cast<float>(ScreenWidth), static_cast<float>(ScreenHeight));
 
         FVector2 ScreenAxis = End - Center;
 		if (ScreenAxis.LengthSquared() < 0.01f)
@@ -285,8 +285,8 @@ void FGizmo::Render(UActorComponent* TargetComponent, const FVector& CameraPosit
 			{
 				continue;
 			}
-            const FVector2 Start = WorldToScreen(StartWorld, ViewProjection, ScreenWidth, ScreenHeight);
-            const FVector2 End = WorldToScreen(EndWorld, ViewProjection, ScreenWidth, ScreenHeight);
+            const FVector2 Start = WorldToScreen(StartWorld, ViewProjection, static_cast<float>(ScreenWidth), static_cast<float>(ScreenHeight));
+            const FVector2 End = WorldToScreen(EndWorld, ViewProjection, static_cast<float>(ScreenWidth), static_cast<float>(ScreenHeight));
             
 			if (FVector2::LengthSquared(Start, End) < 0.01f) 
 			{

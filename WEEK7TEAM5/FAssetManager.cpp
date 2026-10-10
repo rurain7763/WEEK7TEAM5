@@ -178,7 +178,7 @@ void FAssetManager::ScanDirectory(const std::filesystem::path& RootDir, URendere
 			Reader << Header;
 
 		}
-		catch(const std::exception& e)
+		catch(const std::exception&)
 		{
 			// Header 읽기 실패
 			UE_LOG_ERROR("Failed to read header: %s", Entry.path().string().c_str());

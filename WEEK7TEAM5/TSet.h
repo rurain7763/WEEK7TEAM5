@@ -73,7 +73,7 @@ inline bool TSet<T>::Add(const T& data)
 template<typename T>
 inline int32 TSet<T>::Remove(const T& data)
 {
-	return mSet.erase(data);
+	return static_cast<int32>(mSet.erase(data));
 }
 
 template<typename T>

@@ -3,6 +3,8 @@
 #include "VectorRegister.h"
 #include "MathUtility.h"
 
+struct FLinearColor;
+
 struct FVector2
 {
 	union
@@ -238,6 +240,9 @@ typedef struct FVector4
 	float Length() const { return FMath::Sqrt(x * x + y * y + z * z + w * w); }
 
 	FVector3 ToVec3() const { return FVector3(x, y, z); }
+
+	FLinearColor ToLinearColor() const;	
+
 } FVector4;
 
 struct FRay
@@ -282,5 +287,9 @@ struct FLinearColor
 		, B(InB)
 		, A(InA) 
 	{
+	}
+	FVector4 ToFVector4()const 
+	{
+		return FVector4(this->R, this->G, this->B, this->A);
 	}
 };

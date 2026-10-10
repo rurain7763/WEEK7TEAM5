@@ -80,7 +80,7 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
         FileWriter << EmptyGuid;                 // Normal Texture
         #endif
     }
-    catch(const std::exception& e)
+    catch(const std::exception&)
     {
         UE_LOG_ERROR("Failed to write to %s", OutPath.string().c_str());
         return false;

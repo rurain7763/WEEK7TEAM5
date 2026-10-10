@@ -4,8 +4,8 @@
 #include "ActorComponent.h"
 #include "TMap.h"
 #include "Object.h"
-#include "UTextComponent.h"
 #include "EngineMathLibrary.h"
+#include "USpotLightComponent.h"
 
 class FComponentVisualizer
 {
@@ -78,7 +78,8 @@ public:
 			}
 		};
 
-		const FVector4 ConeColor = SpotLightComponent->GetColor();
+		FLinearColor SpotColor = SpotLightComponent->GetColor();
+		const FVector4 ConeColor = FVector4(SpotColor.R, SpotColor.G, SpotColor.B, SpotColor.A);
 
 		DrawCone(OuterAngle, ConeColor);
 		if (InnerAngle > 0.f && InnerAngle < OuterAngle)

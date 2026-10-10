@@ -7,6 +7,7 @@
 #include "FBVH.h"
 #include "FInstrumentor.h"
 #include "UTextComponent.h"
+#include "ULightComponentBase.h"
 #include "ShowFlags.h"
 #include "FHiZOcclusionManager.h"
 #include "FDuplicatedDataRW.h"
@@ -64,7 +65,7 @@ bool ULevel::RemoveActor(uint32 uuid)
 
 int32 ULevel::GetActorIndex(uint32 actorUUID) const
 {
-	for (uint32 i = 0; i < mActors.Num(); ++i)
+	for (uint32 i = 0; i < static_cast<uint32>(mActors.Num()); ++i)
 	{
 		if (mActors[i]->UUID == actorUUID)
 		{
@@ -185,8 +186,14 @@ void UWorld::RegisterComponent(UActorComponent* Component)
 	}
 
 	UPrimitiveComponent* PrimitiveComponent = Component->Cast<UPrimitiveComponent>();
-    ComponentRegistrations.Add(Component, { PrimitiveComponent, Component->IsRenderable() });
+	ULightComponentBase* LightComponent = Component->Cast<ULightComponentBase>();
+    ComponentRegistrations.Add(Component, { PrimitiveComponent, LightComponent, Component->IsRenderable() });
     RefreshComponentTick(Component);
+
+	if (LightComponent)
+	{
+		mLightComponents.Add(LightComponent);
+	}
 
 	if (PrimitiveComponent)
 	{
@@ -213,6 +220,16 @@ void UWorld::UnregisterComponent(UActorComponent* Component)
     // 소멸 중 가상 타입에 의존하지 않고 등록 당시의 목록에서 제거합니다.
     mTickableComponents.Remove(Component);
     ComponentRegistrations.Remove(Component);
+
+	if (Registration.Light)
+	{
+		// 등록 순서를 유지해야 하므로 RemoveAtSwap을 쓰지 않는다.
+		const int32 LightIndex = mLightComponents.Find(Registration.Light);
+		if (LightIndex != -1)
+		{
+			mLightComponents.RemoveAt(LightIndex, 1);
+		}
+	}
 
 	UPrimitiveComponent* PrimitiveComponent = Registration.Primitive;
 	if (PrimitiveComponent)

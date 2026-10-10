@@ -5,7 +5,8 @@
 #include "FQuaternion.h"
 #include "Vector.h"
 
-class FTransform;
+struct FTransform;
+class UBillboardComponent;
 
 class USceneComponent : public UActorComponent
 {
@@ -48,8 +49,15 @@ public:
 	inline USceneComponent* GetParentComponent() const { return mParentComponent; }
 	inline const TArray<USceneComponent*>& GetChildComponents() const { return mChildComponents; }
 
+	FVector GetForwardVector() const;	
+
 protected:
 	virtual void OnTransformChanged() {}
+
+	// 이 컴포넌트에 붙는 에디터 전용 아이콘 빌보드를 만듭니다. 이미 있으면 기존 아이콘을 돌려줍니다.
+	// 아이콘은 이 컴포넌트에 Attach되고, 이 컴포넌트가 소멸되면 함께 제거됩니다.
+	UBillboardComponent* CreateEditorIcon(const FGuid& IconTextureID, const FName& IconName);
+	UBillboardComponent* GetEditorIcon() const;
 
 private:
 	bool CanAttachTo(USceneComponent* ParentComponent) const;
@@ -64,5 +72,10 @@ private:
 
 	USceneComponent* mParentComponent = nullptr;
 	TArray<USceneComponent*> mChildComponents;
+
+	// CreateEditorIcon으로 만든 아이콘. 아이콘이 먼저 소멸되면 아이콘 쪽에서 비운다.
+	USceneComponent* mEditorIcon = nullptr;
+
+	FVector CacheForwardVector;
 };
 

@@ -157,7 +157,7 @@ void URenderer::CreateDeviceAndSwapChain(HWND hWindow)
 	Width = SwapChainDesc.BufferDesc.Width;
 	Height = SwapChainDesc.BufferDesc.Height;
 	ViewportInfo = { 0.0f, 0.0f, (float)Width, (float)Height, 0.0f, 1.0f };
-	Projection2D = FMatrix::Ortho(0.f, Width, Height, 0.f, 0.0f, 1.0f);
+	Projection2D = FMatrix::Ortho(0.f, static_cast<float>(Width), static_cast<float>(Height), 0.f, 0.0f, 1.0f);
 }
 
 void URenderer::BeginFrame()
@@ -538,14 +538,14 @@ void URenderer::BindPipeline(const FRenderPipeline* Pipeline, uint32 StencilRef)
 	if (bShouldSetCBs)
 	{
 		const int32 BindCount = FPlatformMath::Max(NewCBCount, CurrentCBCount);
-
+		CurrentCBs.Reset(BindCount);
 		for (int32 i = 0; i < BindCount; ++i)
 		{
-			CurrentCBs[i] = i < NewCBCount ? Pipeline->ConstantBuffers[i] : nullptr;
+			CurrentCBs.Emplace(i < NewCBCount ? Pipeline->ConstantBuffers[i] : nullptr);
 		}
 
-		DeviceContext->VSSetConstantBuffers(0, BindCount, CurrentCBs);
-		DeviceContext->PSSetConstantBuffers(0, BindCount, CurrentCBs);
+		DeviceContext->VSSetConstantBuffers(0, BindCount, CurrentCBs.Data());
+		DeviceContext->PSSetConstantBuffers(0, BindCount, CurrentCBs.Data());
 
 		CurrentCBCount = NewCBCount;
 	}
@@ -605,7 +605,7 @@ void URenderer::BindFrameBuffer()
 	DeviceContext->OMSetRenderTargets(1, &FrameBufferRTV, nullptr);
 	DeviceContext->RSSetViewports(1, &ViewportInfo);
 
-	Projection2D = FMatrix::Ortho(0.f, Width, Height, 0.f, 0.0f, 1.0f);
+	Projection2D = FMatrix::Ortho(0.f, static_cast<float>(Width), static_cast<float>(Height), 0.f, 0.0f, 1.0f);
 
 	BindedRenderTarget = nullptr;
 	BindedDepthStencil = nullptr;
@@ -639,7 +639,7 @@ void URenderer::BindRenderTarget(FRenderTarget2D* RenderTarget, FDepthStencil* D
 
 	DeviceContext->RSSetViewports(1, &Viewport);
 
-	Projection2D = FMatrix::Ortho(0.f, RenderTarget->Width, RenderTarget->Height, 0.f, 0.0f, 1.0f);
+	Projection2D = FMatrix::Ortho(0.f, static_cast<float>(RenderTarget->Width), static_cast<float>(RenderTarget->Height), 0.f, 0.0f, 1.0f);
 
 	BindedRenderTarget = RenderTarget;
 	BindedDepthStencil = DepthStencil;
@@ -872,7 +872,7 @@ void URenderer::OnResize(UINT width, UINT height)
 	Width = width;
 	Height = height;
 	ViewportInfo = { 0.0f, 0.0f, (float)width, (float)height, 0.0f, 1.0f };
-	Projection2D = FMatrix::Ortho(0.f, Width, Height, 0.f, 0.0f, 1.0f);
+	Projection2D = FMatrix::Ortho(0.f, static_cast<float>(Width), static_cast<float>(Height), 0.f, 0.0f, 1.0f);
 
 	CreateFrameBuffer();
 	CreateDepthStencilBuffer();
