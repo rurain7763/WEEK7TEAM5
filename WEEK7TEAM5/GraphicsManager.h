@@ -100,20 +100,33 @@ private:
 		FVector Position;
 		ELightType Type;
 		FLinearColor Color;
+		FVector Direction;
 		float Range;
 		float Intensity;
 		float FallOf;
+		float InnerConeAngle;
+		float OuterConeAngle;
 	};
 
 	struct FMeshContants
 	{
 		FMatrix Matrix;
+		FMatrix InvMatrix;
 		FVector4 Color;
 		FVector2 UVOffset;
 		int32 UseVertexColor;
 		int32 HasTexture;
+		FLinearColor AmbientColor;
+		float AmbientIntensity;
 		int32 LightCount;
-		int32 Padding[3];
+		int32 Padding[2];
+	};
+
+	struct FViewConstants
+	{
+		FMatrix ViewProjectionMatrix;
+		FVector ViewPosition;
+		float Padding;
 	};
 
 	URenderer* mRenderer;
@@ -146,6 +159,8 @@ private:
 	float mProjectionDuration = 1.0f;
 	bool mbProjectionTransitioning = false;
 
+	FLinearColor mAmbientColor;
+	float mAmbientIntensity;
 	TArray<FLightInfo> mLightInfos;
 	TSharedPtr<FStructuredBuffer> mLightInfoBuffer;
 

@@ -58,7 +58,7 @@ void URenderer::Create(HWND hWindow)
 
 	WorldGridPipeline = CreateRenderPipeline();
 	WorldGridPipeline->SetRasterRizerState(D3D11_CULL_NONE);
-	WorldGridPipeline->SetDepthStencilState(true, true);
+	WorldGridPipeline->SetDepthStencilState(true, false);
 	WorldGridPipeline->SetBlendState(ERenderBlendMode::Transparent);
 	WorldGridPipeline->SetShader("Assets/Shaders/WorldGrid.hlsl");
 	WorldGridPipeline->AddConstantBuffer<FWorldGridConstants>();

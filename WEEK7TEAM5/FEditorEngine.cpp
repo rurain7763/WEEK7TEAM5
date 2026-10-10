@@ -421,7 +421,7 @@ void FEditorEngine::Render(float DeltaTime)
 								FRenderLineInfo LineInfo;
 								LineInfo.Start = WorldStart.ToVec3();
 								LineInfo.End = WorldEnd.ToVec3();
-								LineInfo.Color = FVector4(1.f, 0.f, 0.f, 1.f); // 빨간색
+								LineInfo.Color = FLinearColor(1.f, 0.f, 0.f, 1.f); // 빨간색
 								LineInfo.Thickness = 5.0f;
 
 								RenderCollector.LineInfos.Add(LineInfo);

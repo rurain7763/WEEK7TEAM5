@@ -13,6 +13,7 @@
 //#include "FInstrumentor.h"
 #include <algorithm>
 #include "FHiZOcclusionManager.h"
+#include "LightComponents.h"
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
@@ -35,7 +36,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mMeshPipeline->SetDepthStencilState(true, true);
 	mMeshPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
 	mMeshPipeline->AddConstantBuffer<FMeshContants>();
-	mMeshPipeline->AddConstantBuffer<FMatrix>();
+	mMeshPipeline->AddConstantBuffer<FViewConstants>();
 
 	mHighlightMarkPipeline = mRenderer->CreateRenderPipeline();
 	mHighlightMarkPipeline->SetRasterRizerState(D3D11_CULL_BACK);
@@ -43,7 +44,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mHighlightMarkPipeline->SetBlendState(ERenderBlendMode::Opaque, false);
 	mHighlightMarkPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
 	mHighlightMarkPipeline->AddConstantBuffer<FMeshContants>();
-	mHighlightMarkPipeline->AddConstantBuffer<FMatrix>();
+	mHighlightMarkPipeline->AddConstantBuffer<FViewConstants>();
 	mHighlightMarkPipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
 
 	mHighlightDrawPipeline = mRenderer->CreateRenderPipeline();
@@ -122,8 +123,39 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	mCameraNear = mCamera->mNear;
 	mCameraFar = mCamera->mFar;
 
-	// NOTE: LightInfos를 모으고 StructuredBuffer에 업데이트합니다.
+	// NOTE: AmbientColor를 세팅.
+	mAmbientColor = FLinearColor(0.f, 0.f, 0.f, 1.f);
+	mAmbientIntensity = 0.f;
+	for (TObjectIterator<UAmbientLightComponent> It; It; ++It)
+	{
+		UAmbientLightComponent* AmbientLight = *It;
+		if (AmbientLight->GetOwner()->GetWorld() != World)
+		{
+			continue;
+		}
+
+		mAmbientColor = AmbientLight->GetColor();
+		mAmbientIntensity = AmbientLight->GetIntensity();
+		break;
+	}
+
+	// NOTE: LightInfos를 모으고 StructuredBuffer에 업데이트.
 	mLightInfos.Empty();
+	for (TObjectIterator<UDirectionalLightComponent> It; It; ++It)
+	{
+		UDirectionalLightComponent* DirectionalLight = *It;
+		if (DirectionalLight->GetOwner()->GetWorld() != World)
+		{
+			continue;
+		}
+
+		FLightInfo& Info = mLightInfos.Emplace();
+		Info.Type = ELightType::Directional;
+		Info.Direction = DirectionalLight->GetForwardVector();
+		Info.Color = DirectionalLight->GetColor();
+		Info.Intensity = DirectionalLight->GetIntensity();
+	}
+
 	for (TObjectIterator<UPointLightComponent> It; It; ++It)
 	{
 		UPointLightComponent* PointLight = *It;
@@ -139,6 +171,26 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 		Info.Intensity = PointLight->GetIntensity();
 		Info.Range = PointLight->GetRadius();
 		Info.FallOf = PointLight->GetRadiusFallOff();
+	}
+
+	for (TObjectIterator<USpotLightComponent> It; It; ++It)
+	{
+		USpotLightComponent* SpotLight = *It;
+		if (SpotLight->GetOwner()->GetWorld() != World)
+		{
+			continue;
+		}
+
+		FLightInfo& Info = mLightInfos.Emplace();
+		Info.Type = ELightType::Spot;
+		Info.Position = SpotLight->GetWorldLocation();
+		Info.Direction = SpotLight->GetForwardVector();
+		Info.Color = SpotLight->GetColor();
+		Info.Intensity = SpotLight->GetIntensity();
+		Info.Range = SpotLight->GetRadius();
+		Info.FallOf = SpotLight->GetRadiusFallOff();
+		Info.InnerConeAngle = SpotLight->GetInnerConeAngle();
+		Info.OuterConeAngle = SpotLight->GetOuterConeAngle();
 	}
 
 	if (mLightInfos.Num() * sizeof(FLightInfo) > mLightInfoBuffer->GetBufferSize())
@@ -172,8 +224,12 @@ void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primi
 		return;
 	}
 
-	mHighlightMarkPipeline->UpdateConstantBuffer(1, mViewUnifiedProjectionMatrix);
-	mHighlightDrawPipeline->UpdateConstantBuffer(1, mViewUnifiedProjectionMatrix);
+	FViewConstants ViewConstants;
+	ViewConstants.ViewProjectionMatrix = mViewUnifiedProjectionMatrix;
+	ViewConstants.ViewPosition = mCameraLocation;
+
+	mHighlightMarkPipeline->UpdateConstantBuffer(1, ViewConstants);
+	mHighlightDrawPipeline->UpdateConstantBuffer(1, ViewConstants);
 
 	// Mark Pass: 스텐실에 마크만 찍는다.
 	for (UPrimitiveComponent* Primitive : Primitives)
@@ -196,10 +252,13 @@ void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primi
 
 		FMeshContants Constants{};
 		Constants.Matrix = Primitive->GetWorldMatrix();
+		Constants.InvMatrix = Primitive->GetWorldMatrix().AffineInverse();
 		Constants.Color = FVector4(0.f, 0.f, 0.f, 0.f);
 		Constants.HasTexture = 0;
 		Constants.UseVertexColor = 0;
 		Constants.UVOffset = FVector2(0.f, 0.f);
+		Constants.AmbientColor = mAmbientColor;
+		Constants.AmbientIntensity = mAmbientIntensity;
 		Constants.LightCount = 0;
 
 		mHighlightMarkPipeline->UpdateConstantBuffer(0, Constants);
@@ -275,7 +334,11 @@ void FGraphicsManager::Render()
 
 			if (Pipeline != LastViewPipeline)
 			{
-				Pipeline->UpdateConstantBuffer(1, mViewUnifiedProjectionMatrix);
+				FViewConstants ViewConstants;
+				ViewConstants.ViewProjectionMatrix = mViewUnifiedProjectionMatrix;
+				ViewConstants.ViewPosition = mCameraLocation;
+
+				Pipeline->UpdateConstantBuffer(1, ViewConstants);
 				Pipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
 			}
 
@@ -289,10 +352,13 @@ void FGraphicsManager::Render()
 			// 개별 Draw의 상수는 기존 동적 상수 버퍼에 Map/Unmap으로 갱신합니다.
 			FMeshContants Constants;
 			Constants.Matrix = Info.Model;
+			Constants.InvMatrix = Info.Model.AffineInverse();
 			Constants.Color = Info.Color;
 			Constants.UVOffset = Info.UVOffset;
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.HasTexture = Info.Texture ? 1 : 0;
+			Constants.AmbientColor = mAmbientColor;
+			Constants.AmbientIntensity = mAmbientIntensity;
 			Constants.LightCount = mLightInfos.Num();
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);

@@ -6,6 +6,14 @@
 #include "PrimitiveComponent.h"
 #include "UAtlasAnimationComponent.h"
 #include "EngineStatics.h"
+#include "SceneComponent.h"
+#include "CubeComponent.h"
+#include "SphereComponent.h"
+#include "UTextComponent.h"
+#include "World.h"
+#include "UStaticMeshComponent.h"
+#include "LightComponents.h"
+#include "ASpotLight.h"
 
 UObject* FObjectFactory::ConstructUnInitializedObject(const FClassInfo* classInfo)
 {
@@ -113,13 +121,6 @@ bool FObjectFactory::RegisterClassInfo(FString className, const FClassInfo* clas
 	mClassInfoMap.Add(className, [classInfo]() -> const FClassInfo* { return classInfo; });
 	return true;
 }
-
-#include "SceneComponent.h"
-#include "CubeComponent.h"
-#include "SphereComponent.h"
-#include "UTextComponent.h"
-#include "World.h"
-#include "UStaticMeshComponent.h"
 
 TMap<FString, std::function<const FClassInfo* ()>> FObjectFactory::mClassInfoMap = {
 	{"UObject", &UObject::GetStaticClass },

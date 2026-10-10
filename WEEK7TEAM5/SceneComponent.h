@@ -44,6 +44,14 @@ public:
 
 	const FMatrix& GetWorldMatrix() const;
 
+	const inline FVector GetForwardVector()
+	{
+		FMatrix Matrix = GetWorldMatrix();
+		FVector Axis = Matrix.GetUnitAxis(EAxis::X);
+		Axis.Normalize();
+		return Axis;
+	}
+
 	inline bool HasParent() const { return mParentComponent != nullptr; }
 	inline USceneComponent* GetParentComponent() const { return mParentComponent; }
 	inline const TArray<USceneComponent*>& GetChildComponents() const { return mChildComponents; }

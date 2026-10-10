@@ -18,6 +18,9 @@ class UTextRenderComponent;
 class UProjectileMovementComponent;
 class URotationMovementComponent;
 class UBillboardComponent;
+class ULightComponent;
+class UDirectionalLightComponent;
+class UAmbientLightComponent;
 
 class FPropertyWindow
 {
@@ -31,15 +34,18 @@ private:
 
 	void RenderTransformProperties(USceneComponent* SceneComponent);
 	void RenderText3DComponent(UText3DComponent* text3DComponent);
-	void RenderSpotLightComponent(USpotLightComponent* spotLightComponent);
 	void RenderAtlasAnimationComponent(UAtlasAnimationComponent* atlasAnimationComponent);
 	void RenderStaticMeshComponent(UStaticMeshComponent* StaticMeshComponent);
 	void RenderHeightFogComponent(UHeightFogComponent* HeightFogComponent);
-	void RenderPointLightComponent(UPointLightComponent* PointLightComponent);
 	void RenderTextRenderComponent(UTextRenderComponent* TextRenderComponent);
 	void RenderProjectileMovementComponent(UProjectileMovementComponent* ProjectileMovementComponent);
 	void RenderRotationMovementComponent(URotationMovementComponent* RotationMovementComponent);
 	void RenderBillboardComponent(UBillboardComponent* BillboardComponent);
+	void RenderLightComponent(ULightComponent* LightComponent);
+	void RenderPointLightComponent(UPointLightComponent* PointLightComponent);
+	void RenderDirectionalLightComponent(UDirectionalLightComponent* DirectionalLightComponent);
+	void RenderAmbientLightComponent(UAmbientLightComponent* AmbientLightComponent);
+	void RenderSpotLightComponent(USpotLightComponent* spotLightComponent);
 
 private:
 	FAssetManager* mAssetManager;

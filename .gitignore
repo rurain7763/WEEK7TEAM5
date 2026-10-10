@@ -284,3 +284,4 @@ editor.ini
 !BuiltInAssets/**
 !Vendor/lib/**
 engine-loop-profile.json
+AGNETS.md

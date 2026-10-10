@@ -17,6 +17,8 @@
 #include "FEditorUIManager.h"
 #include "enum.h"
 #include "GraphicsManager.h"
+#include "LightComponents.h"
+#include "ASpotLight.h"
 
 void FControlWindow::Render(const FGuiReference& GuiReference)
 {
@@ -132,7 +134,6 @@ void FControlWindow::RenderSpawnActorControl(const FGuiReference& GuiReference)
 				UTextRenderComponent* TextComponent = NewActor->CreateDefaultSubobject<UTextRenderComponent>(FName("TextRenderComponent"));
 				TextComponent->SetText(L"Hello World!");
 				TextComponent->SetFontAtlasAsset(FAssetManager::Get().GetAssetAs<FFontAtlasAsset>(FName("TestFontAtlas")));
-				TextComponent->SetDepthState(false, false);
 
 				NewActor->SetRootComponent(TextComponent);
 			}

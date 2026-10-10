@@ -383,60 +383,6 @@ protected:
 	bool mEnableDepthWrite = true;
 };
 
-class USpotLightComponent : public USceneComponent
-{
-	REFLECT_CLASS(USpotLightComponent, USceneComponent)
-
-public:
-    USpotLightComponent() { SetTickable(true); }
-
-	virtual void Serialize(FArchive& Ar) override
-	{
-		Super::Serialize(Ar);
-
-		Ar << Range;
-		Ar << mInnerConeAngle;
-		Ar << mOuterConeAngle;
-		Ar << mColor;
-	}
-
-	virtual void Deserialize(FArchive& Ar) override
-	{
-		Super::Deserialize(Ar);
-
-		Ar << Range;
-		Ar << mInnerConeAngle;
-		Ar << mOuterConeAngle;
-		Ar << mColor;
-	}
-
-	inline float GetRange() const { return Range; }
-	inline float GetInnerConeAngle() const { return mInnerConeAngle; }
-	inline float GetOuterConeAngle() const { return mOuterConeAngle; }
-	inline const FVector4& GetColor() const { return mColor; }
-
-	inline void SetColor(const FVector4& InColor) { mColor = InColor; }
-
-	inline void SetOuterConeAngle(float InAngle)
-	{
-		mOuterConeAngle = FMath::Clamp(InAngle, 0.f, MAX_CONE_ANGLE);
-		mInnerConeAngle = FMath::Min(mInnerConeAngle, mOuterConeAngle);
-	}
-
-	inline void SetInnerConeAngle(float InAngle)
-	{
-		mInnerConeAngle = FMath::Clamp(InAngle, 0.f, mOuterConeAngle);
-	}
-
-private:
-	static constexpr float MAX_CONE_ANGLE = 89.f;
-
-	float Range = 5.0f;
-	FVector4 mColor = { 1.f, 1.f, 1.f, 1.f };
-	float mInnerConeAngle = 30.0f;
-	float mOuterConeAngle = 45.0f;
-};
-
 class UText3DComponent : public USceneComponent
 {
 	REFLECT_CLASS(UText3DComponent, USceneComponent)
@@ -602,50 +548,6 @@ private:
 	bool mEnableDepthWrite = true;
 };
 
-class ASpotLight : public AActor
-{
-	REFLECT_CLASS(ASpotLight, AActor)
-
-public:
-	ASpotLight()
-	{
-		USpotLightComponent* SpotLightComponent = CreateDefaultSubobject<USpotLightComponent>(FName("SpotLightComponent"));
-		SetRootComponent(SpotLightComponent);
-	}
-
-	void CreateEditorComponents() override
-	{
-		UBillboardComponent* BillboardComponent = CreateDefaultSubobject<UBillboardComponent>(FName("SpotLightIcon"));
-		BillboardComponent->SetTexture(FAssetManager::Get().GetAssetAs<FTexture2DAsset>(BuiltInAssetID::SpotLightIcon, true));
-		BillboardComponent->SetBlendState(ERenderBlendMode::Transparent);
-		BillboardComponent->SetDepthState(true, false);
-		BillboardComponent->SetEditorOnly(true);
-		BillboardComponent->SetDoNotSerialize(true);
-		BillboardComponent->SetVisualizeProxy(true);
-
-		USceneComponent* RootComp = GetRootComponent();
-		if (RootComp)
-		{
-			BillboardComponent->SetupAttachment(RootComp, false);
-		}
-
-		AddOwnedComponent(BillboardComponent);
-
-		UText3DComponent* Text3DComponent = CreateDefaultSubobject<UText3DComponent>(FName("UUIDDisplayer"));
-		Text3DComponent->SetRelativeScale3D(FVector(0.01f, 0.01f, 0.01f));
-		Text3DComponent->SetBillboard(true);
-		Text3DComponent->SetText(Utf2Wide(std::format("UUID: {}", UUID)));
-		Text3DComponent->SetFontAtlasAsset(FAssetManager::Get().GetAssetAs<FFontAtlasAsset>(FName("TestFontAtlas")));
-		Text3DComponent->SetDepthState(false, false);
-		Text3DComponent->SetEditorOnly(true);
-		Text3DComponent->SetDoNotSerialize(true);
-
-		Text3DComponent->SetupAttachment(BillboardComponent, false);
-
-		AddOwnedComponent(Text3DComponent);
-	}
-};
-
 class UHeightFogComponent : public UPrimitiveComponent
 {
 	REFLECT_CLASS(UHeightFogComponent, UPrimitiveComponent)
@@ -785,85 +687,6 @@ public:
 
 		AddOwnedComponent(Text3DComponent);
 	}
-};
-
-class UPointLightComponent : public USceneComponent
-{
-	REFLECT_CLASS(UPointLightComponent, USceneComponent)
-
-public:
-	UPointLightComponent() = default;
-
-	virtual void Serialize(FArchive& Ar) override
-	{
-		Super::Serialize(Ar);
-		
-		Ar << Intensity;
-		Ar << Radius;
-		Ar << RadiusFallOff;
-		Ar << Color;
-	}
-
-	virtual void Deserialize(FArchive& Ar) override
-	{
-		Super::Deserialize(Ar);
-
-		Ar << Intensity;
-		Ar << Radius;
-		Ar << RadiusFallOff;
-		Ar << Color;
-	}
-
-	void SerializeClass(json::JSON& outJson) const override
-	{
-		Super::SerializeClass(outJson);
-
-		outJson["Properties"]["Intensity"] = Intensity;
-		outJson["Properties"]["Radius"] = Radius;
-		outJson["Properties"]["RadiusFallOff"] = RadiusFallOff;
-		outJson["Properties"]["Color"] = JsonUtils::ToJson(Color);
-	}
-
-	void DeserializeClass(const json::JSON& inJson) override
-	{
-		Super::DeserializeClass(inJson);
-
-		const json::JSON& PropertiesJson = inJson.at("Properties");
-		if (PropertiesJson.hasKey("Intensity"))
-		{
-			Intensity = JsonUtils::FromJson<float>(PropertiesJson.at("Intensity"));
-		}
-		if (PropertiesJson.hasKey("Radius"))
-		{
-			Radius = JsonUtils::FromJson<float>(PropertiesJson.at("Radius"));
-		}
-		if (PropertiesJson.hasKey("RadiusFallOff"))
-		{
-			RadiusFallOff = JsonUtils::FromJson<float>(PropertiesJson.at("RadiusFallOff"));
-		}
-		if (PropertiesJson.hasKey("Color"))
-		{
-			Color = JsonUtils::FromJson<FLinearColor>(PropertiesJson.at("Color"));
-		}
-	}
-
-	inline void SetIntensity(float InIntensity) { Intensity = InIntensity; }
-	inline float GetIntensity() const { return Intensity; }
-
-	inline void SetRadius(float InRadius) { Radius = InRadius; }
-	inline float GetRadius() const { return Radius; }
-
-	inline void SetRadiusFallOff(float InRadiusFallOff) { RadiusFallOff = InRadiusFallOff; }
-	inline float GetRadiusFallOff() const { return RadiusFallOff; }
-
-	inline void SetColor(const FLinearColor& InColor) { Color = InColor; }
-	inline FLinearColor GetColor() const { return Color; }
-
-private:
-	float Intensity = 3.f;
-	float Radius = 5.f;
-	float RadiusFallOff = 1.f;
-	FLinearColor Color = FLinearColor(1.f, 1.f, 1.f, 1.f);
 };
 
 class UProjectileMovementComponent : public UActorComponent
@@ -1232,7 +1055,7 @@ private:
 	TSharedPtr<FFontAtlasAsset> mFontAtlasAsset;
 	FVector4 mColor = FVector4(1, 1, 1, 1);
 	bool mEnableDepthTest = true;
-	bool mEnableDepthWrite = true;
+	bool mEnableDepthWrite = false;
 
 	bool mbBoundingBoxDirty = true;
 	FAABB mBoundingBox;

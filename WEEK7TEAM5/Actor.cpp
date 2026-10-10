@@ -6,6 +6,7 @@
 #include "ObjectFactory.h"
 #include "World.h"
 #include "Serializers.h"
+#include "LightComponents.h"
 #include <format>
 
 void AActor::Initialize()
