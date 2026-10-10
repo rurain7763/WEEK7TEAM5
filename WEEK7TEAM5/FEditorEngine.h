@@ -136,6 +136,8 @@ public:
 	void StartPIE();
 	void EndPIE();
 
+	inline bool IsPlayingInEditor() const { return mbIsPlayingInEditor; }
+
 private:
 	void InitAssetManager();
 
