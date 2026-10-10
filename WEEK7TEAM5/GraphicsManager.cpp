@@ -29,6 +29,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 	mAspect = mRenderer->GetWidth() / static_cast<float>(mRenderer->GetHeight());
 
+	mAmbientBuffer = mRenderer->CreateConstantBuffer<FAmbientConstants>();
 	mLightInfoBuffer = mRenderer->CreateStructuredBuffer<FLightInfo>(1);
 
 	mMeshPipeline = mRenderer->CreateRenderPipeline();
@@ -37,6 +38,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mMeshPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
 	mMeshPipeline->AddConstantBuffer<FMeshContants>();
 	mMeshPipeline->AddConstantBuffer<FViewConstants>();
+	mMeshPipeline->SetConstantBuffer(2, mAmbientBuffer->Buffer.Get());
 
 	mHighlightMarkPipeline = mRenderer->CreateRenderPipeline();
 	mHighlightMarkPipeline->SetRasterRizerState(D3D11_CULL_BACK);
@@ -76,6 +78,7 @@ FGraphicsManager::~FGraphicsManager()
 	mHighlightIndexBuffer.reset();
 	mHighlightMarkPipeline.reset();
 	mHighlightDrawPipeline.reset();
+	mAmbientBuffer.reset();
 	mMeshPipeline.reset();
 	mRenderCollector.Clear();
 	mRenderer->Release();
@@ -257,8 +260,6 @@ void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primi
 		Constants.HasTexture = 0;
 		Constants.UseVertexColor = 0;
 		Constants.UVOffset = FVector2(0.f, 0.f);
-		Constants.AmbientColor = mAmbientColor;
-		Constants.AmbientIntensity = mAmbientIntensity;
 		Constants.LightCount = 0;
 
 		mHighlightMarkPipeline->UpdateConstantBuffer(0, Constants);
@@ -297,6 +298,11 @@ void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primi
 void FGraphicsManager::Render()
 {
 	mRenderGraph.Clear();
+
+	FAmbientConstants AmbientConstants;
+	AmbientConstants.AmbientColor = mAmbientColor;
+	AmbientConstants.AmbientIntensity = mAmbientIntensity;
+	mAmbientBuffer->UpdateBuffer(&AmbientConstants, sizeof(FAmbientConstants));
 
 	FRGTextureRef FrontRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetFrontRenderTarget());
 	FRGTextureRef BackRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetBackRenderTarget());
@@ -357,8 +363,6 @@ void FGraphicsManager::Render()
 			Constants.UVOffset = Info.UVOffset;
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.HasTexture = Info.Texture ? 1 : 0;
-			Constants.AmbientColor = mAmbientColor;
-			Constants.AmbientIntensity = mAmbientIntensity;
 			Constants.LightCount = mLightInfos.Num();
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);

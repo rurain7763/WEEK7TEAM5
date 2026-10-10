@@ -39,7 +39,7 @@ void FRenderPipeline::Release()
 
 	for (int32 Index = 0; Index < ConstantBuffers.Num(); Index++)
 	{
-		if (ConstantBuffers[Index])
+		if (ConstantBuffers[Index] && !ExternalConstantBuffers[Index])
 		{
 			ConstantBuffers[Index]->Release();
 			ConstantBuffers[Index] = nullptr;

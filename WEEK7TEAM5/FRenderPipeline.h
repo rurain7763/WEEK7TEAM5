@@ -7,6 +7,7 @@
 #include "TArray.h"
 #include "RenderInfo.h"
 #include "enum.h"
+#include "RenderUtils.h"
 #include <initializer_list>
 
 class URenderer;
@@ -44,24 +45,33 @@ public:
 	// SRV와 상수 내용은 제외하며, 파이프라인 바인딩 설정의 변경을 식별합니다.
 	inline uint32 GetBindingVersion() const { return BindingVersion; }
 
+	void SetConstantBuffer(uint32 Index, ID3D11Buffer* Buffer)
+	{
+		if (Index >= ConstantBuffers.Num())
+		{
+			ConstantBuffers.SetNum(Index + 1);
+			ExternalConstantBuffers.SetNum(Index + 1);
+		}
+
+		ConstantBuffers[Index] = Buffer;
+		ExternalConstantBuffers[Index] = true;
+		++BindingVersion;
+	}
+
 	template <typename T>
 	void AddConstantBuffer()
 	{
-		if (Device)
+		if (!Device)
 		{
-			D3D11_BUFFER_DESC ConstantBufferDesc = {};
-			ConstantBufferDesc.ByteWidth = sizeof(T) + 0xf & 0xfffffff0;
-			ConstantBufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-			ConstantBufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-			ConstantBufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+			return;
+		}
 
-			ID3D11Buffer* ConstantBuffer = nullptr;
-			HRESULT Hr = Device->CreateBuffer(&ConstantBufferDesc, nullptr, &ConstantBuffer);
-			if (SUCCEEDED(Hr))
-			{
-				ConstantBuffers.Add(ConstantBuffer);
-				++BindingVersion;
-			}
+		ID3D11Buffer* NewBuffer = RenderUtils::CreateConstantBuffer(Device, sizeof(T));
+		if (NewBuffer)
+		{
+			ConstantBuffers.Add(NewBuffer);
+			ExternalConstantBuffers.Add(false);
+			++BindingVersion;
 		}
 	}
 
@@ -98,6 +108,7 @@ private:
 	ID3D11BlendState* BlendState = nullptr;
 	TSharedPtr<FShader> Shader;
 	TArray<ID3D11Buffer*> ConstantBuffers;
+	TArray<int8> ExternalConstantBuffers; // 외부에서 생성한 상수 버퍼인지 여부를 나타냅니다.
 	TArray<ID3D11ShaderResourceView*> ShaderResourceViews;
 	TArray<ID3D11SamplerState*> SamplerStates;
 

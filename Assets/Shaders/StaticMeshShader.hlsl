@@ -21,10 +21,8 @@ cbuffer ModelConstants : register(b0) // FConstants
     float2 uv_offset;
 	int UseVertexColor;
     int HasTexture;
-    float4 ambient_color;
-    float ambient_intensity;
     int light_count;
-    int2 padding;
+    float3 padding;
 }
 
 cbuffer ViewConstants : register(b1) // FConstants
@@ -32,6 +30,13 @@ cbuffer ViewConstants : register(b1) // FConstants
 	row_major matrix view_projection;
     float3 view_position;
     float view_constants_padding;
+}
+
+cbuffer AmbientConstants : register(b2) // FConstants
+{
+    float4 ambient_color;
+    float ambient_intensity;
+    float3 ambient_constants_padding;
 }
 
 struct VS_INPUT

@@ -116,10 +116,8 @@ private:
 		FVector2 UVOffset;
 		int32 UseVertexColor;
 		int32 HasTexture;
-		FLinearColor AmbientColor;
-		float AmbientIntensity;
 		int32 LightCount;
-		int32 Padding[2];
+		int32 Padding[3];
 	};
 
 	struct FViewConstants
@@ -127,6 +125,13 @@ private:
 		FMatrix ViewProjectionMatrix;
 		FVector ViewPosition;
 		float Padding;
+	};
+
+	struct FAmbientConstants
+	{
+		FLinearColor AmbientColor;
+		float AmbientIntensity;
+		float Padding[3];
 	};
 
 	URenderer* mRenderer;
@@ -161,6 +166,8 @@ private:
 
 	FLinearColor mAmbientColor;
 	float mAmbientIntensity;
+	TSharedPtr<FConstantBuffer> mAmbientBuffer;
+
 	TArray<FLightInfo> mLightInfos;
 	TSharedPtr<FStructuredBuffer> mLightInfoBuffer;
 
