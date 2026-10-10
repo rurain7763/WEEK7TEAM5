@@ -160,7 +160,7 @@ void FRenderPipeline::SetShader(const TSharedPtr<FShader>& InShader)
 
 void FRenderPipeline::SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV)
 {
-	if (Slot >= ShaderResourceViews.Num())
+	if (Slot >= static_cast<uint32>(ShaderResourceViews.Num()))
 	{
 		ShaderResourceViews.SetNum(Slot + 1);
 	}
@@ -179,7 +179,7 @@ void FRenderPipeline::SetSamplerState(uint32 Slot, D3D11_FILTER Filter, D3D11_TE
 	++BindingVersion;
 	FSamplerStateKey Key{ Filter, AddressU, AddressV };
 	ID3D11SamplerState* SamplerState = SamplerStatePool->GetOrCreateSamplerState(Device, Key);
-	if (Slot >= SamplerStates.Num())
+	if (Slot >= static_cast<uint32>(SamplerStates.Num()))
 	{
 		SamplerStates.SetNum(Slot + 1);
 	}

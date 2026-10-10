@@ -64,7 +64,7 @@ bool ULevel::RemoveActor(uint32 uuid)
 
 int32 ULevel::GetActorIndex(uint32 actorUUID) const
 {
-	for (uint32 i = 0; i < mActors.Num(); ++i)
+	for (uint32 i = 0; i < static_cast<uint32>(mActors.Num()); ++i)
 	{
 		if (mActors[i]->UUID == actorUUID)
 		{

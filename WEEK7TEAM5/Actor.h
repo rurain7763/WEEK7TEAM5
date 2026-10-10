@@ -10,7 +10,7 @@ class ULevel;
 struct FRenderInfo;
 struct FTransform;
 class USceneComponent;
-class FRenderCollector;
+struct FRenderCollector;
 
 class AActor : public UObject
 {

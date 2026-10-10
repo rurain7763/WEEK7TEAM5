@@ -31,7 +31,7 @@ bool FTexture2DImporter::Import(const std::filesystem::path& InPath, const std::
             return false;
         }
     }
-    catch(const std::exception& e)
+    catch(const std::exception&)
     {
         UE_LOG_ERROR("Failed to write to %s", OutPath.string().c_str());
         return false;

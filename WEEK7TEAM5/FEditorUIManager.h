@@ -17,7 +17,7 @@ class FGraphicsManager;
 class URenderer;
 class FEditorEngine;
 class FFileManager;
-class FWorldContext;
+struct FWorldContext;
 struct FEditorViewportClient;
 struct FEditorLayout;
 struct FEditorViewport;

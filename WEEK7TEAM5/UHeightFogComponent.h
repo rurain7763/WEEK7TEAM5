@@ -75,7 +75,7 @@ public:
 		}
 		if (PropertiesJson.hasKey("FogHeightFalloff"))
 		{
-			SetFogDensity(JsonUtils::FromJson<float>(PropertiesJson.at("FogHeightFalloff")));
+			SetFogHeightFalloff(JsonUtils::FromJson<float>(PropertiesJson.at("FogHeightFalloff")));
 		}
 		if (PropertiesJson.hasKey("FogStartDistance"))
 		{

@@ -117,7 +117,7 @@ struct FNamePool
 		return DisplayIndex;
 	}
 
-	friend class FName;
+	friend struct FName;
 
 	TMap<HashValue64, TArray<int32>> ComparisonNameMap;
 	TArray<FNameEntry> NameEntries;

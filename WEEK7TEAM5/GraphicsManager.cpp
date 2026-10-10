@@ -400,7 +400,7 @@ void FGraphicsManager::Render()
 
 		// Match the grid's world-space half-width of 0.001.
 		mRenderer->RenderWorldAxis(mViewMatrix, mProjectionMatrix, FVector4(0.f, 0.f, 1.f, 1.f), FVector3(0.f, 0.f, 1.f), 0.002f);
-		mRenderer->RenderWorldGrid(GridWorldMatrix * mViewUnifiedProjectionMatrix, mCameraLocation, GridGap);
+		mRenderer->RenderWorldGrid(GridWorldMatrix * mViewUnifiedProjectionMatrix, mCameraLocation, static_cast<float>(GridGap));
 	}
 
 	const auto& RenderOverlayQuadInfoPool = mRenderCollector.GetRenderOverlayQuadInfoPool();

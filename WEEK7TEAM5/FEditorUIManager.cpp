@@ -16,8 +16,8 @@ FEditorUIManager::FEditorUIManager(URenderer& InRenderer)
 {
 	mViewportX = 0;
 	mViewportY = 0;
-	mViewportWidth = WindowApplication.PendingWidth;
-	mViewportHeight = WindowApplication.PendingHeight;
+	mViewportWidth = static_cast<float>(WindowApplication.PendingWidth);
+	mViewportHeight = static_cast<float>(WindowApplication.PendingHeight);
 
 	mContentBrowser.Initialize(kDefaultAssetsPath);
 	mContentBrowser.SetEventHandler(this);

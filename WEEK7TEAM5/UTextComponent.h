@@ -164,7 +164,7 @@ public:
 			return;
 		}
 
-		mRenderProxy->ReserveRenderOverlayQuadInfos(mText.length());
+		mRenderProxy->ReserveRenderOverlayQuadInfos(static_cast<int32>(mText.length()));
 
 		FTextBuilder TextBuilder(FontAtlas, WorldUnitPerPixel);
 
@@ -398,7 +398,7 @@ public:
 			return;
 		}
 
-		mRenderProxy->ReserveRenderTransparentQuadInfos(mText.length());
+		mRenderProxy->ReserveRenderTransparentQuadInfos(static_cast<int32>(mText.length()));
 
 		FTextBuilder TextBuilder(FontAtlas, WorldUnitPerPixel);
 

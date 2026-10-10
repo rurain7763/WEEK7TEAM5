@@ -85,7 +85,7 @@ void FEditorEngine::Initialize(HINSTANCE hInstance, WNDPROC WndProc)
 	{
 		mViewports[i].Window = (i == MainViewportIndex) ? mEditorLayout.RootWindow : mEditorLayout.ViewportWindows[i];
 		mViewports[i].Viewport = MakeShared<FViewport>();
-		mViewports[i].Viewport->Resize(*mGraphicsManager->GetRenderer(), mEditorLayout.ViewportWindows[i]->Rect.Width, mEditorLayout.ViewportWindows[i]->Rect.Height);
+		mViewports[i].Viewport->Resize(*mGraphicsManager->GetRenderer(), static_cast<uint32>(mEditorLayout.ViewportWindows[i]->Rect.Width), static_cast<uint32>(mEditorLayout.ViewportWindows[i]->Rect.Height));
 		mViewports[i].Client = MakeShared<FEditorViewportClient>(*mGraphicsManager->GetRenderer());
 		mViewports[i].Client->SetViewportType(DefaultLayoutTypes[i]);
 	}
@@ -119,22 +119,22 @@ void FEditorEngine::InitAssetManager()
 	FAssetManager::Get().ScanDirectory("Assets", *renderer);
 
 	// Register built-in asset types
-	TSharedPtr<FStaticMeshAsset> cubeAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::CubeMesh, FName("CubeMesh"), *renderer, Cube_vertices, sizeof(Cube_vertices) / sizeof(FVertex), Cube_indices, sizeof(Cube_indices) / sizeof(uint32));
+	TSharedPtr<FStaticMeshAsset> cubeAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::CubeMesh, FName("CubeMesh"), *renderer, Cube_vertices, static_cast<uint32>(sizeof(Cube_vertices) / sizeof(FVertex)), Cube_indices, static_cast<uint32>(sizeof(Cube_indices) / sizeof(uint32)));
 	mAssetManager->RegisterAsset(cubeAsset);
 
-	TSharedPtr<FStaticMeshAsset> sphereAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::SphereMesh, FName("SphereMesh"), *renderer, Sphere_vertices, sizeof(Sphere_vertices) / sizeof(FVertex), Sphere_indices, sizeof(Sphere_indices) / sizeof(uint32));
+	TSharedPtr<FStaticMeshAsset> sphereAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::SphereMesh, FName("SphereMesh"), *renderer, Sphere_vertices, static_cast<uint32>(sizeof(Sphere_vertices) / sizeof(FVertex)), Sphere_indices, static_cast<uint32>(sizeof(Sphere_indices) / sizeof(uint32)));
 	mAssetManager->RegisterAsset(sphereAsset);
 
-	TSharedPtr<FStaticMeshAsset> circleAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::CircleMesh, FName("CircleMesh"), *renderer, Circle_vertices, sizeof(Circle_vertices) / sizeof(FVertex), Circle_indices, sizeof(Circle_indices) / sizeof(uint32));
+	TSharedPtr<FStaticMeshAsset> circleAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::CircleMesh, FName("CircleMesh"), *renderer, Circle_vertices, static_cast<uint32>(sizeof(Circle_vertices) / sizeof(FVertex)), Circle_indices, static_cast<uint32>(sizeof(Circle_indices) / sizeof(uint32)));
 	mAssetManager->RegisterAsset(circleAsset);
 
-	TSharedPtr<FStaticMeshAsset> triangleAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::TriangleMesh, FName("TriangleMesh"), *renderer, Triangle_vertices, sizeof(Triangle_vertices) / sizeof(FVertex), Triangle_indices, sizeof(Triangle_indices) / sizeof(uint32));
+	TSharedPtr<FStaticMeshAsset> triangleAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::TriangleMesh, FName("TriangleMesh"), *renderer, Triangle_vertices, static_cast<uint32>(sizeof(Triangle_vertices) / sizeof(FVertex)), Triangle_indices, static_cast<uint32>(sizeof(Triangle_indices) / sizeof(uint32)));
 	mAssetManager->RegisterAsset(triangleAsset);
 
-	TSharedPtr<FStaticMeshAsset> gizmoArrowAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::GizmoArrowMesh, FName("GizmoArrowMesh"), *renderer, GizmoArrow_vertices, sizeof(GizmoArrow_vertices) / sizeof(FVertex), GizmoArrow_indices, sizeof(GizmoArrow_indices) / sizeof(uint32));
+	TSharedPtr<FStaticMeshAsset> gizmoArrowAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::GizmoArrowMesh, FName("GizmoArrowMesh"), *renderer, GizmoArrow_vertices, static_cast<uint32>(sizeof(GizmoArrow_vertices) / sizeof(FVertex)), GizmoArrow_indices, static_cast<uint32>(sizeof(GizmoArrow_indices) / sizeof(uint32)));
 	mAssetManager->RegisterAsset(gizmoArrowAsset);
 
-	TSharedPtr<FStaticMeshAsset> PlaneAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::PlaneMesh, FName("PlaneMesh"), *renderer, Plane_vertices, sizeof(Plane_vertices) / sizeof(FVertex), Plane_indices, sizeof(Plane_indices) / sizeof(uint32));
+	TSharedPtr<FStaticMeshAsset> PlaneAsset = MakeShared<FStaticMeshAsset>(BuiltInAssetID::PlaneMesh, FName("PlaneMesh"), *renderer, Plane_vertices, static_cast<uint32>(sizeof(Plane_vertices) / sizeof(FVertex)), Plane_indices, static_cast<uint32>(sizeof(Plane_indices) / sizeof(uint32)));
 	mAssetManager->RegisterAsset(PlaneAsset);
 
 	TSharedPtr<FTexture2DAssetLoader> TextureLoader = MakeShared<FTexture2DAssetLoader>(*renderer);
@@ -445,7 +445,7 @@ void FEditorEngine::Render(float DeltaTime)
 			//Render Threads
 			{
 				PROFILE_SCOPE("Viewport/Render");
-				CurrentViewport->Viewport->Resize(*mGraphicsManager->GetRenderer(), ViewportRect.Width, ViewportRect.Height);
+				CurrentViewport->Viewport->Resize(*mGraphicsManager->GetRenderer(), static_cast<uint32>(ViewportRect.Width), static_cast<uint32>(ViewportRect.Height));
 				mGraphicsManager->Prepare(&CurrentViewport->Client->mCamera, CurrentRatio, ViewProjection, InvViewProjection, *CurrentViewport->Viewport, World, CurrentViewport->Client->GetViewMode(), CurrentViewport->Client->GetViewportType());
 				mGraphicsManager->RenderHighLight(HighlightedComponents);
 				mGraphicsManager->Render();
@@ -784,8 +784,8 @@ void LoadMap(UWorld* World, FCamera* Camera, const std::filesystem::path& sceneP
 	json::JSON PerspectiveCameraJson = sceneJson.at("PerspectiveCamera");
 	Camera->Transform.SetLocation(JsonUtils::FromJson<FVector>(PerspectiveCameraJson.at("Location")));
 	Camera->Transform.SetRotation(JsonUtils::FromJson<FRotator>(PerspectiveCameraJson.at("Rotation")));
-	Camera->mFovDegree = PerspectiveCameraJson.at("FOV").ToFloat();
-	Camera->mNear = PerspectiveCameraJson.at("Near").ToFloat();
-	Camera->mFar = PerspectiveCameraJson.at("Far").ToFloat();
+	Camera->mFovDegree = static_cast<float>(PerspectiveCameraJson.at("FOV").ToFloat());
+	Camera->mNear = static_cast<float>(PerspectiveCameraJson.at("Near").ToFloat());
+	Camera->mFar = static_cast<float>(PerspectiveCameraJson.at("Far").ToFloat());
 }
 

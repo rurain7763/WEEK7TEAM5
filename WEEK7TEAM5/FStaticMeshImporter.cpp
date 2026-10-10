@@ -52,7 +52,7 @@ bool FStaticMeshImporter::Import(const std::filesystem::path& InPath, const std:
 
         FStaticMeshFileIO::Save(FileWriter, BuildData);
     }
-    catch(const std::exception& e)
+    catch(const std::exception&)
     {
         UE_LOG_ERROR("Failed to write to %s", OutPath.string().c_str());
         return false;
@@ -114,7 +114,7 @@ bool FStaticMeshImporter::Export(const std::filesystem::path& InPath, const std:
 
         FStaticMeshFileIO::Save(FileWriter, BuildData);
     }
-    catch (const std::exception& e)
+    catch (const std::exception&)
     {
         UE_LOG_ERROR("Failed to write to %s", OutPath.string().c_str());
         return false;

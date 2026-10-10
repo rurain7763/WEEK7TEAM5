@@ -69,7 +69,7 @@ public:
 	void UpdateConstantBuffer(uint32 Index, const T& Data)
 	{
 		// 같은 버퍼의 내용만 바꾸므로 바인딩 버전은 유지합니다.
-		if (DeviceContext && Index < ConstantBuffers.Num())
+		if (DeviceContext && Index < static_cast<uint32>(ConstantBuffers.Num()))
 		{
 			ID3D11Buffer* ConstantBuffer = ConstantBuffers[Index];
 			D3D11_MAPPED_SUBRESOURCE MappedResource;

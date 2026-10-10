@@ -3,7 +3,7 @@
 #include "Object.h"
 
 struct FRenderInfo;
-class FRenderCollector;
+struct FRenderCollector;
 class FRenderProxy;
 
 enum EActorComponentFlags
