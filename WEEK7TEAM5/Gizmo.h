@@ -17,7 +17,7 @@ enum class EAxisNumber
     X, 
     Y, 
     Z, 
-    Cameara
+    Camera
 };
 
 class FGizmo
@@ -29,7 +29,7 @@ public:
     EGIZMO_TYPE GetOperation() const;
 
     void Tick(UActorComponent* TargetComponent, const FRect& ViewportRect, bool bViewportHovered, const FMatrix& InvViewProjection);
-    void Render(UActorComponent* TargetComponent, const FVector& CameraPosition, const FRect& ViewportRect, const FMatrix& ViewProjection, bool bIsOrtho = false, float OrthoDistance = 10.0f);
+    void Render(UActorComponent* TargetComponent, const FVector& CameraPosition, const FVector& CameraForward, const FRect& ViewportRect, const FMatrix& ViewProjection, bool bIsOrtho = false, float OrthoDistance = 10.0f);
     bool IsMouseOverHandle() const;
     bool IsDragging() const { return bIsSelected; }
     void Reset();
