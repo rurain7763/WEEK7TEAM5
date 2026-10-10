@@ -18,9 +18,9 @@ class UTextRenderComponent;
 class UProjectileMovementComponent;
 class URotationMovementComponent;
 class UBillboardComponent;
-class ULightComponent;
 class UDirectionalLightComponent;
 class UAmbientLightComponent;
+class ULightComponentBase;
 
 class FPropertyWindow
 {
@@ -41,7 +41,7 @@ private:
 	void RenderProjectileMovementComponent(UProjectileMovementComponent* ProjectileMovementComponent);
 	void RenderRotationMovementComponent(URotationMovementComponent* RotationMovementComponent);
 	void RenderBillboardComponent(UBillboardComponent* BillboardComponent);
-	void RenderLightComponent(ULightComponent* LightComponent);
+	void RenderLightComponent(ULightComponentBase* LightComponent);
 	void RenderPointLightComponent(UPointLightComponent* PointLightComponent);
 	void RenderDirectionalLightComponent(UDirectionalLightComponent* DirectionalLightComponent);
 	void RenderAmbientLightComponent(UAmbientLightComponent* AmbientLightComponent);

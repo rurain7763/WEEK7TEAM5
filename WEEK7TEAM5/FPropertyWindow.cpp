@@ -22,6 +22,7 @@
 #include "UAmbientLightComponent.h"
 #include "USpotLightComponent.h"
 #include "UPointLightComponent.h"
+#include "ULightComponentBase.h"
 #include "MathUtility.h"
 
 void FPropertyWindow::Render(const FGuiReference& GuiReference)
@@ -731,7 +732,7 @@ void FPropertyWindow::RenderBillboardComponent(UBillboardComponent* BillboardCom
 	}
 }
 
-void FPropertyWindow::RenderLightComponent(ULightComponent* LightComponent)
+void FPropertyWindow::RenderLightComponent(ULightComponentBase* LightComponent)
 {
 	FLinearColor ColorInput = LightComponent->GetColor();
 	if (ImGui::ColorPicker3("Color", &ColorInput.R, ImGuiColorEditFlags_DisplayRGB | ImGuiColorEditFlags_DisplayHSV | ImGuiColorEditFlags_DisplayHex))

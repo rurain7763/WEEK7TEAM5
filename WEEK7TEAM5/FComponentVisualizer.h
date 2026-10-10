@@ -7,6 +7,7 @@
 #include "EngineMathLibrary.h"
 #include "USpotLightComponent.h"
 #include "UPointLightComponent.h"
+#include "UDirectionalLightComponent.h"
 
 class FComponentVisualizer
 {

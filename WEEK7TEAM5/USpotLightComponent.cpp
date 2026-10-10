@@ -7,6 +7,7 @@
 USpotLightComponent::USpotLightComponent()
 {
 	Intensity = 1.f;
+	SetTickable(true);
 }
 
 // Intensity와 Color는 ULightComponentBase가 직렬화한다.
@@ -14,7 +15,6 @@ void USpotLightComponent::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
-	Ar << Range;
 	Ar << mInnerConeAngle;
 	Ar << mOuterConeAngle;
 }
@@ -23,7 +23,6 @@ void USpotLightComponent::Deserialize(FArchive& Ar)
 {
 	Super::Deserialize(Ar);
 
-	Ar << Range;
 	Ar << mInnerConeAngle;
 	Ar << mOuterConeAngle;
 }
@@ -32,7 +31,6 @@ void USpotLightComponent::SerializeClass(json::JSON& outJson) const
 {
 	Super::SerializeClass(outJson);
 
-	outJson["Properties"]["Range"] = Range;
 	outJson["Properties"]["InnerConeAngle"] = mInnerConeAngle;
 	outJson["Properties"]["OuterConeAngle"] = mOuterConeAngle;
 }
@@ -42,18 +40,15 @@ void USpotLightComponent::DeserializeClass(const json::JSON& inJson)
 	Super::DeserializeClass(inJson);
 
 	const json::JSON& PropertiesJson = inJson.at("Properties");
-	if (PropertiesJson.hasKey("Range"))
-	{
-		Range = JsonUtils::FromJson<float>(PropertiesJson.at("Range"));
-	}
-	// Outer를 먼저 넣어야 Inner가 Outer 기준으로 잘리지 않는다.
-	if (PropertiesJson.hasKey("OuterConeAngle"))
-	{
-		SetOuterConeAngle(JsonUtils::FromJson<float>(PropertiesJson.at("OuterConeAngle")));
-	}
+
 	if (PropertiesJson.hasKey("InnerConeAngle"))
 	{
-		SetInnerConeAngle(JsonUtils::FromJson<float>(PropertiesJson.at("InnerConeAngle")));
+		mInnerConeAngle = JsonUtils::FromJson<float>(PropertiesJson.at("InnerConeAngle"));
+	}
+
+	if (PropertiesJson.hasKey("OuterConeAngle"))
+	{
+		mOuterConeAngle = JsonUtils::FromJson<float>(PropertiesJson.at("OuterConeAngle"));
 	}
 }
 

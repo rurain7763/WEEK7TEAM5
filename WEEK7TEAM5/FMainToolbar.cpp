@@ -4,12 +4,18 @@
 #include "UTextComponent.h"
 #include "UAtlasAnimationComponent.h"
 #include "UStaticMeshComponent.h"
-#include "LightComponents.h"
+#include "UPointLightComponent.h"
+#include "UDirectionalLightComponent.h"
+#include "USpotLightComponent.h"
+#include "ULightComponentBase.h"
 #include "ASpotLight.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_internal.h"
 #include "ImGui/imgui_impl_win32.h"
 #include "ImGui/imgui_impl_dx11.h"
+#include "URotationMovementComponent.h"
+#include "UProjectileMovementComponent.h"
+#include "AHeightFog.h"
 
 void FMainToolbar::Render(const FGuiReference& GuiReference)
 {

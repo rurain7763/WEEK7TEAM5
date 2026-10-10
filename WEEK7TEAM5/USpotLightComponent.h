@@ -1,6 +1,6 @@
 #pragma once
 
-#include "ULightComponentBase.h"
+#include "UPointLightComponent.h"
 #include "Json/json.hpp"
 #include "JsonUtil.h"
 #include "Vector.h"
@@ -8,35 +8,38 @@
 class FArchive;
 
 
-class USpotLightComponent : public ULightComponentBase
+class USpotLightComponent : public UPointLightComponent
 {
-	REFLECT_CLASS(USpotLightComponent, ULightComponentBase)
+	REFLECT_CLASS(USpotLightComponent, UPointLightComponent)
 
 public:
 	USpotLightComponent();
 
-	void Serialize(FArchive& Ar) override;
+	virtual void Serialize(FArchive& Ar) override;
+	
 
-	void Deserialize(FArchive& Ar) override;
+	virtual void Deserialize(FArchive& Ar) override;
+	
 
 	void SerializeClass(json::JSON& outJson) const override;
+	
 
 	void DeserializeClass(const json::JSON& inJson) override;
+	
 
-	inline float GetRange() const { return Range; }
 	inline float GetInnerConeAngle() const { return mInnerConeAngle; }
 	inline float GetOuterConeAngle() const { return mOuterConeAngle; }
 
-	void SetOuterConeAngle(float InAngle);
-	void SetInnerConeAngle(float InAngle);
+	void SetOuterConeAngle(float InAngle);	
+
+	void SetInnerConeAngle(float InAngle);	
 
 protected:
 	const FGuid& GetEditorIconTextureID() const override;
 
 private:
-	static constexpr float MAX_CONE_ANGLE = 89.f;
+	static constexpr float MAX_CONE_ANGLE = PI * 0.5f; // 90 degrees in radians
 
-	float Range = 5.0f;
-	float mInnerConeAngle = 30.0f;
-	float mOuterConeAngle = 45.0f;
+	float mInnerConeAngle = FMath::DegreesToRadians(30.0f);
+	float mOuterConeAngle = FMath::DegreesToRadians(45.0f);
 };
