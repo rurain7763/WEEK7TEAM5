@@ -59,12 +59,6 @@ struct PS_INPUT
     float3 world_position : TEXCOORD1;
 };
 
-struct PS_OUTPUT
-{
-    float4 color : SV_TARGET0;
-    float3 normal : SV_TARGET1;
-};
-
 Texture2D main_texture : register(t0);
 StructuredBuffer<LightInfo> lights : register(t1);
 
@@ -208,10 +202,8 @@ PS_INPUT mainVS(VS_INPUT input)
 }
 
 // Pixel Shader
-PS_OUTPUT mainPS(PS_INPUT input)
+float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    PS_OUTPUT output;
-    
     float4 output_color = input.color;
     
 #if 1 //LIGHTING_MODEL_GOURAUD
@@ -259,8 +251,5 @@ PS_OUTPUT mainPS(PS_INPUT input)
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
 #endif
     
-    output.color = output_color;
-    output.normal = input.normal;
-    
-    return output;
+    return output_color;
 }

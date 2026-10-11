@@ -6,7 +6,6 @@
 struct FPostProcessInputs
 {
     FRGTextureRef InputColorTexture = InvalidRGTextureRef;
-	FRGTextureRef InputNormalTexture = InvalidRGTextureRef;
     FRGTextureRef InputDepthTexture = InvalidRGTextureRef;
 
     // If set, the post-process will write to this texture instead of the default output.
