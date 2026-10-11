@@ -472,7 +472,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 
 			ImGui::SetNextItemWidth(80.0f);
 
-			const char* ViewModeNames[] = { "Lit", "UnLit", "Wireframe", "SceneDepth", "NormalView"};
+			const char* ViewModeNames[] = { "Lit", "UnLit", "Wireframe", "SceneDepth" };
 			int32 CurrentModeIndex = static_cast<int32>(EditorViewport->Client->GetViewMode());
 
 			if (ImGui::Combo("##ViewMode", &CurrentModeIndex, ViewModeNames, IM_ARRAYSIZE(ViewModeNames)))

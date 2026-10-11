@@ -698,14 +698,10 @@ void URenderer::RenderQuad(const FRenderQuadInfo& Info)
 	++DrawCallCount;
 }
 
-void URenderer::RenderPrimitive(FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices, bool bShouldBindPipeline)
+void URenderer::RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices, bool bShouldBindPipeline)
 {
 	if (bShouldBindPipeline)
 		BindPipeline(Pipeline);
-	if (ViewModeIndex == EViewModeIndex::VMI_NormalView)
-	{
-		Pipeline->SetShader("Assets/Shaders/NormalViewShader.hlsl");
-	}
 	BindVertexBuffer(Buffer, Pipeline->Shader->Stride);
 
 	DeviceContext->Draw(NumVertices, 0);
@@ -754,14 +750,10 @@ void URenderer::RenderPrimitiveIndexed(const FRenderInfo& RenderInfo, uint32 Ste
 	RenderPrimitiveIndexed(PrimitivePipeline.get(), RenderInfo, StencilRef);
 }
 
-void URenderer::RenderPrimitiveIndexed(FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef, bool bShouldBindPipeline)
+void URenderer::RenderPrimitiveIndexed(const FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef, bool bShouldBindPipeline)
 {
 	if (bShouldBindPipeline)
 		BindPipeline(Pipeline, StencilRef);
-	if (ViewModeIndex == EViewModeIndex::VMI_NormalView)
-	{
-		Pipeline->SetShader("Assets/Shaders/NormalViewShader.hlsl");
-	}
 	BindVertexBuffer(RenderInfo.VertexBuffer, Pipeline->Shader->Stride);
 	BindIndexBuffer(RenderInfo.IndexBuffer);
 

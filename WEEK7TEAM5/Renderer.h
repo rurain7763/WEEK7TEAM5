@@ -564,11 +564,11 @@ public:
 
 	void RenderQuad(const FRenderQuadInfo& Info);
 
-	void RenderPrimitive(FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices, bool bShouldBindPipeline = true);
+	void RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices, bool bShouldBindPipeline = true);
 	void RenderPrimitive(ID3D11Buffer* Buffer, UINT NumVertices, const FMatrix& Model);
 	void RenderPrimitive(ID3D11Buffer* Buffer, UINT NumVertices, const FMatrix& Model, const FVector4& Color);
 	void RenderPrimitiveIndexed(const FRenderInfo& RenderInfo, uint32 StencilRef = 0);
-	void RenderPrimitiveIndexed(FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0, bool bShouldBindPipeline = true);
+	void RenderPrimitiveIndexed(const FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0, bool bShouldBindPipeline = true);
 	void RenderPrimitiveIndexed(const TSharedPtr<FRenderPipeline>& Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0, bool bShouldBindPipeline = true)
 	{
 		RenderPrimitiveIndexed(Pipeline.get(), RenderInfo, StencilRef, bShouldBindPipeline);
