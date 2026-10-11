@@ -61,8 +61,14 @@ struct PS_INPUT
 
 Texture2D main_texture : register(t0);
 StructuredBuffer<LightInfo> lights : register(t1);
+Texture2D normal_map : register(t2);
 
 SamplerState default_sampler : register(s0);
+
+void GetNormalFromMap(float3 Normal, Texture2D NormalMap, out float3 mappedNormal)
+{
+    
+}
 
 void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, out float3 diffuse, out float3 specular)
 {
@@ -216,8 +222,9 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     {
         output_color *= main_texture.Sample(default_sampler, input.uv);
     }
-    
-    float3 N = normalize(input.normal);
+    #if HAS_NORMAL_MAP
+    float3 mappedNormal = GetNormalFromMap(input.Normal, input.Tex);
+    float3 N = normalize(mappedNormal);
     float3 V = normalize(view_position - input.world_position);
     
     float3 ambient = ambient_color.rgb * ambient_intensity;
@@ -249,6 +256,39 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     }
     
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
+    #else
+    float3 N = normalize(input.normal);
+    float3 V = normalize(view_position - input.world_position);
+    
+    float3 ambient = ambient_color.rgb * ambient_intensity;
+    float3 total_diffuse = float3(0.0, 0.0, 0.0);
+    float3 total_specular = float3(0.0, 0.0, 0.0);
+
+    float3 diffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
+    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
+    
+    total_diffuse += diffuse;
+    total_specular += specular;
+    
+    for (int i = 0; i < light_count; ++i)
+    {
+        LightInfo light = lights[i];        
+
+        if (light.type == 1)
+        {
+            calculate_point(N, V, light, input.world_position, diffuse, specular);
+        }
+        else if (light.type == 2)
+        {
+            calculate_spot(N, V, light, input.world_position, diffuse, specular);
+        }
+        
+        total_diffuse += diffuse;
+        total_specular += specular;
+    }
+    output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
+    #endif    
 #endif
     
     return output_color;
