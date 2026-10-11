@@ -48,6 +48,8 @@ struct VS_INPUT
     float3 normal : NORMAL;
 	float4 color : COLOR;
     float2 uv : TEXCOORD0;
+    float3 tangent : TANGENT;
+    float3 bitangent : BITANGENT;
 };
 
 struct PS_INPUT
@@ -65,9 +67,10 @@ Texture2D normal_map : register(t2);
 
 SamplerState default_sampler : register(s0);
 
-void GetNormalFromMap(float3 Normal, Texture2D NormalMap, out float3 mappedNormal)
+void GetNormalFromMap(Texture2D NormalMap, float2 uv, out float3 mappedNormal)
 {
-    
+    float3 MapNormal = float3(NormalMap.Sample(default_sampler, uv).xyz);
+    mappedNormal = normalize(MapNormal * 2.0 - 1.0);
 }
 
 void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, out float3 diffuse, out float3 specular)
@@ -223,7 +226,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         output_color *= main_texture.Sample(default_sampler, input.uv);
     }
     #if HAS_NORMAL_MAP
-    float3 mappedNormal = GetNormalFromMap(input.Normal, input.Tex);
+    float3 mappedNormal = GetNormalFromMap(input.uv, input.Tex);
     float3 N = normalize(mappedNormal);
     float3 V = normalize(view_position - input.world_position);
     
