@@ -27,9 +27,9 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mRenderer = new URenderer;
 	mRenderer->Create(hWindow);
 
-	mRenderGraph.Initialize(*mRenderer);
 
 	mAspect = mRenderer->GetWidth() / static_cast<float>(mRenderer->GetHeight());
+	mRenderGraph.Initialize(*mRenderer);
 
 	mGlobalLightInfoBuffer = mRenderer->CreateConstantBuffer<FGlobalLightInfo>();
 	mLightInfoBuffer = mRenderer->CreateStructuredBuffer<FLightInfo>(1);
@@ -241,7 +241,6 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 		for (const int32 Index : VisibleRenderInfoIndices)
 		{
 			const FRenderInfo& Info = RenderInfos[Index];
-
 			const auto& Pipeline = Info.Pipeline ? Info.Pipeline : mMeshPipeline.get();
 
 			if (Pipeline != LastViewPipeline)
@@ -249,6 +248,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 				FViewConstants ViewConstants;
 				ViewConstants.ViewProjectionMatrix = mViewUnifiedProjectionMatrix;
 				ViewConstants.ViewPosition = mCameraLocation;
+				ViewConstants.IsWorldNormalViewMode = (mViewModeIndex == EViewModeIndex::VMI_WorldNormal) ? 1 : 0;
 
 				Pipeline->UpdateConstantBuffer(1, ViewConstants);
 				Pipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);

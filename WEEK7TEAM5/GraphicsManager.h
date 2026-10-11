@@ -144,7 +144,9 @@ private:
 	{
 		FMatrix ViewProjectionMatrix;
 		FVector ViewPosition;
-		float Padding;
+		//float Padding;
+
+		int32 IsWorldNormalViewMode;
 	};
 
 	URenderer* mRenderer;

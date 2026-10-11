@@ -29,7 +29,8 @@ cbuffer ViewConstants : register(b1) // FConstants
 {
 	row_major matrix view_projection;
     float3 view_position;
-    float view_constants_padding;
+    //float view_constants_padding;
+    int IsWorldNormalViewMode;
 }
 
 cbuffer GlobalLightConstants : register(b2) 
@@ -204,6 +205,15 @@ PS_INPUT mainVS(VS_INPUT input)
 // Pixel Shader
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
+    if (IsWorldNormalViewMode == 1)
+    {
+        //float3 worldNormal = normalize(input.normal);
+        float3 worldNormal = input.normal;
+        float4 outputColor = float4((worldNormal * 0.5 + 0.5), 1.0f);
+        
+        return outputColor;
+    }
+    
     float4 output_color = input.color;
     
 #if 1 //LIGHTING_MODEL_GOURAUD

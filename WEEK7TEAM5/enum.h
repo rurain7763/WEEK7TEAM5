@@ -33,6 +33,7 @@ enum class EViewModeIndex
 	VMI_Unlit,
 	VMI_Wireframe,
 	VMI_SceneDepth,
+	VMI_WorldNormal,
 
 	// 실제 뷰 모드가 아니다. 뷰 모드별 배열 크기를 잡는 데 쓴다.
 	// 모드를 추가하면 이 앞에 넣을 것.
