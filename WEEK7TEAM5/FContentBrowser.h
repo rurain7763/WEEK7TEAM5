@@ -9,13 +9,14 @@
 #include "FStaticMeshImporter.h"
 #include "FMaterialImporter.h"
 #include "FLogManager.h"
-#include "FEditorIconUtils.hpp"
+#include "FEditorUtils.hpp"
 #include "AssetDragDrop.h"
 
 struct FContentBrowserEventHandler
 {
 	virtual void OnNewAssetFile(const FAssetFileHeader& Header, const std::filesystem::path& FilePath) {}
 	virtual void OnDeleteAssetFile(const std::filesystem::path& FilePath) {}
+	virtual void OnClickedAssetFile(const FAssetMetaInfo& MetaInfo, const std::filesystem::path& FilePath) {}
 	virtual void RefreshContentBrowser(const std::filesystem::path& TargetDirectory) {}
 };
 
@@ -47,7 +48,6 @@ public:
 	}
 	bool IsDrawerOpen() const { return bIsDrawerOpen; }
 	void SetIsDrawerOpen(bool InIsDrawerOpen) { bIsDrawerOpen = InIsDrawerOpen; }
-	void SetAssetManager(FAssetManager* InAssetManager) { AssetManager = InAssetManager; }
 
 	void RefreshContentBrowser(const std::filesystem::path& TargetDirectory);
 	const std::filesystem::path GetCurrentDirectory() const { return CurrentDirectory; }
@@ -56,12 +56,11 @@ public:
 private:
 	void RenderDrawer(const float BottomBarHeight);
 	void RenderFolderNode(const std::filesystem::path& DirectoryPath);
+
 private:
 	std::filesystem::path RootDirectory;
 	std::filesystem::path CurrentDirectory;
 	FContentBrowserEventHandler* EventHandler = nullptr;
-
-	FAssetManager* AssetManager = nullptr;
 
 	bool bIsDrawerOpen = false;
 	float DrawerHeight = 350.0f;

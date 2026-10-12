@@ -6,6 +6,38 @@
 #include "Serializers.h"
 #include "FTexture2DImporter.h"
 
+bool FMaterialImporter::ImportDefault(const std::filesystem::path& InPath, const std::filesystem::path& OutPath, FAssetFileHeader& OutHead)
+{
+    try
+    {
+	    OutHead.Version = 1;
+	    OutHead.AssetType = EAssetType::Material;
+	    OutHead.AssetID = FGuid::NewGuid();
+
+        FWindowsBinWriter FileWriter(OutPath);
+
+        FMaterialPayload Payload;
+        Payload.AmbientColor = FVector3(0.1, 0.1, 0.1);
+	    Payload.DiffuseColor = FVector3(1.0, 1.0, 1.0);
+	    Payload.SpecularColor = FVector3(0.0, 0.0, 0.0);
+        Payload.DiffuseTexture = FGuid();
+        Payload.SpecularTexture = FGuid();
+        Payload.NormalTexture = FGuid();
+        Payload.Opacity = 1.0f;
+
+        FileWriter << OutHead;
+
+        FMaterialFileIO::Save(FileWriter, Payload);
+    }
+	catch (const std::exception&)
+	{
+		UE_LOG_ERROR("Failed to write to %s", OutPath.string().c_str());
+		return false;
+	}
+
+    return true;
+}
+
 bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::filesystem::path& InPath, const std::filesystem::path& OutPath, FAssetFileHeader& OutHead)
 {
     OutHead.Version = 1;
@@ -68,17 +100,6 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
 
         FileWriter << OutHead;
         FMaterialFileIO::Save(FileWriter, Payload);
-
-        #if 0
-        FileWriter << OutHead;
-        FileWriter << DiffuseColor;              // Ambient Color ( 임시로 diffuse 사용 )
-        FileWriter << DiffuseColor;              // Diffuse Color
-        FileWriter << Opacity;
-        FileWriter << ZeroVector;                // Specular Color ( 임시로 black 사용 )
-        FileWriter << DiffuseTextureID;          // Diffuse Texture
-        FileWriter << EmptyGuid;                 // Specular Texture ( FGuid-0000 '없음' )
-        FileWriter << EmptyGuid;                 // Normal Texture
-        #endif
     }
     catch(const std::exception&)
     {

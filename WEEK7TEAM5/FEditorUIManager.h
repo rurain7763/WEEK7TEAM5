@@ -22,6 +22,7 @@ struct FEditorViewportClient;
 struct FEditorLayout;
 struct FEditorViewport;
 struct FShader;
+class FAssetEditor;
 
 struct FGuiReference
 {
@@ -57,6 +58,7 @@ private:
 
 	void OnNewAssetFile(const FAssetFileHeader& Header, const std::filesystem::path& FilePath) override;
 	void OnDeleteAssetFile(const std::filesystem::path& FilePath) override;
+	void OnClickedAssetFile(const FAssetMetaInfo& MetaInfo, const std::filesystem::path& FilePath) override;
 	void RefreshContentBrowser(const std::filesystem::path& TargetDirectory) override;
 
 private:
@@ -74,6 +76,8 @@ private:
 	FContentBrowser mContentBrowser;
 	FPropertyWindow mPropertyWindow;
 	FOutlinerWindow mOutlinerWindow;
+
+	TArray<TSharedPtr<FAssetEditor>> mAssetEditors;
 
 	float mViewportX;
 	float mViewportY;
