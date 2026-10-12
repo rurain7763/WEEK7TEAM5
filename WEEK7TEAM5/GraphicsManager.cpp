@@ -137,8 +137,10 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	{
 		for (ULightComponentBase* Light : World->GetLightComponents())
 		{
-			if (UPointLightComponent* PointLight = Light->Cast<UPointLightComponent>())
+			if (Light->GetClass() == UPointLightComponent::GetStaticClass())
 			{
+				UPointLightComponent* PointLight = Light->Cast<UPointLightComponent>();
+
 				FLightInfo& Info = mLightInfos.Emplace();
 				Info.Type = ELightType::Point;
 				Info.Position = PointLight->GetWorldLocation();
@@ -149,8 +151,10 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 				continue;
 			}
 
-			if (USpotLightComponent* SpotLight = Light->Cast<USpotLightComponent>())
+			if (Light->GetClass() == USpotLightComponent::GetStaticClass())
 			{
+				USpotLightComponent* SpotLight = Light->Cast<USpotLightComponent>();
+
 				FLightInfo& Info = mLightInfos.Emplace();
 				Info.Type = ELightType::Spot;
 				Info.Position = SpotLight->GetWorldLocation();

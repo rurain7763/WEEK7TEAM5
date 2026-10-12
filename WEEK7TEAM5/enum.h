@@ -29,7 +29,9 @@ enum EGIZMO_TYPE {
 
 enum class EViewModeIndex
 {
-	VMI_Lit,
+	VMI_Lit_Gouraud,
+	VMI_Lit_Lambert,
+	VMI_Lit_Phong,
 	VMI_Unlit,
 	VMI_Wireframe,
 	VMI_SceneDepth,

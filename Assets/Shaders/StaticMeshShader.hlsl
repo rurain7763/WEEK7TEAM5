@@ -1,5 +1,15 @@
 #define PI 3.14159265359
 
+/*
+#define LIGHTING_MODEL_GOURAUD (0U)
+#define LIGHTING_MODEL_LAMBERT (1U)
+#define LIGHTING_MODEL_BLINN_PHONG (2U)
+*/
+
+#define LIGHTING_MODEL_GOURAUD (1U)
+//#define LIGHTING_MODEL_LAMBERT (1U)
+//#define LIGHTING_MODEL_BLINN_PHONG (1U)
+
 struct LightInfo
 {
     float3 position;
@@ -65,17 +75,16 @@ StructuredBuffer<LightInfo> lights : register(t1);
 
 SamplerState default_sampler : register(s0);
 
-void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, out float3 diffuse, out float3 specular)
+void calculate_directional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, out float3 diffuse, out float3 specular)
 {
     float3 light_color = p_light_color * light_intensity;
-    
     float3 L = normalize(-light_direction);
     float NdotL = max(dot(N, L), 0.0);
 
     diffuse = light_color * NdotL;
     specular = float3(0.0, 0.0, 0.0);
-
-#if LIGHTING_MODEL_BLINN_PHONG
+    
+#if LIGHTING_MODEL != LIGHTING_MODEL_LAMBERT
     if (NdotL > 0.0)
     {
         float3 H = normalize(L + V);
@@ -100,7 +109,7 @@ void calculate_point(float3 N, float3 V, LightInfo light, float3 world_position,
     diffuse = light_color * NdotL * attenuation;
     specular = float3(0.0, 0.0, 0.0);
     
-#if LIGHTING_MODEL_BLINN_PHONG
+#if LIGHTING_MODEL != LIGHTING_MODEL_LAMBERT
     if (NdotL > 0.0)
     {
         float3 H = normalize(L + V);
@@ -132,7 +141,7 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
     diffuse = light_color * NdotL * spot_factor * attenuation;
     specular = float3(0.0, 0.0, 0.0);
     
-#if LIGHTING_MODEL_BLINN_PHONG
+#if LIGHTING_MODEL != LIGHTING_MODEL_LAMBERT
     if (NdotL > 0.0)
     {
         float3 H = normalize(-light_to_point + V);
@@ -140,6 +149,41 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
         specular = light_color * pow(NdotH, 32.0) * spot_factor * attenuation;
     }
 #endif
+}
+
+void shade(float3 world_position, float3 world_normal, inout float4 out_color)
+{
+    float3 V = normalize(view_position - world_position);
+    
+    float3 ambient = ambient_color.rgb * ambient_intensity;
+    float3 total_diffuse = float3(0.0, 0.0, 0.0);
+    float3 total_specular = float3(0.0, 0.0, 0.0);
+
+    float3 diffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
+    calculate_directional(world_normal, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
+    
+    total_diffuse += diffuse;
+    total_specular += specular;
+    
+    for (int i = 0; i < light_count; ++i)
+    {
+        LightInfo light = lights[i];
+
+        if (light.type == 1)
+        {
+            calculate_point(world_normal, V, light, world_position.xyz, diffuse, specular);
+        }
+        else if (light.type == 2)
+        {
+            calculate_spot(world_normal, V, light, world_position.xyz, diffuse, specular);
+        }
+        
+        total_diffuse += diffuse;
+        total_specular += specular;
+    }
+    
+    out_color.rgb = out_color.rgb * (ambient + total_diffuse) + total_specular;
 }
 
 // Vertex Shader
@@ -159,38 +203,8 @@ PS_INPUT mainVS(VS_INPUT input)
         output_color = Color;
     }
     
-#if 1 // LIGHTING_MODEL_GOURAUD
-    float3 V = normalize(view_position - world_position.xyz);
-    
-    float3 ambient = ambient_color.rgb * ambient_intensity;
-    float3 total_diffuse = float3(0.0, 0.0, 0.0);
-    float3 total_specular = float3(0.0, 0.0, 0.0);
-
-    float3 diffuse = float3(0.0, 0.0, 0.0);
-    float3 specular = float3(0.0, 0.0, 0.0);
-    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
-    
-    total_diffuse += diffuse;
-    total_specular += specular;
-    
-    for (int i = 0; i < light_count; ++i)
-    {
-        LightInfo light = lights[i];        
-
-        if (light.type == 1)
-        {
-            calculate_point(N, V, light, world_position.xyz, diffuse, specular);
-        }
-        else if (light.type == 2)
-        {
-            calculate_spot(N, V, light, world_position.xyz, diffuse, specular);
-        }
-        
-        total_diffuse += diffuse;
-        total_specular += specular;
-    }
-    
-    output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
+#if LIGHTING_MODEL_GOURAUD // LIGHTING_MODEL_GOURAUD
+    shade(world_position.xyz, N, output_color);
 #endif
     
     output.position = mul(world_position, view_projection);
@@ -205,60 +219,25 @@ PS_INPUT mainVS(VS_INPUT input)
 // Pixel Shader
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    if (IsWorldNormalViewMode == 1)
-    {
-        //float3 worldNormal = normalize(input.normal);
-        float3 worldNormal = input.normal;
-        float4 outputColor = float4((worldNormal * 0.5 + 0.5), 1.0f);
-        
-        return outputColor;
-    }
-    
+    float3 world_normal = normalize(input.normal);
     float4 output_color = input.color;
     
-#if 1 //LIGHTING_MODEL_GOURAUD
-    if (HasTexture)
+    if (IsWorldNormalViewMode == 1)
     {
-        output_color *= main_texture.Sample(default_sampler, input.uv);
+        output_color = float4((world_normal * 0.5 + 0.5), 1.0f);
+        
+        return output_color;
     }
-#else
+    
     if (HasTexture != 0)
     {
         output_color *= main_texture.Sample(default_sampler, input.uv);
     }
     
-    float3 N = normalize(input.normal);
-    float3 V = normalize(view_position - input.world_position);
-    
-    float3 ambient = ambient_color.rgb * ambient_intensity;
-    float3 total_diffuse = float3(0.0, 0.0, 0.0);
-    float3 total_specular = float3(0.0, 0.0, 0.0);
-
-    float3 diffuse = float3(0.0, 0.0, 0.0);
-    float3 specular = float3(0.0, 0.0, 0.0);
-    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
-    
-    total_diffuse += diffuse;
-    total_specular += specular;
-    
-    for (int i = 0; i < light_count; ++i)
-    {
-        LightInfo light = lights[i];        
-
-        if (light.type == 1)
-        {
-            calculate_point(N, V, light, input.world_position, diffuse, specular);
-        }
-        else if (light.type == 2)
-        {
-            calculate_spot(N, V, light, input.world_position, diffuse, specular);
-        }
-        
-        total_diffuse += diffuse;
-        total_specular += specular;
-    }
-    
-    output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
+#if LIGHTING_MODEL_GOURAUD 
+    // Do nothing
+#else 
+    shade(input.world_position, world_normal, output_color);
 #endif
     
     return output_color;
