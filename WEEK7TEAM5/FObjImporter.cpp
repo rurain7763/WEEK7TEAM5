@@ -102,6 +102,7 @@ bool FObjImporter::ParseObj(const FString& FilePath, FObjInfo& OutObjInfo)
 
             ParseMtl(FString(MtlPath.string()), OutObjInfo);
         }
+
     }
 
     return true;
@@ -356,6 +357,12 @@ bool FObjImporter::ParseMtl(const FString& FilePath, FObjInfo& OutObjInfo)
             std::string TexturePath;
             Stream >> TexturePath;
             CurrentMaterial->DiffuseTexturePath = FString(TexturePath);
+        }
+        else if (Command == "map_Bump")
+        {
+            std::string NormalPath;
+            Stream >> NormalPath;
+            CurrentMaterial->NormalTexturePath = FString(NormalPath);
         }
     }
 

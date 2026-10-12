@@ -15,6 +15,7 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
     try
     {
         FGuid DiffuseTextureID;
+        FGuid NormalTextureID;
 
         if (MaterialInfo.DiffuseTexturePath.Len() != 0)
         {
@@ -46,8 +47,35 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
             FAssetFileHeader TextureHeader;
             Reader << TextureHeader;
             DiffuseTextureID = TextureHeader.AssetID;
-            
-        }   
+        }
+
+        if (MaterialInfo.NormalTexturePath.Len() != 0)
+        {
+
+            const std::filesystem::path NormalPath = (InPath / MaterialInfo.NormalTexturePath.CStr()).lexically_normal().generic_string();
+
+            std::optional<std::filesystem::path> NormalUAssetPath = FTexture2DImporter::GetorImport(NormalPath, OutPath.parent_path());
+
+            if (!NormalUAssetPath)
+            {
+                const std::filesystem::path FallPath = InPath / MaterialInfo.NormalTexturePath.CStr();
+                NormalUAssetPath = FTexture2DImporter::GetorImport(FallPath, OutPath.parent_path());
+
+            }
+
+            if (!NormalUAssetPath)
+            {
+                UE_LOG_ERROR("Failed to find Diffuse Texture: %s", NormalPath.string().c_str());
+                return false;
+
+            }
+
+            FWindowsBinReader Reader(*NormalUAssetPath);
+            FAssetFileHeader NormalHeader;
+            Reader << NormalHeader;
+            NormalTextureID = NormalHeader.AssetID;
+        }
+
         
         FVector ZeroVector(0.0f);
         FGuid EmptyGuid;
@@ -63,7 +91,7 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
         Payload.SpecularColor = ZeroVector;
         Payload.DiffuseTexture = DiffuseTextureID;
         Payload.SpecularTexture = EmptyGuid;
-        Payload.NormalTexture = EmptyGuid;
+        Payload.NormalTexture = NormalTextureID;
         Payload.Opacity = Opacity;
 
         FileWriter << OutHead;
@@ -77,7 +105,7 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
         FileWriter << ZeroVector;                // Specular Color ( 임시로 black 사용 )
         FileWriter << DiffuseTextureID;          // Diffuse Texture
         FileWriter << EmptyGuid;                 // Specular Texture ( FGuid-0000 '없음' )
-        FileWriter << EmptyGuid;                 // Normal Texture
+        FileWriter << NormalTextureID;                 // Normal Texture
         #endif
     }
     catch(const std::exception&)

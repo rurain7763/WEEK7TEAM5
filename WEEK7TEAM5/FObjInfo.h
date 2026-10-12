@@ -24,6 +24,7 @@ struct FObjMaterialInfo
     FVector DiffuseColor = FVector(1.0f, 1.0f, 1.0f); // Kd
     float Opacity = 1.0f;                             // d 또는 Tr
     FString DiffuseTexturePath;                   // map_Kd
+    FString NormalTexturePath;
 };
 
 struct FObjInfo

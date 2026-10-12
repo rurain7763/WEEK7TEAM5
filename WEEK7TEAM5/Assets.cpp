@@ -14,45 +14,59 @@
 
 namespace
 {
-void CalculateNormals(FStaticMeshBuildData& MeshData)
-{
-	for (FVertex& Vertex : MeshData.Vertices)
+	void CalculateNormals(FStaticMeshBuildData& MeshData)
 	{
-		Vertex.Normal = FVector(0.0f);
-	}
-
-	for (uint32 Index = 0; Index + 2 < static_cast<uint32>(MeshData.Indices.Num()); Index += 3)
-	{
-		const uint32 Index0 = MeshData.Indices[Index];
-		const uint32 Index1 = MeshData.Indices[Index + 1];
-		const uint32 Index2 = MeshData.Indices[Index + 2];
-		if (Index0 >= static_cast<uint32>(MeshData.Vertices.Num())
-			|| Index1 >= static_cast<uint32>(MeshData.Vertices.Num())
-			|| Index2 >= static_cast<uint32>(MeshData.Vertices.Num()))
+		for (FVertex& Vertex : MeshData.Vertices)
 		{
-			continue;
+			Vertex.Normal = FVector(0.0f);
 		}
 
-		const FVector FaceNormal = FVector::cross(
-			MeshData.Vertices[Index1].Pos - MeshData.Vertices[Index0].Pos,
-			MeshData.Vertices[Index2].Pos - MeshData.Vertices[Index0].Pos);
-		MeshData.Vertices[Index0].Normal += FaceNormal;
-		MeshData.Vertices[Index1].Normal += FaceNormal;
-		MeshData.Vertices[Index2].Normal += FaceNormal;
-	}
+		for (uint32 Index = 0; Index + 2 < static_cast<uint32>(MeshData.Indices.Num()); Index += 3)
+		{
+			const uint32 Index0 = MeshData.Indices[Index];
+			const uint32 Index1 = MeshData.Indices[Index + 1];
+			const uint32 Index2 = MeshData.Indices[Index + 2];
+			if (Index0 >= static_cast<uint32>(MeshData.Vertices.Num())
+				|| Index1 >= static_cast<uint32>(MeshData.Vertices.Num())
+				|| Index2 >= static_cast<uint32>(MeshData.Vertices.Num()))
+			{
+				continue;
+			}
 
-	for (FVertex& Vertex : MeshData.Vertices)
-	{
-		if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
-		{
-			Vertex.Normal.Normalize();
+			const FVector FaceNormal = FVector::cross(
+				MeshData.Vertices[Index1].Pos - MeshData.Vertices[Index0].Pos,
+				MeshData.Vertices[Index2].Pos - MeshData.Vertices[Index0].Pos);
+			MeshData.Vertices[Index0].Normal += FaceNormal;
+			MeshData.Vertices[Index1].Normal += FaceNormal;
+			MeshData.Vertices[Index2].Normal += FaceNormal;
+
+			FVector vec0 = MeshData.Vertices[Index0].Pos;
+			FVector vec1 = MeshData.Vertices[Index1].Pos;
+			FVector vec2 = MeshData.Vertices[Index2].Pos;
+
+			FVector2 uv0 = MeshData.Vertices[Index0].Tex;
+			FVector2 uv1 = MeshData.Vertices[Index1].Tex;
+			FVector2 uv2 = MeshData.Vertices[Index2].Tex;
+
+			FVector3 T = ((vec1 - vec0) * (uv2.Y - uv0.Y) - (vec2 - vec0) * (uv1.Y - uv0.Y)) / ((uv1.X - uv0.X) * (uv2.Y - uv0.Y) - (uv2.X - uv0.X) * (uv1.Y - uv0.Y));
+
+			MeshData.Vertices[Index0].Tangent = T;
+			MeshData.Vertices[Index1].Tangent = T;
+			MeshData.Vertices[Index2].Tangent = T;
 		}
-		else
+
+		for (FVertex& Vertex : MeshData.Vertices)
 		{
-			Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
+			if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
+			{
+				Vertex.Normal.Normalize();
+			}
+			else
+			{
+				Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
+			}
 		}
 	}
-}
 
 FStaticMeshBuildData BuildFromVertices(const FVertex* InVertices, uint32 InVertexCount,
 	const uint32* InIndices, uint32 InIndexCount)
