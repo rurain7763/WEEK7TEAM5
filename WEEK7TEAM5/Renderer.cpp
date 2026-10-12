@@ -11,6 +11,9 @@ void URenderer::Create(HWND hWindow)
 
 	LineStructuredBuffer = CreateStructuredBuffer<FRenderLineInfo>(MaxLineInstances);
 
+	StaticMeshShader = CreateShader(("Assets/Shaders/StaticMeshShader.hlsl"));
+	NormalViewShader = CreateShader(("Assets/Shaders/NormalViewShader.hlsl"));
+
 	LinePipeline = CreateRenderPipeline();
 	LinePipeline->SetRasterRizerState(D3D11_CULL_NONE);
 	LinePipeline->SetShader("Assets/Shaders/Line.hlsl");
@@ -704,7 +707,11 @@ void URenderer::RenderPrimitive(FRenderPipeline* Pipeline, ID3D11Buffer* Buffer,
 		BindPipeline(Pipeline);
 	if (ViewModeIndex == EViewModeIndex::VMI_NormalView)
 	{
-		Pipeline->SetShader("Assets/Shaders/NormalViewShader.hlsl");
+		Pipeline->SetShader(NormalViewShader);
+	}
+	else
+	{
+		Pipeline->SetShader(StaticMeshShader);
 	}
 	BindVertexBuffer(Buffer, Pipeline->Shader->Stride);
 
@@ -760,7 +767,11 @@ void URenderer::RenderPrimitiveIndexed(FRenderPipeline* Pipeline, const FRenderI
 		BindPipeline(Pipeline, StencilRef);
 	if (ViewModeIndex == EViewModeIndex::VMI_NormalView)
 	{
-		Pipeline->SetShader("Assets/Shaders/NormalViewShader.hlsl");
+		Pipeline->SetShader(NormalViewShader);
+	}
+	else 
+	{
+		Pipeline->SetShader(StaticMeshShader);
 	}
 	BindVertexBuffer(RenderInfo.VertexBuffer, Pipeline->Shader->Stride);
 	BindIndexBuffer(RenderInfo.IndexBuffer);

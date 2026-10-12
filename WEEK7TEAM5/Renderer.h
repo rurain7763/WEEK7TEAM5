@@ -685,6 +685,8 @@ private:
 
 	ID3D11Buffer* CurrentIndexBuffer = nullptr;
 
+	TSharedPtr<FShader> StaticMeshShader;
+	TSharedPtr<FShader> NormalViewShader;
 	//Directional Light, Ambient 등 라이트 관련 버퍼 모음
 	//FLightBuffer LightBuffer;
 };

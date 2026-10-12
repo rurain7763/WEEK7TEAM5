@@ -48,8 +48,7 @@ struct VS_INPUT
     float3 normal : NORMAL;
 	float4 color : COLOR;
     float2 uv : TEXCOORD0;
-    float3 tangent : TANGENT;
-    float3 bitangent : BITANGENT;
+    //float3 tangent : TANGENT;
 };
 
 struct PS_INPUT
@@ -225,44 +224,10 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     {
         output_color *= main_texture.Sample(default_sampler, input.uv);
     }
-    #if HAS_NORMAL_MAP
-    float3 mappedNormal = GetNormalFromMap(input.uv, input.Tex);
-    float3 N = normalize(mappedNormal);
-    float3 V = normalize(view_position - input.world_position);
     
-    float3 ambient = ambient_color.rgb * ambient_intensity;
-    float3 total_diffuse = float3(0.0, 0.0, 0.0);
-    float3 total_specular = float3(0.0, 0.0, 0.0);
-
-    float3 diffuse = float3(0.0, 0.0, 0.0);
-    float3 specular = float3(0.0, 0.0, 0.0);
-    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
-    
-    total_diffuse += diffuse;
-    total_specular += specular;
-    
-    for (int i = 0; i < light_count; ++i)
-    {
-        LightInfo light = lights[i];        
-
-        if (light.type == 1)
-        {
-            calculate_point(N, V, light, input.world_position, diffuse, specular);
-        }
-        else if (light.type == 2)
-        {
-            calculate_spot(N, V, light, input.world_position, diffuse, specular);
-        }
-        
-        total_diffuse += diffuse;
-        total_specular += specular;
-    }
-    
-    output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
-    #else
     float3 N = normalize(input.normal);
     float3 V = normalize(view_position - input.world_position);
-    
+
     float3 ambient = ambient_color.rgb * ambient_intensity;
     float3 total_diffuse = float3(0.0, 0.0, 0.0);
     float3 total_specular = float3(0.0, 0.0, 0.0);
@@ -270,13 +235,13 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     float3 diffuse = float3(0.0, 0.0, 0.0);
     float3 specular = float3(0.0, 0.0, 0.0);
     calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
-    
+
     total_diffuse += diffuse;
     total_specular += specular;
-    
+
     for (int i = 0; i < light_count; ++i)
     {
-        LightInfo light = lights[i];        
+        LightInfo light = lights[i];
 
         if (light.type == 1)
         {
@@ -285,14 +250,13 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         else if (light.type == 2)
         {
             calculate_spot(N, V, light, input.world_position, diffuse, specular);
-        }
-        
+    }
+
         total_diffuse += diffuse;
         total_specular += specular;
     }
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
-    #endif    
-#endif
+    #endif
     
     return output_color;
 }
