@@ -137,8 +137,10 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	{
 		for (ULightComponentBase* Light : World->GetLightComponents())
 		{
-			if (UPointLightComponent* PointLight = Light->Cast<UPointLightComponent>())
+			if (Light->GetClass() == UPointLightComponent::GetStaticClass())
 			{
+				UPointLightComponent* PointLight = Light->Cast<UPointLightComponent>();
+
 				FLightInfo& Info = mLightInfos.Emplace();
 				Info.Type = ELightType::Point;
 				Info.Position = PointLight->GetWorldLocation();
@@ -149,8 +151,10 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 				continue;
 			}
 
-			if (USpotLightComponent* SpotLight = Light->Cast<USpotLightComponent>())
+			if (Light->GetClass() == USpotLightComponent::GetStaticClass())
 			{
+				USpotLightComponent* SpotLight = Light->Cast<USpotLightComponent>();
+
 				FLightInfo& Info = mLightInfos.Emplace();
 				Info.Type = ELightType::Spot;
 				Info.Position = SpotLight->GetWorldLocation();
@@ -260,6 +264,12 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			}
 
 			Pipeline->SetShaderResource(1, mLightInfoBuffer->SRV);
+
+
+			if (Info.Normal)
+			{
+				Pipeline->SetShaderResource(2, Info.Normal->GetSRV());
+			}
 			
 			// 개별 Draw의 상수는 기존 동적 상수 버퍼에 Map/Unmap으로 갱신합니다.
 			FMeshContants Constants;
@@ -269,6 +279,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			Constants.UVOffset = Info.UVOffset;
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.HasTexture = Info.Texture ? 1 : 0;
+			Constants.HasNormal = Info.Normal ? 1 : 0;
 			Constants.LightCount = mLightInfos.Num();
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);

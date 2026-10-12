@@ -136,8 +136,9 @@ private:
 		FVector2 UVOffset;
 		int32 UseVertexColor;
 		int32 HasTexture;
+		int32 HasNormal;
 		int32 LightCount;
-		int32 Padding[3];
+		int32 Padding[2];
 	};
 
 	struct FViewConstants

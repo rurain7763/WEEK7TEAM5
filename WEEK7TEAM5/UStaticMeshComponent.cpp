@@ -180,6 +180,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
             RenderInfo.StartIndex = Section.FirstIndex;
             RenderInfo.IndexCount = Section.IndexCount;
             RenderInfo.Texture = Material->GetDiffuseTexture().get();
+            RenderInfo.Normal = Material->GetNormalTexture().get();
             RenderInfo.UVOffset = mUVOffsets[SectionIndex];
             RenderInfo.Model = GetWorldMatrix();
             RenderInfo.Color = FVector4(DiffuseColor.x, DiffuseColor.y, DiffuseColor.z, Opacity);
@@ -195,6 +196,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
 			RenderInfo.StartIndex = Section.FirstIndex;
 			RenderInfo.IndexCount = Section.IndexCount;
 			RenderInfo.Texture = nullptr;
+            RenderInfo.Normal = nullptr;
 			RenderInfo.UVOffset = mUVOffsets[SectionIndex];
             RenderInfo.Model = GetWorldMatrix();
 			RenderInfo.Color = Color;

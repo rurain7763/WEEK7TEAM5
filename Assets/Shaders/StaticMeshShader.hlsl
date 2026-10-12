@@ -21,8 +21,9 @@ cbuffer ModelConstants : register(b0) // FConstants
     float2 uv_offset;
 	int UseVertexColor;
     int HasTexture;
+    int HasNormal;
     int light_count;
-    float3 padding;
+    float2 padding;
 }
 
 cbuffer ViewConstants : register(b1) // FConstants
@@ -48,7 +49,7 @@ struct VS_INPUT
     float3 normal : NORMAL;
 	float4 color : COLOR;
     float2 uv : TEXCOORD0;
-    //float3 tangent : TANGENT;
+    float3 tangent : TANGENT;
 };
 
 struct PS_INPUT
@@ -58,6 +59,7 @@ struct PS_INPUT
     float4 color : COLOR;
     float2 uv : TEXCOORD0;
     float3 world_position : TEXCOORD1;
+    float3 tangent : TANGENT;
 };
 
 Texture2D main_texture : register(t0);
@@ -65,12 +67,6 @@ StructuredBuffer<LightInfo> lights : register(t1);
 Texture2D normal_map : register(t2);
 
 SamplerState default_sampler : register(s0);
-
-void GetNormalFromMap(Texture2D NormalMap, float2 uv, out float3 mappedNormal)
-{
-    float3 MapNormal = float3(NormalMap.Sample(default_sampler, uv).xyz);
-    mappedNormal = normalize(MapNormal * 2.0 - 1.0);
-}
 
 void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, out float3 diffuse, out float3 specular)
 {
@@ -154,8 +150,10 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
     
+    float3 N = mul(input.normal, transpose((float3x3) inv_model));
+    float3 T = mul(input.tangent, (float3x3) Model);
+    
     float4 world_position = mul(input.position, Model);
-    float3 N = normalize(mul(input.normal, transpose((float3x3)inv_model)));    
     float4 output_color = float4(0.0, 0.0, 0.0, 1.0);
     if (UseVertexColor)
     {
@@ -164,47 +162,13 @@ PS_INPUT mainVS(VS_INPUT input)
     else
     {
         output_color = Color;
-    }
-    
-#if 1 // LIGHTING_MODEL_GOURAUD
-    float3 V = normalize(view_position - world_position.xyz);
-    
-    float3 ambient = ambient_color.rgb * ambient_intensity;
-    float3 total_diffuse = float3(0.0, 0.0, 0.0);
-    float3 total_specular = float3(0.0, 0.0, 0.0);
-
-    float3 diffuse = float3(0.0, 0.0, 0.0);
-    float3 specular = float3(0.0, 0.0, 0.0);
-    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
-    
-    total_diffuse += diffuse;
-    total_specular += specular;
-    
-    for (int i = 0; i < light_count; ++i)
-    {
-        LightInfo light = lights[i];        
-
-        if (light.type == 1)
-        {
-            calculate_point(N, V, light, world_position.xyz, diffuse, specular);
-        }
-        else if (light.type == 2)
-        {
-            calculate_spot(N, V, light, world_position.xyz, diffuse, specular);
-        }
-        
-        total_diffuse += diffuse;
-        total_specular += specular;
-    }
-    
-    output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
-#endif
-    
+    }    
     output.position = mul(world_position, view_projection);
     output.uv = input.uv + uv_offset;
     output.color = output_color;
     output.normal = N;
     output.world_position = world_position.xyz;
+    output.tangent = T;
     
 	return output;
 }
@@ -214,18 +178,22 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float4 output_color = input.color;
     
-#if 1 //LIGHTING_MODEL_GOURAUD
-    if (HasTexture)
-    {
-        output_color *= main_texture.Sample(default_sampler, input.uv);
-    }
-#else
     if (HasTexture != 0)
     {
         output_color *= main_texture.Sample(default_sampler, input.uv);
     }
-    
+       
     float3 N = normalize(input.normal);
+    
+    if (HasNormal != 0)
+    {
+        float3 T = normalize(input.tangent - dot(input.tangent, N) * N);
+        float3 B = cross(N, T);
+        
+        float3 mappedNormal = float3(normal_map.Sample(default_sampler, input.uv).xyz * 2 - 1);
+        N = normalize(mappedNormal.x * T + mappedNormal.y * B + mappedNormal.z * N);
+    }
+    
     float3 V = normalize(view_position - input.world_position);
 
     float3 ambient = ambient_color.rgb * ambient_intensity;
@@ -256,7 +224,6 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         total_specular += specular;
     }
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
-    #endif
     
     return output_color;
 }

@@ -7,4 +7,5 @@ class FStaticMeshBuilder
 public:
 	static bool Build (const FMeshDescription& MeshDescription,
 		FStaticMeshBuildData& OutCookedData);
+
 };

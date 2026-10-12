@@ -48,6 +48,7 @@ struct FVertex
     FVector Normal;
     FVector4 Color;
     FVector2 Tex;
+    FVector Tangent;
 
     FVector GetPosition() const { return Pos; }
 };

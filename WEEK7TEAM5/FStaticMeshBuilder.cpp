@@ -1,4 +1,5 @@
 #include "FStaticMeshBuilder.h"
+#include "TArray.h"
 #include <cassert>
 
 bool FStaticMeshBuilder::Build (const FMeshDescription& MeshDescription,
@@ -47,7 +48,7 @@ bool FStaticMeshBuilder::Build (const FMeshDescription& MeshDescription,
                 RenderVertex.Pos = MeshVertex.Position;
                 RenderVertex.Normal = VertexInstance.Normal;
                 RenderVertex.Color = VertexInstance.Color;
-                RenderVertex.Tex = VertexInstance.TexCoord;
+                RenderVertex.Tex = VertexInstance.TexCoord;          
 
                 const uint32 NewVertexIndex = static_cast<uint32>(OutCookedData.Vertices.Num());
 
@@ -62,6 +63,23 @@ bool FStaticMeshBuilder::Build (const FMeshDescription& MeshDescription,
 			OutCookedData.Sections.Add(Section);
 		}
 	}
+
+    for (int i = 0;i < OutCookedData.Vertices.Num();i += 3)
+    {
+        FVector vec0 = OutCookedData.Vertices[i].Pos;
+        FVector vec1 = OutCookedData.Vertices[i + 1].Pos;
+        FVector vec2 = OutCookedData.Vertices[i + 2].Pos;
+
+        FVector2 uv0 = OutCookedData.Vertices[i].Tex;
+        FVector2 uv1 = OutCookedData.Vertices[i + 1].Tex;
+        FVector2 uv2 = OutCookedData.Vertices[i + 2].Tex;
+
+        FVector3 T = ((vec1 - vec0) * (uv2.Y - uv0.Y) - (vec2 - vec0) * (uv1.Y - uv0.Y)) / ((uv1.X - uv0.X) * (uv2.Y - uv0.Y) - (uv2.X - uv0.X) * (uv1.Y - uv0.Y));
+
+        OutCookedData.Vertices[i].Tangent = T;
+        OutCookedData.Vertices[i+1].Tangent = T;
+        OutCookedData.Vertices[i+2].Tangent = T;
+    }
 
 	return true;
 }

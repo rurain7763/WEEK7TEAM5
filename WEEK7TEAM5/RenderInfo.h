@@ -49,10 +49,12 @@ struct FRenderInfo
 	uint32 StartIndex = 0;
 	uint32 IndexCount = 0;
 	FTexture2DAsset* Texture = nullptr;
+	FTexture2DAsset* Normal = nullptr;
 	FVector2 UVOffset = { 0.f, 0.f };
 	FMatrix Model;
 	uint32 ObjectInternalIndex;
 	FVector4 Color = { 1.f, 1.f, 1.f, 1.f };
+	FVector3 Tangent;
 	bool UseVertexColor = true;
 
 	bool operator<(const FRenderInfo& Other) const

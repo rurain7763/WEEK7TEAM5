@@ -55,6 +55,7 @@ struct FArchiveSerializer<FVertex>
 		Ar << Value.Normal;
 		Ar << Value.Color;
 		Ar << Value.Tex;
+		Ar << Value.Tangent;
 	}
 };
 
