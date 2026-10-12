@@ -6,9 +6,12 @@
 #define LIGHTING_MODEL_BLINN_PHONG (2U)
 */
 
-#define LIGHTING_MODEL_GOURAUD (1U)
-//#define LIGHTING_MODEL_LAMBERT (1U)
+
+//#define LIGHTING_MODEL_GOURAUD (1U)
+#define LIGHTING_MODEL_LAMBERT (1U)
 //#define LIGHTING_MODEL_BLINN_PHONG (1U)
+
+#define LIGHTING_MODEL (LIGHTING_MODEL_LAMBERT)
 
 struct LightInfo
 {
@@ -84,7 +87,7 @@ void calculate_directional(float3 N, float3 V, float3 light_direction, float3 p_
     diffuse = light_color * NdotL;
     specular = float3(0.0, 0.0, 0.0);
     
-#if LIGHTING_MODEL != LIGHTING_MODEL_LAMBERT
+#if LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(L + V);
@@ -109,7 +112,7 @@ void calculate_point(float3 N, float3 V, LightInfo light, float3 world_position,
     diffuse = light_color * NdotL * attenuation;
     specular = float3(0.0, 0.0, 0.0);
     
-#if LIGHTING_MODEL != LIGHTING_MODEL_LAMBERT
+#if LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(L + V);
@@ -141,7 +144,7 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
     diffuse = light_color * NdotL * spot_factor * attenuation;
     specular = float3(0.0, 0.0, 0.0);
     
-#if LIGHTING_MODEL != LIGHTING_MODEL_LAMBERT
+#if LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(-light_to_point + V);
