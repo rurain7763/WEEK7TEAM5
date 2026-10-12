@@ -1,4 +1,5 @@
 #include "FContentBrowser.h"
+#include "FObjImporter.h"
 #include "ImGui/imgui_internal.h"
 #include "Assets.h"
 
@@ -146,6 +147,33 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 				}
 			}
 
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Import Material"))
+		{
+			std::filesystem::path TargetPath;
+			FAssetFileHeader Header;
+			if (FNativeFileDialog::OpenFileDialog(CurrentDirectory, { FFileFilter{ L"Material Files", L"*.mtl;" } }, L"", TargetPath))
+			{
+				FObjInfo MaterialInfo;
+				FObjImporter MaterialImporter;
+				MaterialImporter.ParseMtl(TargetPath.string(), MaterialInfo);
+				for (int i = 0;i < MaterialInfo.Materials.Num(); i++)
+				{
+					std::filesystem::path NewFilePath = CurrentDirectory / TargetPath.filename();
+					NewFilePath.replace_extension(".uasset");
+					NewFilePath = ResolveImportPath(NewFilePath);
+					if (FMaterialImporter::Import(MaterialInfo.Materials[i], TargetPath.parent_path(), NewFilePath, Header))
+					{
+						//NewAssetFiles.Emplace(FAssetFileEntry{ Header, NewFilePath });
+						if (EventHandler)
+						{
+							EventHandler->OnNewAssetFile(Header, NewFilePath);
+						}
+						RefreshCache();
+					}
+				}
+			}
 		}
 		ImGui::SameLine();
 		ImGui::Text(" | Current: %s", CurrentDirectory.string().c_str());
