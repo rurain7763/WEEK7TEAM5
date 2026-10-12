@@ -270,6 +270,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.HasTexture = Info.Texture ? 1 : 0;
 			Constants.LightCount = mLightInfos.Num();
+			Constants.UseWorldNormalView = (mViewModeIndex == EViewModeIndex::VMI_WorldNormal) ? 1 : 0;
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);
 
@@ -321,7 +322,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 		}
 	}
 
-	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent());
+	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent() && mViewModeIndex != EViewModeIndex::VMI_WorldNormal);
 	mFXAAProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::FXAA));
 	mDepthPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_SceneDepth);
 

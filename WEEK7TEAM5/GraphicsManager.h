@@ -137,7 +137,8 @@ private:
 		int32 UseVertexColor;
 		int32 HasTexture;
 		int32 LightCount;
-		int32 Padding[3];
+		int32 UseWorldNormalView;
+		int32 Padding[2];
 	};
 
 	struct FViewConstants

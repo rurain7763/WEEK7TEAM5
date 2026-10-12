@@ -18,11 +18,14 @@ cbuffer ModelConstants : register(b0) // FConstants
 	row_major matrix Model;
     row_major matrix inv_model;
 	float4 Color;
+    
     float2 uv_offset;
 	int UseVertexColor;
     int HasTexture;
+    
     int light_count;
-    float3 padding;
+    int UseWorldNormalView;
+    float2 padding;
 }
 
 cbuffer ViewConstants : register(b1) // FConstants
@@ -158,7 +161,7 @@ PS_INPUT mainVS(VS_INPUT input)
         output_color = Color;
     }
     
-#if 1 // LIGHTING_MODEL_GOURAUD
+#if 1  // LIGHTING_MODEL_GOURAUD
     float3 V = normalize(view_position - world_position.xyz);
     
     float3 ambient = ambient_color.rgb * ambient_intensity;
@@ -204,13 +207,33 @@ PS_INPUT mainVS(VS_INPUT input)
 // Pixel Shader
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
-    float4 output_color = input.color;
+    float4 output_color = float4(0.0, 0.0, 0.0, 1.0);
     
-#if 1 //LIGHTING_MODEL_GOURAUD
-    if (HasTexture)
+    if (UseWorldNormalView)
     {
-        output_color *= main_texture.Sample(default_sampler, input.uv);
+        //픽셀 셰이더에 들어온 보간된 Normal은 길이가 1이 아닐 수 있기에 normalize 해준다.
+        float3 NormalizeNormal = normalize(input.normal);
+        //normal을 색으로 변환 
+        //-1 ~ 1 -> 0.0 ~ 1.0
+        //감마보정을 대비해 2.2승
+        output_color.rgb = pow((NormalizeNormal + 1.0) * 0.5, 2.2);
+        
+        //아래의 식대로 출력하면 본래 월드 노멀보다 조금 밝은 색이 나온다.
+        //이유는 백버퍼에 쓸 때 감마보정이 들어가기 때문
+        //2.2승을 하여 출력하면 본래의 노멀 값대로 색상이 적용된다.
+        //하지만 노멀 색상을 2.2승하여 출력하게 되면 이 노멀 값을 가지고 계산하게 될 때 틀린 값을 사용하게 된다.
+        //지금 당장 계산된 노멀값을 쓰고 있진 않지만 차후 노멀값이 기록된 버퍼를 만들어야 할 때 2.2승을 하면 안된다.
+        //output_color.rgb = (NormalizeNormal + 1.0) * 0.5;
     }
+    else
+    {
+        output_color = input.color;
+        
+#if 1 //LIGHTING_MODEL_GOURAUD
+        if (HasTexture)
+        {
+            output_color *= main_texture.Sample(default_sampler, input.uv);
+        }
 #else
     if (HasTexture != 0)
     {
@@ -250,6 +273,9 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
 #endif
+    }
+    
+
     
     return output_color;
 }
