@@ -65,7 +65,7 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
 
             if (!NormalUAssetPath)
             {
-                UE_LOG_ERROR("Failed to find Diffuse Texture: %s", NormalPath.string().c_str());
+                UE_LOG_ERROR("Failed to find Normal Texture: %s", NormalPath.string().c_str());
                 return false;
 
             }
