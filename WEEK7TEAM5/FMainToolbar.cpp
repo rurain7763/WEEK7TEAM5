@@ -8,6 +8,7 @@
 #include "UDirectionalLightComponent.h"
 #include "USpotLightComponent.h"
 #include "ULightComponentBase.h"
+#include "UAmbientLightComponent.h"
 #include "ASpotLight.h"
 #include "ImGui/imgui.h"
 #include "ImGui/imgui_internal.h"
@@ -89,6 +90,9 @@ void FMainToolbar::RenderSpawnActorControl(const FGuiReference& GuiReference)
 		"HeightFog",
 		"FireBall",
 		"Text",
+		"DirectionalLight",
+		"PointLight",
+		"SpotLight",
 	};
 
 	const float FontSize = ImGui::GetFontSize();
@@ -185,6 +189,34 @@ void FMainToolbar::RenderSpawnActorControl(const FGuiReference& GuiReference)
 				TextComponent->SetFontAtlasAsset(FAssetManager::Get().GetAssetAs<FFontAtlasAsset>(FName("TestFontAtlas")));
 
 				NewActor->SetRootComponent(TextComponent);
+			}
+			else if (strcmp(ActorTypeName, "DirectionalLight") == 0)
+			{
+				NewActor = FObjectFactory::ConstructObject<AActor>();
+				NewActor->Rename(FName("DirectionalLightActor"));
+
+				UDirectionalLightComponent* DirectionalLightComponent = NewActor->CreateDefaultSubobject<UDirectionalLightComponent>(FName("DirectionalComponent"));
+				NewActor->SetRootComponent(DirectionalLightComponent);
+
+				UAmbientLightComponent* AmbientLightComponent = NewActor->CreateDefaultSubobject<UAmbientLightComponent>(FName("AmbientLightComponent"));
+				AmbientLightComponent->SetupAttachment(DirectionalLightComponent);
+				NewActor->AddOwnedComponent(AmbientLightComponent);
+			}
+			else if (strcmp(ActorTypeName, "PointLight") == 0)
+			{
+				NewActor = FObjectFactory::ConstructObject<AActor>();
+				NewActor->Rename(FName("PointLightActor"));
+
+				UPointLightComponent* PointLightComponent = NewActor->CreateDefaultSubobject<UPointLightComponent>(FName("PointLightComponent"));
+				NewActor->SetRootComponent(PointLightComponent);
+			}
+			else if (strcmp(ActorTypeName, "SpotLight") == 0)
+			{
+				NewActor = FObjectFactory::ConstructObject<AActor>();
+				NewActor->Rename(FName("SpotLightLightActor"));
+
+				USpotLightComponent* SpotLightComponent = NewActor->CreateDefaultSubobject<USpotLightComponent>(FName("SpotLightComponent"));
+				NewActor->SetRootComponent(SpotLightComponent);
 			}
 			else
 			{

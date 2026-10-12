@@ -124,7 +124,7 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
     float inner_cos = cos(light.inner_cone_angle);
     float outer_cos = cos(light.outer_cone_angle);
     
-    float spot_factor = saturate((cos_theta - outer_cos) / (inner_cos - outer_cos));
+    float spot_factor = saturate((cos_theta - outer_cos) / max(inner_cos - outer_cos, 1e-4));
     
     float NdotL = max(dot(N, -light_to_point), 0.0);
     
@@ -161,7 +161,7 @@ PS_INPUT mainVS(VS_INPUT input)
         output_color = Color;
     }
     
-#if 1  // LIGHTING_MODEL_GOURAUD
+#if 0  // LIGHTING_MODEL_GOURAUD
     float3 V = normalize(view_position - world_position.xyz);
     
     float3 ambient = ambient_color.rgb * ambient_intensity;
@@ -229,7 +229,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     {
         output_color = input.color;
         
-#if 1 //LIGHTING_MODEL_GOURAUD
+#if 0 //LIGHTING_MODEL_GOURAUD
         if (HasTexture)
         {
             output_color *= main_texture.Sample(default_sampler, input.uv);

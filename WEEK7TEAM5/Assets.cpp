@@ -85,7 +85,23 @@ FStaticMeshBuildData BuildFromVertices(const FVertex* InVertices, uint32 InVerte
 	FStaticMeshSection& Section = BuildData.Sections.Emplace();
 	Section.FirstIndex = 0;
 	Section.IndexCount = static_cast<uint32>(BuildData.Indices.Num());
-	CalculateNormals(BuildData);
+
+	// 입력 데이터에 노멀이 하나도 없을 때만 면 노멀 평균으로 계산한다.
+	// 노멀이 들어 있는 메시(예: Sphere)는 그대로 써야 UV 이음새에서 노멀이 갈라지지 않는다.
+	bool bHasNormals = false;
+	for (const FVertex& Vertex : BuildData.Vertices)
+	{
+		if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
+		{
+			bHasNormals = true;
+			break;
+		}
+	}
+
+	if (!bHasNormals)
+	{
+		CalculateNormals(BuildData);
+	}
 	return BuildData;
 }
 }
