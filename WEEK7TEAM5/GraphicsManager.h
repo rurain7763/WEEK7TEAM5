@@ -136,7 +136,7 @@ private:
 		FVector4 Color;
 		FVector2 UVOffset;
 		int32 UseVertexColor;
-		int32 HasTexture;
+		uint32 BindedTextureMapFlags;
 		int32 LightCount;
 		int32 Padding[3];
 	};

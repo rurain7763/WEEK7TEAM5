@@ -587,14 +587,11 @@ public:
 
 	void RenderQuad(const FRenderQuadInfo& Info);
 
-	void RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices, bool bShouldBindPipeline = true);
-	void RenderPrimitive(ID3D11Buffer* Buffer, UINT NumVertices, const FMatrix& Model);
-	void RenderPrimitive(ID3D11Buffer* Buffer, UINT NumVertices, const FMatrix& Model, const FVector4& Color);
-	void RenderPrimitiveIndexed(const FRenderInfo& RenderInfo, uint32 StencilRef = 0);
-	void RenderPrimitiveIndexed(const FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0, bool bShouldBindPipeline = true);
-	void RenderPrimitiveIndexed(const TSharedPtr<FRenderPipeline>& Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0, bool bShouldBindPipeline = true)
+	void RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices);
+	void RenderPrimitiveIndexed(const FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0);
+	void RenderPrimitiveIndexed(const TSharedPtr<FRenderPipeline>& Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0)
 	{
-		RenderPrimitiveIndexed(Pipeline.get(), RenderInfo, StencilRef, bShouldBindPipeline);
+		RenderPrimitiveIndexed(Pipeline.get(), RenderInfo, StencilRef);
 	}
 
 	inline static bool bReuseMeshBindings = true;
@@ -664,7 +661,6 @@ private:
 	TSharedPtr<FStructuredBuffer> LineStructuredBuffer;
 
 	TSharedPtr<FRenderPipeline> LinePipeline;
-	TSharedPtr<FRenderPipeline> PrimitivePipeline;
 	TSharedPtr<FRenderPipeline> Line2DPipeline;
 	TSharedPtr<FRenderPipeline> Circle2DPipeline;
 	TSharedPtr<FRenderPipeline> Triangle2DPipeline;
@@ -708,7 +704,4 @@ private:
 	UINT CurrentVertexStride = 0;
 
 	ID3D11Buffer* CurrentIndexBuffer = nullptr;
-
-	//Directional Light, Ambient 등 라이트 관련 버퍼 모음
-	//FLightBuffer LightBuffer;
 };

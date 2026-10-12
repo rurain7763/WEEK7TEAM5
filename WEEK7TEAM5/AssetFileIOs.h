@@ -75,11 +75,11 @@ public:
 		Ar << OutData.Vertices;
 		Ar << OutData.Indices;
 		Ar << OutData.Sections;
+
 		return true;
 	}
 
-	static bool Load(const std::filesystem::path& FilePath,
-		FStaticMeshPayload& OutPayload)
+	static bool Load(const std::filesystem::path& FilePath, FStaticMeshPayload& OutPayload)
 	{
 		const std::filesystem::path Extension = FilePath.extension();
 
@@ -111,6 +111,7 @@ public:
 		Ar << InData.Vertices;
 		Ar << InData.Indices;
 		Ar << InData.Sections;
+
 		return true;
 	}
 	
@@ -158,6 +159,4 @@ public:
 		
 		return true;
 	}
-	
-	private:
 };

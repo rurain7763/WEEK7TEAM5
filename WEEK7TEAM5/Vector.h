@@ -257,6 +257,35 @@ typedef struct FVector4
 
 	float Length() const { return FMath::Sqrt(x * x + y * y + z * z + w * w); }
 
+	void Normalize()
+	{
+		float len = Length();
+		x /= len;
+		y /= len;
+		z /= len;
+		w /= len;
+	}
+
+	void SafeNormalize(float Tolerance = KINDA_SMALL_NUMBER)
+	{
+		float lenSq = x * x + y * y + z * z + w * w;
+		if (lenSq > Tolerance)
+		{
+			float len = FMath::Sqrt(lenSq);
+			x /= len;
+			y /= len;
+			z /= len;
+			w /= len;
+		}
+		else
+		{
+			x = 0.0f;
+			y = 0.0f;
+			z = 0.0f;
+			w = 0.0f;
+		}
+	}
+
 	FVector3 ToVec3() const { return FVector3(x, y, z); }
 
 	FLinearColor ToLinearColor() const;	
@@ -310,4 +339,16 @@ struct FLinearColor
 	{
 		return FVector4(this->R, this->G, this->B, this->A);
 	}
+};
+
+struct FIntVector3
+{
+	union
+	{
+		struct { int32 X, Y, Z; };
+		int32 V[3];
+	};
+
+	FIntVector3() : X(0), Y(0), Z(0) {}
+	FIntVector3(int32 _X, int32 _Y, int32 _Z) : X(_X), Y(_Y), Z(_Z) {}
 };

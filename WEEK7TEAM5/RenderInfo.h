@@ -48,7 +48,7 @@ struct FRenderInfo
 	ID3D11Buffer* IndexBuffer = nullptr;
 	uint32 StartIndex = 0;
 	uint32 IndexCount = 0;
-	FTexture2DAsset* Texture = nullptr;
+	FMaterialAsset* Material = nullptr;
 	FVector2 UVOffset = { 0.f, 0.f };
 	FMatrix Model;
 	uint32 ObjectInternalIndex;

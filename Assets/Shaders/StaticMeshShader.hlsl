@@ -1,5 +1,8 @@
 #define PI 3.14159265359
 
+#define TEXTURE_MAP_BASE_COLOR 0x1
+#define TEXTURE_MAP_NORMAL 0x2
+
 struct LightInfo
 {
     float3 position;
@@ -20,7 +23,7 @@ cbuffer ModelConstants : register(b0) // FConstants
 	float4 Color;
     float2 uv_offset;
 	int UseVertexColor;
-    int HasTexture;
+    uint binded_texture_map_flags;
     int light_count;
     float3 padding;
 }
@@ -48,12 +51,14 @@ struct VS_INPUT
     float3 normal : NORMAL;
 	float4 color : COLOR;
     float2 uv : TEXCOORD0;
+    float4 tangent : TANGENT;
 };
 
 struct PS_INPUT
 {
 	float4 position : SV_POSITION;
     float3 normal : NORMAL;
+    float4 tangent : TANGENT;
     float4 color : COLOR;
     float2 uv : TEXCOORD0;
     float3 world_position : TEXCOORD1;
@@ -65,8 +70,9 @@ struct PS_OUTPUT
     float3 normal : SV_TARGET1;
 };
 
-Texture2D main_texture : register(t0);
-StructuredBuffer<LightInfo> lights : register(t1);
+Texture2D base_color_texture : register(t0);
+Texture2D normal_texture : register(t1);
+StructuredBuffer<LightInfo> lights : register(t2);
 
 SamplerState default_sampler : register(s0);
 
@@ -80,7 +86,7 @@ void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_l
     diffuse = light_color * NdotL;
     specular = float3(0.0, 0.0, 0.0);
 
-#if LIGHTING_MODEL_BLINN_PHONG
+#if 1 // LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(L + V);
@@ -105,7 +111,7 @@ void calculate_point(float3 N, float3 V, LightInfo light, float3 world_position,
     diffuse = light_color * NdotL * attenuation;
     specular = float3(0.0, 0.0, 0.0);
     
-#if LIGHTING_MODEL_BLINN_PHONG
+#if 1 // LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(L + V);
@@ -137,7 +143,7 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
     diffuse = light_color * NdotL * spot_factor * attenuation;
     specular = float3(0.0, 0.0, 0.0);
     
-#if LIGHTING_MODEL_BLINN_PHONG
+#if 1 // LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(-light_to_point + V);
@@ -152,8 +158,10 @@ PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
     
-    float4 world_position = mul(input.position, Model);
-    float3 N = normalize(mul(input.normal, transpose((float3x3)inv_model)));    
+    float4 world_position = mul(input.position, Model);   
+    float3 N = normalize(mul(input.normal, transpose((float3x3)inv_model)));
+    float4 T = float4(normalize(mul(input.tangent.xyz, (float3x3) Model)), input.tangent.w);
+    
     float4 output_color = float4(0.0, 0.0, 0.0, 1.0);
     if (UseVertexColor)
     {
@@ -164,7 +172,7 @@ PS_INPUT mainVS(VS_INPUT input)
         output_color = Color;
     }
     
-#if 1 // LIGHTING_MODEL_GOURAUD
+#if 0 // LIGHTING_MODEL_GOURAUD
     float3 V = normalize(view_position - world_position.xyz);
     
     float3 ambient = ambient_color.rgb * ambient_intensity;
@@ -202,6 +210,7 @@ PS_INPUT mainVS(VS_INPUT input)
     output.uv = input.uv + uv_offset;
     output.color = output_color;
     output.normal = N;
+    output.tangent = T;
     output.world_position = world_position.xyz;
     
 	return output;
@@ -213,19 +222,32 @@ PS_OUTPUT mainPS(PS_INPUT input)
     PS_OUTPUT output;
     
     float4 output_color = input.color;
+    float3 N = normalize(input.normal);
     
-#if 1 //LIGHTING_MODEL_GOURAUD
-    if (HasTexture)
+#if 0 //LIGHTING_MODEL_GOURAUD
+    if (binded_texture_map_flags & TEXTURE_MAP_BASE_COLOR)
     {
-        output_color *= main_texture.Sample(default_sampler, input.uv);
+        output_color *= base_color_texture.Sample(default_sampler, input.uv);
     }
 #else
-    if (HasTexture != 0)
+    if (binded_texture_map_flags & TEXTURE_MAP_BASE_COLOR)
     {
-        output_color *= main_texture.Sample(default_sampler, input.uv);
+        output_color *= base_color_texture.Sample(default_sampler, input.uv);
     }
     
-    float3 N = normalize(input.normal);
+    if (binded_texture_map_flags & TEXTURE_MAP_NORMAL)
+    {
+        // 넘어온 tangent가 normal과 직교하지 않을 수 있으므로, Gram-Schmidt orthogonalize를 이용하여 tangent을 정규화하고, normal과 직교하도록 수정합니다.
+        float3 T = normalize(input.tangent.xyz - dot(N, input.tangent.xyz) * N);
+        float3 B = cross(N, T) * input.tangent.w;
+        float3x3 TBN = float3x3(T, B, N);
+        
+        float3 normal_map = normal_texture.Sample(default_sampler, input.uv).xyz;
+        normal_map = normal_map * 2.0 - 1.0; // Transform from [0,1] to [-1,1]
+        
+        N = normalize(mul(normal_map, TBN));
+    }
+    
     float3 V = normalize(view_position - input.world_position);
     
     float3 ambient = ambient_color.rgb * ambient_intensity;
@@ -260,7 +282,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 #endif
     
     output.color = output_color;
-    output.normal = input.normal;
+    output.normal = N;
     
     return output;
 }

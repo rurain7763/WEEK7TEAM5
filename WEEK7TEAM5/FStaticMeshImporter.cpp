@@ -82,7 +82,7 @@ bool FStaticMeshImporter::Export(const std::filesystem::path& InPath, const std:
     const FMatrix NormalMatrix = BakeMatrix.AffineInverse().Transpose();
     for (FVertex& Vertex : BuildData.Vertices)
     {
-        Vertex.Pos = BakeMatrix.TransformPosition(Vertex.Pos);
+        Vertex.Position = BakeMatrix.TransformPosition(Vertex.Position);
         Vertex.Normal = NormalMatrix.TransformVector(Vertex.Normal);
         Vertex.Normal.Normalize();
     }

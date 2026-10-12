@@ -265,17 +265,22 @@ class FMaterialAsset : public FAsset
 public:
 	FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName, const FVector& InAmbientColor, const FVector& InDiffuseColor, const FVector& InSpecularColor, const FGuid& InDiffuseTexture, const FGuid& InSpecularTexture, const FGuid& InNormalTexture, const float InOpacity);
 
+	const FVector& GetAmbientColor() const { return AmbientColor; }
+	const FVector& GetSpecularColor() const { return SpecularColor; }
 	const FVector& GetDiffuseColor() const { return DiffuseColor; }
 	const float& GetOpacity() const { return Opacity; }
 
+	void SetDiffuseTexture(const FGuid& InDiffuseTextureAsset);
 	inline bool HasDiffuseTexture() const { return DiffuseTexture.IsValid(); }
-	inline const TSharedPtr<FTexture2DAsset>& GetDiffuseTexture() const { return DiffuseTextureAsset; }
+	inline const FTexture2DAsset* GetDiffuseTexture() const { return DiffuseTextureAsset.get(); }
 
+	void SetSpecularTexture(const FGuid& InSpecularTextureAsset);
 	inline bool HasSpecularTexture() const { return SpecularTexture.IsValid(); }
-	inline const TSharedPtr<FTexture2DAsset>& GetSpecularTexture() const { return SpecularTextureAsset; }
+	inline const FTexture2DAsset* GetSpecularTexture() const { return SpecularTextureAsset.get(); }
 
+	void SetNormalTexture(const FGuid& InNormalTextureAsset);
 	inline bool HasNormalTexture() const { return NormalTexture.IsValid(); }
-	inline const TSharedPtr<FTexture2DAsset>& GetNormalTexture() const { return NormalTextureAsset; }
+	inline const FTexture2DAsset* GetNormalTexture() const { return NormalTextureAsset.get(); }
 
 	inline uint32 GetMaterialID() const { return MaterialID; }
 
@@ -284,6 +289,8 @@ public:
 	uint16 GetPipelineID() const;
 
 private:
+	inline static uint32 NextMaterialID = 1;
+
 	TSharedPtr<FRenderPipeline> Pipeline = nullptr;
 	FVector AmbientColor;
 	FVector DiffuseColor;
@@ -300,7 +307,6 @@ private:
 	
 	float Opacity;
 	uint32 MaterialID = 0;
-	inline static uint32 NextMaterialID = 1;
 };
 
 class FMaterialAssetLoader : public FAssetLoader

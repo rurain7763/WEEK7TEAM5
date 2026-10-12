@@ -51,10 +51,10 @@ struct FArchiveSerializer<FVertex>
 {
 	static void Serialize(FArchive& Ar, FVertex& Value)
 	{
-		Ar << Value.Pos;
+		Ar << Value.Position;
 		Ar << Value.Normal;
 		Ar << Value.Color;
-		Ar << Value.Tex;
+		Ar << Value.UV;
 	}
 };
 

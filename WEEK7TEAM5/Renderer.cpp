@@ -17,13 +17,6 @@ void URenderer::Create(HWND hWindow)
 	LinePipeline->AddConstantBuffer<FCameraConstants>();
 	LinePipeline->SetShaderResource(0, LineStructuredBuffer->SRV);
 
-	PrimitivePipeline = CreateRenderPipeline();
-	PrimitivePipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, {EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe});
-	PrimitivePipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
-	PrimitivePipeline->AddConstantBuffer<FConstants>();
-	PrimitivePipeline->AddConstantBuffer<FMatrix>();
-	PrimitivePipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
-
 	Line2DPipeline = CreateRenderPipeline();
 	Line2DPipeline->SetRasterRizerState(D3D11_CULL_NONE);
 	Line2DPipeline->SetDepthStencilState(false, false);
@@ -244,7 +237,6 @@ void URenderer::Release()
 	Triangle2DPipeline.reset();
 	Circle2DPipeline.reset();
 	Line2DPipeline.reset();
-	PrimitivePipeline.reset();
 	LinePipeline.reset();
 	QuadPipeline.reset();
 	LineStructuredBuffer.reset();
@@ -292,7 +284,6 @@ void URenderer::Prepare(const FMatrix& ViewProjectionMatrix)
 	CameraConstants.ViewportSize = FVector2((float)Width, (float)Height);
 
 	LinePipeline->UpdateConstantBuffer(0, CameraConstants);
-	PrimitivePipeline->UpdateConstantBuffer(1, ViewProjectionMatrix);
 	QuadPipeline->UpdateConstantBuffer(1, ViewProjectionMatrix);
 }
 
@@ -472,8 +463,7 @@ void URenderer::BindPipeline(const FRenderPipeline* Pipeline, uint32 StencilRef)
 	}
 
 	const uint32 Version = Pipeline->GetBindingVersion();
-	if (bReuseMeshBindings && LastPipeline == Pipeline && LastPipelineVersion == Version
-		&& CurrentStencilRef == StencilRef && LastPipelineViewMode == ViewModeIndex)
+	if (bReuseMeshBindings && LastPipeline == Pipeline && LastPipelineVersion == Version && CurrentStencilRef == StencilRef && LastPipelineViewMode == ViewModeIndex)
 	{
 		return;
 	}
@@ -745,62 +735,18 @@ void URenderer::RenderQuad(const FRenderQuadInfo& Info)
 	++DrawCallCount;
 }
 
-void URenderer::RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices, bool bShouldBindPipeline)
+void URenderer::RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices)
 {
-	if (bShouldBindPipeline)
-		BindPipeline(Pipeline);
+	BindPipeline(Pipeline);
 	BindVertexBuffer(Buffer, Pipeline->Shader->Stride);
 
 	DeviceContext->Draw(NumVertices, 0);
 	++DrawCallCount;
 }
 
-void URenderer::RenderPrimitive(ID3D11Buffer* Buffer, UINT NumVertices, const FMatrix& Model)
+void URenderer::RenderPrimitiveIndexed(const FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef)
 {
-	FConstants Constants;
-	Constants.Matrix = Model;
-	Constants.Color = FVector4(1.0f, 1.0f, 1.0f, 1.0f);
-	Constants.UVOffset = FVector2(0.0f, 0.0f);
-	Constants.UseVertexColor = 1;
-	Constants.HasTexture = 0;
-
-	PrimitivePipeline->UpdateConstantBuffer(0, Constants);
-
-	RenderPrimitive(PrimitivePipeline.get(), Buffer, NumVertices);
-}
-
-void URenderer::RenderPrimitive(ID3D11Buffer* Buffer, UINT NumVertices, const FMatrix& Model, const FVector4& Color)
-{
-	FConstants Constants;
-	Constants.Matrix = Model;
-	Constants.Color = Color;
-	Constants.UVOffset = FVector2(0.0f, 0.0f);
-	Constants.UseVertexColor = 1;
-	Constants.HasTexture = 0;
-
-	PrimitivePipeline->UpdateConstantBuffer(0, Constants);
-
-	RenderPrimitive(PrimitivePipeline.get(), Buffer, NumVertices);
-}
-
-void URenderer::RenderPrimitiveIndexed(const FRenderInfo& RenderInfo, uint32 StencilRef)
-{
-	FConstants Constants;
-	Constants.Matrix = RenderInfo.Model;
-	Constants.Color = RenderInfo.Color;
-	Constants.UVOffset = RenderInfo.UVOffset;
-	Constants.UseVertexColor = RenderInfo.UseVertexColor;
-	Constants.HasTexture = RenderInfo.Texture ? 1 : 0;
-
-	PrimitivePipeline->UpdateConstantBuffer(0, Constants);
-
-	RenderPrimitiveIndexed(PrimitivePipeline.get(), RenderInfo, StencilRef);
-}
-
-void URenderer::RenderPrimitiveIndexed(const FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef, bool bShouldBindPipeline)
-{
-	if (bShouldBindPipeline)
-		BindPipeline(Pipeline, StencilRef);
+	BindPipeline(Pipeline, StencilRef);
 	BindVertexBuffer(RenderInfo.VertexBuffer, Pipeline->Shader->Stride);
 	BindIndexBuffer(RenderInfo.IndexBuffer);
 

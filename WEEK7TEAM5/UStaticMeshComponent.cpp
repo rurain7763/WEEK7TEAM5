@@ -161,7 +161,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
         const FStaticMeshSection& Section = Sections[SectionIndex];
         if (Section.IndexCount == 0) continue;
 
-        const FMaterialAsset* Material = mMaterialAssets[SectionIndex].get();
+        FMaterialAsset* Material = mMaterialAssets[SectionIndex].get();
 
 		FRenderInfo& RenderInfo = mRenderProxy->GetRenderInfo(ActiveSectionCount++);
         if (Material)
@@ -179,7 +179,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
             RenderInfo.IndexBuffer = mMeshAsset->GetIndexBuffer(LOD);
             RenderInfo.StartIndex = Section.FirstIndex;
             RenderInfo.IndexCount = Section.IndexCount;
-            RenderInfo.Texture = Material->GetDiffuseTexture().get();
+            RenderInfo.Material = Material;
             RenderInfo.UVOffset = mUVOffsets[SectionIndex];
             RenderInfo.Model = GetWorldMatrix();
             RenderInfo.Color = FVector4(DiffuseColor.x, DiffuseColor.y, DiffuseColor.z, Opacity);
@@ -194,7 +194,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
 			RenderInfo.IndexBuffer = mMeshAsset->GetIndexBuffer(LOD);
 			RenderInfo.StartIndex = Section.FirstIndex;
 			RenderInfo.IndexCount = Section.IndexCount;
-			RenderInfo.Texture = nullptr;
+			RenderInfo.Material = nullptr;
 			RenderInfo.UVOffset = mUVOffsets[SectionIndex];
             RenderInfo.Model = GetWorldMatrix();
 			RenderInfo.Color = Color;

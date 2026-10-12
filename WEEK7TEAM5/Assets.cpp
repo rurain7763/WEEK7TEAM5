@@ -34,8 +34,8 @@ void CalculateNormals(FStaticMeshBuildData& MeshData)
 		}
 
 		const FVector FaceNormal = FVector::cross(
-			MeshData.Vertices[Index1].Pos - MeshData.Vertices[Index0].Pos,
-			MeshData.Vertices[Index2].Pos - MeshData.Vertices[Index0].Pos);
+			MeshData.Vertices[Index1].Position - MeshData.Vertices[Index0].Position,
+			MeshData.Vertices[Index2].Position - MeshData.Vertices[Index0].Position);
 		MeshData.Vertices[Index0].Normal += FaceNormal;
 		MeshData.Vertices[Index1].Normal += FaceNormal;
 		MeshData.Vertices[Index2].Normal += FaceNormal;
@@ -116,10 +116,10 @@ FStaticMeshAsset::FStaticMeshAsset(const FGuid& InAssetID, const FName& InAssetN
 {
 	if (InBuildData.Vertices.Num() > 0)
 	{
-		BoundingBox = FAABB(InBuildData.Vertices[0].Pos, InBuildData.Vertices[0].Pos);
+		BoundingBox = FAABB(InBuildData.Vertices[0].Position, InBuildData.Vertices[0].Position);
 		for (int32 i = 1; i < InBuildData.Vertices.Num(); ++i)
 		{
-			BoundingBox.ExpandToInclude(InBuildData.Vertices[i].Pos);
+			BoundingBox.ExpandToInclude(InBuildData.Vertices[i].Position);
 		}
 	}
 	
@@ -408,6 +408,24 @@ FMaterialAsset::FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName,
 {
 	DiffuseTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(DiffuseTexture, true);
 	SpecularTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(SpecularTexture, true);
+	NormalTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(NormalTexture, true);
+}
+
+void FMaterialAsset::SetDiffuseTexture(const FGuid& InDiffuseTextureAsset)
+{
+	DiffuseTexture = InDiffuseTextureAsset;
+	DiffuseTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(DiffuseTexture, true);
+}
+
+void FMaterialAsset::SetSpecularTexture(const FGuid& InSpecularTextureAsset)
+{
+	SpecularTexture = InSpecularTextureAsset;
+	SpecularTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(SpecularTexture, true);
+}
+
+void FMaterialAsset::SetNormalTexture(const FGuid& InNormalTextureAsset)
+{
+	NormalTexture = InNormalTextureAsset;
 	NormalTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(NormalTexture, true);
 }
 

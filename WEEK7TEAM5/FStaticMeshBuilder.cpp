@@ -44,10 +44,10 @@ bool FStaticMeshBuilder::Build (const FMeshDescription& MeshDescription,
                 const FMeshVertexPosition& MeshVertex =  MeshDescription.Vertices[VertexID];
 
                 FVertex RenderVertex;
-                RenderVertex.Pos = MeshVertex.Position;
+                RenderVertex.Position = MeshVertex.Position;
                 RenderVertex.Normal = VertexInstance.Normal;
                 RenderVertex.Color = VertexInstance.Color;
-                RenderVertex.Tex = VertexInstance.TexCoord;
+                RenderVertex.UV = VertexInstance.TexCoord;
 
                 const uint32 NewVertexIndex = static_cast<uint32>(OutCookedData.Vertices.Num());
 

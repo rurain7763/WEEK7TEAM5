@@ -46,6 +46,7 @@
 #include "FHiZOcclusionManager.h"
 #include "FInstrumentor.h"
 #include "FEditorUIManager.h"
+#include "EngineMathLibrary.h"
 
 #if IS_OBJ_VIEWER
 #include "FObjViewer.h"
@@ -93,6 +94,14 @@ void FEditorEngine::Initialize(HINSTANCE hInstance, WNDPROC WndProc)
 	mComponentVisualizerManager = new FComponentVisualizerManager();
 
 	mEditorUIManager = new FEditorUIManager(*Renderer);
+
+	// NOTE: 테스트로 Tangent를 계산하는 코드 추가.
+	CalculateTangents(Cube_vertices, static_cast<uint32>(sizeof(Cube_vertices) / sizeof(FVertex)), Cube_indices, static_cast<uint32>(sizeof(Cube_indices) / sizeof(uint32)));
+	CalculateTangents(Sphere_vertices, static_cast<uint32>(sizeof(Sphere_vertices) / sizeof(FVertex)), Sphere_indices, static_cast<uint32>(sizeof(Sphere_indices) / sizeof(uint32)));
+	CalculateTangents(Circle_vertices, static_cast<uint32>(sizeof(Circle_vertices) / sizeof(FVertex)), Circle_indices, static_cast<uint32>(sizeof(Circle_indices) / sizeof(uint32)));
+	CalculateTangents(Triangle_vertices, static_cast<uint32>(sizeof(Triangle_vertices) / sizeof(FVertex)), Triangle_indices, static_cast<uint32>(sizeof(Triangle_indices) / sizeof(uint32)));
+	CalculateTangents(GizmoArrow_vertices, static_cast<uint32>(sizeof(GizmoArrow_vertices) / sizeof(FVertex)), GizmoArrow_indices, static_cast<uint32>(sizeof(GizmoArrow_indices) / sizeof(uint32)));
+	CalculateTangents(Plane_vertices, static_cast<uint32>(sizeof(Plane_vertices) / sizeof(FVertex)), Plane_indices, static_cast<uint32>(sizeof(Plane_indices) / sizeof(uint32)));
 
 	InitAssetManager();
 
@@ -149,9 +158,6 @@ void FEditorEngine::InitAssetManager()
 			mAssetManager->RegisterAsset(ExplosionSpriteAtlasAsset);
 		}
 	}
-
-	// ScanDirectory로 파일 자동 스캔하여 uasset 등록하므로 아래 줄과 중복되어 삭제해도 되나,
-	// 참고하고 있는 곳이 있어서 ScanDirectory와 동일한 파일명 규칙으로 수정해 둠.
 
 	TSharedPtr<FFileAssetSource> FontAssetSource = MakeShared<FFileAssetSource>("Assets/Fonts/HMKMRHD.ttf");
 	mAssetManager->RegisterAsset(FGuid::NewGuid(), FName("TestFont"), FontLoader, FontAssetSource);

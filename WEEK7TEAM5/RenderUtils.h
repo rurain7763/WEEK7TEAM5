@@ -109,10 +109,11 @@ namespace RenderUtils
 			// NOTE: 나중에 HLSL Reflection을 이용해서 InputLayout을 자동으로 생성하도록 개선, 추가로 캐싱해서 재사용 가능하도록 Pool을 만들어도 좋음
 			D3D11_INPUT_ELEMENT_DESC Layout[] =
 			{
-				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 24, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 40, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+				{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FVertex, Position), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+				{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, offsetof(FVertex, Normal), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+				{ "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FVertex, Color), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FVertex, UV), D3D11_INPUT_PER_VERTEX_DATA, 0 },
+				{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FVertex, Tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			};
 
 			Device->CreateInputLayout(Layout, ARRAYSIZE(Layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), InputLayout.GetAddressOf());
