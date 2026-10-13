@@ -122,8 +122,7 @@ void CaclulateTangents(TArray<FVertex>* OutVertices, const TArray<uint32> Indice
 
 			//Make Tangent
 			{
-				Tangent = RawTangent - Normal * FVector::dot(RawTangent, Normal);
-
+				Tangent = RawTangent - (Normal * FVector::dot(RawTangent, Normal));
 				if (Tangent.LengthSquared() <= TANGENT_TOLERANCE)
 				{
 					const FVector ReferenceAxis = (FMath::Abs(Normal.z) < 0.999f) ? FVector(0.0f, 0.0f, 1.0f) : FVector(0.0f, 1.0f, 0.0f);
@@ -540,11 +539,6 @@ void FMaterialAssetLoader::UnloadAsset(TSharedPtr<FAsset> Asset)
 {
 	// NOTE: Nothing to do for now
 }
-
-
-
-
-
 
 bool FStaticMeshAsset::BuildLODs(URenderer& Renderer)
 {
