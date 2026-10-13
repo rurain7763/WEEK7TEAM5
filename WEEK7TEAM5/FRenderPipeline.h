@@ -34,6 +34,7 @@ public:
 
 	void SetShader(const FString& ShaderPath);
 	void SetShader(const TSharedPtr<FShader>& InShader);
+	void InitLightShader(const FString& ShaderPath);
 	
 	void SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV);
 	void ClearShaderResource();

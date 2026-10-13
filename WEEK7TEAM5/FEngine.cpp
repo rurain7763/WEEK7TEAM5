@@ -73,7 +73,7 @@ void FEngine::Initialize(HINSTANCE hInstance, WNDPROC WndProc)
 	rid.dwFlags = 0;		// 포커스 있을 때만 수신
 	rid.hwndTarget = mHWnd;
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
-
+	mAssetManager = new FAssetManager();
 	mGraphicsManager = new FGraphicsManager(mHWnd);
 	FNativeFileDialog::Initialize(mHWnd);
 
@@ -82,7 +82,7 @@ void FEngine::Initialize(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mFileManager = new FFileManager();
 	mFontManager = new FFontManager();
-	mAssetManager = new FAssetManager();
+	
 }
 
 void FEngine::Cleanup()

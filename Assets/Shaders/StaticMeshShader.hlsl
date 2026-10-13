@@ -162,7 +162,42 @@ PS_INPUT mainVS(VS_INPUT input)
     else
     {
         output_color = Color;
-    }    
+    }
+    
+    #if LIGHTING_MODEL_GOURAUD
+    N = normalize(N);
+    float3 V = normalize(view_position - world_position.xyz);
+
+    float3 ambient = ambient_color.rgb * ambient_intensity;
+    float3 total_diffuse = float3(0.0, 0.0, 0.0);
+    float3 total_specular = float3(0.0, 0.0, 0.0);
+
+    float3 diffuse = float3(0.0, 0.0, 0.0);
+    float3 specular = float3(0.0, 0.0, 0.0);
+    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
+
+    total_diffuse += diffuse;
+    total_specular += specular;
+
+    for (int i = 0; i < light_count; ++i)
+    {
+        LightInfo light = lights[i];
+
+        if (light.type == 1)
+        {
+            calculate_point(N, V, light, world_position.xyz, diffuse, specular);
+        }
+        else if (light.type == 2)
+        {
+            calculate_spot(N, V, light, world_position.xyz, diffuse, specular);
+    }
+
+        total_diffuse += diffuse;
+        total_specular += specular;
+    }
+    output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
+    #endif
+    
     output.position = mul(world_position, view_projection);
     output.uv = input.uv + uv_offset;
     output.color = output_color;
@@ -182,9 +217,9 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
     {
         output_color *= main_texture.Sample(default_sampler, input.uv);
     }
-       
+#if LIGHTING_MODEL_LAMBERT || LIGHTING_MODEL_BLINN_PHONG
     float3 N = normalize(input.normal);
-    
+    #if HAS_NORMAL_MAP
     if (HasNormal != 0)
     {
         float3 T = normalize(input.tangent - dot(input.tangent, N) * N);
@@ -193,6 +228,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         float3 mappedNormal = float3(normal_map.Sample(default_sampler, input.uv).xyz * 2 - 1);
         N = normalize(mappedNormal.x * T + mappedNormal.y * B + mappedNormal.z * N);
     }
+    #endif
     
     float3 V = normalize(view_position - input.world_position);
 
@@ -224,6 +260,6 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         total_specular += specular;
     }
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
-    
+#endif
     return output_color;
 }

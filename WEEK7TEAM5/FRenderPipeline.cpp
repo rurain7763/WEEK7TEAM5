@@ -1,9 +1,12 @@
 #include "FRenderPipeline.h"
+#include "FAssetManager.h"
 #include <windows.h>
 #include <d3dcompiler.h>
 #include "Renderer.h"
 #include "FMeshDescription.h"
 #include "TMap.h"
+
+class FAssetManager;
 
 FRenderPipeline::FRenderPipeline(ID3D11Device* InDevice, ID3D11DeviceContext* InDeviceContext, FSamplerStatePool* InSamplerStatePool, FDepthStencilStatePool* InDepthStencilStatePool, FBlendStatePool* InBlendStatePool)
 	: Device(InDevice)
@@ -158,6 +161,21 @@ void FRenderPipeline::SetShader(const TSharedPtr<FShader>& InShader)
 	Shader = InShader;
 }
 
+void FRenderPipeline::InitLightShader(const FString& ShaderPath)
+{
+	TSharedPtr<FLightShader> Shader = MakeShared<FLightShader>();
+
+	Shader->CompileShader(this->Device, ShaderPath);
+
+	TSharedPtr<FShaderAsset> Asset = MakeShared<FShaderAsset>(FGuid::NewGuid(), FName("LightShader"), Shader);
+
+	FAssetManager::Get().RegisterAsset(Asset);
+
+	Asset = FAssetManager::Get().GetAssetAs< FShaderAsset>(FName(("LightShader")));
+
+	this->SetShader(Asset->GetShader());
+}
+
 void FRenderPipeline::SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV)
 {
 	if (Slot >= static_cast<uint32>(ShaderResourceViews.Num()))
@@ -194,3 +212,4 @@ void FRenderPipeline::ClearSamplerState()
 	SamplerStates.Empty();
 	++BindingVersion;
 }
+

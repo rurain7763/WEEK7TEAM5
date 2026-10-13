@@ -214,18 +214,6 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 
 void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 {
-	/*if (LastShowFlag != FShowFlags::Get())
-	{
-		switch (FShowFlags::Get())
-		{
-			case 0
-				Shader->use();
-				Shaer->Use();
-		}
-
-		Shader->Compile();
-	}*/
-
 	mRenderGraph.Clear();
 
 	FRGTextureRef FrontRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetFrontRenderTarget());

@@ -25,6 +25,7 @@ class FRenderPipeline;
 class FAssetManager;
 struct FVertexBuffer;
 struct FIndexBuffer;
+struct FShader;
 
 namespace BuiltInAssetID
 {
@@ -314,25 +315,19 @@ public:
 	virtual EAssetType GetAssetType() const override { return EAssetType::Material; }
 };
 
-struct LightShader : public FShader
-{
-	void SetGouraudShading();
-	void SetLambertShading();
-	void SetBlinnPhongShading();
-	void SetUnlitShading();
-	void CompileShader();
-};
-
 class FShaderAsset : public FAsset
 {
 public:
-	FShaderAsset(FGuid GUID, const FName& AssetName, FShader* Shader) 
-		: Shader(Shader)
+	FShaderAsset(FGuid GUID, const FName& AssetName,
+		TSharedPtr<FShader> Shader)
+		: FAsset(GUID, AssetName, EAssetType::Shader)
+		, Shader(Shader)
 	{
-
 	}
 
-	inline FShader* GetShader() { return Shader; }\
+	TSharedPtr<FShader> GetShader() { return Shader; }
 private:
-	FShader* Shader; // LightShader
+	TSharedPtr<FShader> Shader; // LightShader
 };
+
+

@@ -441,6 +441,19 @@ struct FShader
 	uint32 Stride;
 };
 
+struct FLightShader : public FShader
+{
+	void SetGouraudShading();
+	void SetLambertShading();
+	void SetBlinnPhongShading();
+	void SetUnlitShading();
+	void SetNormalMapping();
+	void SetMacroEnd();
+	void CompileShader(ID3D11Device* Device, const FString& ShaderPath);
+
+	TArray<D3D_SHADER_MACRO> ShaderMacrosArray;
+};
+
 struct FConstantBuffer
 {
 	ID3D11DeviceContext* DeviceContext;
@@ -687,6 +700,7 @@ private:
 
 	TSharedPtr<FShader> StaticMeshShader;
 	TSharedPtr<FShader> NormalViewShader;
+	uint64 LastLightShaderFlags = UINT64_MAX;
 	//Directional Light, Ambient 등 라이트 관련 버퍼 모음
 	//FLightBuffer LightBuffer;
 };

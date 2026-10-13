@@ -14,6 +14,11 @@ enum class EShowFlag : uint64
 	OcclusionCulling  = 1ull << 5,
 	Fog				  = 1ull << 6,
 	FXAA			  = 1ull << 7,
+	GouraudShading    = 1ull << 8,
+	LambertShading    = 1ull << 9,
+	BlinnPhongShading = 1ull << 10,
+	UnlitShading      = 1ull << 11,
+	NormalMapping     = 1ull << 12,
 };
 
 inline constexpr EShowFlag operator|(EShowFlag a, EShowFlag b)
@@ -36,6 +41,11 @@ inline constexpr FShowFlagInfo GShowFlagInfos[] =
 	{ EShowFlag::OcclusionCulling,  "Occlusion Culling" },
 	{ EShowFlag::Fog,               "Fog" },
 	{ EShowFlag::FXAA,              "FXAA" },
+	{ EShowFlag::GouraudShading,    "Gouraud Shading" },
+	{ EShowFlag::LambertShading,    "Lambert Shading" },
+	{ EShowFlag::BlinnPhongShading, "Blinn-Phong Shading" },
+	{ EShowFlag::UnlitShading,      "Unlit Shading" },
+	{ EShowFlag::NormalMapping,     "Normal Mapping" },
 };
 
 class FShowFlags

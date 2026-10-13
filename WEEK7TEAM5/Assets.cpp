@@ -465,11 +465,6 @@ void FMaterialAssetLoader::UnloadAsset(TSharedPtr<FAsset> Asset)
 	// NOTE: Nothing to do for now
 }
 
-
-
-
-
-
 bool FStaticMeshAsset::BuildLODs(URenderer& Renderer)
 {
     PROFILE_SCOPE("Mesh/LODBuild");
@@ -504,4 +499,45 @@ bool FStaticMeshAsset::BuildLODs(URenderer& Renderer)
         return true;
     }
     catch (const std::exception& Error) { LODError = FString(Error.what()); return false; }
+}
+
+
+void FLightShader::SetGouraudShading()
+{
+	D3D_SHADER_MACRO GouraudMacro = { "LIGHTING_MODEL_GOURAUD","1" };
+	ShaderMacrosArray.Add(GouraudMacro);
+}
+
+void FLightShader::SetLambertShading()
+{
+	D3D_SHADER_MACRO LambertMacro = { "LIGHTING_MODEL_LAMBERT","1" };
+	ShaderMacrosArray.Add(LambertMacro);
+}
+
+void FLightShader::SetBlinnPhongShading()
+{
+	D3D_SHADER_MACRO BlinnPhongMacro = { "LIGHTING_MODEL_BLINN_PHONG","1" };
+	ShaderMacrosArray.Add(BlinnPhongMacro);
+}
+
+void FLightShader::SetUnlitShading()
+{
+
+}
+
+void FLightShader::SetNormalMapping()
+{
+	D3D_SHADER_MACRO NormalMacro = { "HAS_NORMAL_MAP","1" };
+	ShaderMacrosArray.Add(NormalMacro);
+}
+
+void FLightShader::SetMacroEnd()
+{
+	D3D_SHADER_MACRO EndMacro = { nullptr,nullptr };
+	ShaderMacrosArray.Add(EndMacro);
+}
+
+void FLightShader::CompileShader(ID3D11Device* Device, const FString& ShaderPath)
+{
+	RenderUtils::CompileShader(Device, ShaderPath, this->VertexShader, this->PixelShader, this->InputLayout, this->Stride, ShaderMacrosArray.Data());
 }

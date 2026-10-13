@@ -1,5 +1,46 @@
 #include "Renderer.h"
+#include "FAssetManager.h"
 #include "FInstrumentor.h"
+#include "Assets.h"
+#include "ShowFlags.h"
+
+namespace
+{
+	bool UpdateLightShaderFlags(FLightShader& Shader, uint64& LastFlags)
+	{
+		const FShowFlags& ShowFlags = FShowFlags::Get();
+		const EShowFlag LightFlags[] = {
+			EShowFlag::GouraudShading,
+			EShowFlag::LambertShading,
+			EShowFlag::BlinnPhongShading,
+			EShowFlag::UnlitShading,
+			EShowFlag::NormalMapping
+		};
+		uint64 CurrentFlags = 0;
+		for (EShowFlag Flag : LightFlags)
+		{
+			if (ShowFlags.IsEnabled(Flag))
+				CurrentFlags |= static_cast<uint64>(Flag);
+		}
+		if (CurrentFlags == LastFlags)
+			return false;
+
+		Shader.ShaderMacrosArray.Empty();
+		if (ShowFlags.IsEnabled(EShowFlag::GouraudShading))
+			Shader.SetGouraudShading();
+		if (ShowFlags.IsEnabled(EShowFlag::LambertShading))
+			Shader.SetLambertShading();
+		if (ShowFlags.IsEnabled(EShowFlag::BlinnPhongShading))
+			Shader.SetBlinnPhongShading();
+		if (ShowFlags.IsEnabled(EShowFlag::UnlitShading))
+			Shader.SetUnlitShading();
+		if (ShowFlags.IsEnabled(EShowFlag::NormalMapping))
+			Shader.SetNormalMapping();
+
+		LastFlags = CurrentFlags;
+		return true;
+	}
+}
 
 constexpr uint32 MaxLineInstances = 1024;
 
@@ -22,7 +63,7 @@ void URenderer::Create(HWND hWindow)
 
 	PrimitivePipeline = CreateRenderPipeline();
 	PrimitivePipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, {EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe});
-	PrimitivePipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
+	PrimitivePipeline->InitLightShader("Assets/Shaders/StaticMeshShader.hlsl");
 	PrimitivePipeline->AddConstantBuffer<FConstants>();
 	PrimitivePipeline->AddConstantBuffer<FMatrix>();
 	PrimitivePipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
@@ -703,16 +744,27 @@ void URenderer::RenderQuad(const FRenderQuadInfo& Info)
 
 void URenderer::RenderPrimitive(FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices, bool bShouldBindPipeline)
 {
-	if (bShouldBindPipeline)
-		BindPipeline(Pipeline);
+	TSharedPtr<FShaderAsset> Asset = FAssetManager::Get().GetAssetAs< FShaderAsset>(FName(("LightShader")));
+	TSharedPtr<FLightShader> LightShader = static_pointer_cast<FLightShader>(Asset->GetShader());
+
+	if (UpdateLightShaderFlags(*LightShader, LastLightShaderFlags))
+	{
+		LightShader->SetMacroEnd();
+		LightShader->CompileShader(Pipeline->Device, "Assets/Shaders/StaticMeshShader.hlsl");
+	}
+
 	if (ViewModeIndex == EViewModeIndex::VMI_NormalView)
 	{
 		Pipeline->SetShader(NormalViewShader);
 	}
 	else
 	{
-		Pipeline->SetShader(StaticMeshShader);
+		Pipeline->SetShader(LightShader);
 	}
+
+	if (bShouldBindPipeline)
+		BindPipeline(Pipeline);
+
 	BindVertexBuffer(Buffer, Pipeline->Shader->Stride);
 
 	DeviceContext->Draw(NumVertices, 0);
@@ -763,16 +815,28 @@ void URenderer::RenderPrimitiveIndexed(const FRenderInfo& RenderInfo, uint32 Ste
 
 void URenderer::RenderPrimitiveIndexed(FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef, bool bShouldBindPipeline)
 {
-	if (bShouldBindPipeline)
-		BindPipeline(Pipeline, StencilRef);
+	TSharedPtr<FShaderAsset> Asset = FAssetManager::Get().GetAssetAs< FShaderAsset>(FName(("LightShader")));
+	TSharedPtr<FLightShader> LightShader = static_pointer_cast<FLightShader>(Asset->GetShader());
+
+	if (UpdateLightShaderFlags(*LightShader, LastLightShaderFlags))
+	{
+		LightShader->SetMacroEnd();
+		LightShader->CompileShader(Pipeline->Device, "Assets/Shaders/StaticMeshShader.hlsl");
+	}
+
 	if (ViewModeIndex == EViewModeIndex::VMI_NormalView)
 	{
 		Pipeline->SetShader(NormalViewShader);
 	}
-	else 
+	else
 	{
-		Pipeline->SetShader(StaticMeshShader);
+		Pipeline->SetShader(LightShader);
 	}
+
+	if (bShouldBindPipeline)
+		BindPipeline(Pipeline, StencilRef);
+
+	
 	BindVertexBuffer(RenderInfo.VertexBuffer, Pipeline->Shader->Stride);
 	BindIndexBuffer(RenderInfo.IndexBuffer);
 
@@ -903,4 +967,3 @@ void URenderer::OnResize(UINT width, UINT height)
 	CreateFrameBuffer();
 	CreateDepthStencilBuffer();
 }
-
