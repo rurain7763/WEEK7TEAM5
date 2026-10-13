@@ -6,10 +6,9 @@
 #include "FArchive.h"
 #include "Serializers.h"
 #include "Object.h"
-#include "FStaticMeshBuilder.h"
-#include "FObjImporter.h"
+#include "FObjInfo.h"
+#include "FMeshDescription.h"
 #include <filesystem>
-
 
 // Texture 전용 Payload, FileIO
 struct FImagePayload
@@ -62,72 +61,74 @@ public:
 
 struct FStaticMeshPayload
 {
-	FMeshDescription MeshDescription;
-	TArray<FObjMaterialInfo> Materials;
+	TArray<FVertex> Vertices;
+	TArray<uint32> Indices;
+	TArray<FGuid> Materials;
+	TArray<FMeshSection> Sections;
+};
+
+struct FStaticMeshSourcePayload
+{
+	TArray<FVertex> Vertices;
+	TArray<uint32> Indices;
+	TArray<FMeshMaterial> Materials;
+	TArray<FMeshSection> Sections;
 };
 
 // StaicMesh 전용 IO
 class FStaticMeshFileIO
 {
 public:
-	static bool Load(FArchive& Ar, FStaticMeshBuildData& OutData)
+	static bool Load(FArchive& Ar, FStaticMeshPayload& OutPayload)
 	{
-		Ar << OutData.Vertices;
-		Ar << OutData.Indices;
-		Ar << OutData.Sections;
+		Ar << OutPayload.Vertices;
+		Ar << OutPayload.Indices;
+		Ar << OutPayload.Sections;
+		Ar << OutPayload.Materials;
 
 		return true;
 	}
 
-	static bool Load(const std::filesystem::path& FilePath, FStaticMeshPayload& OutPayload)
+	static bool Load(const std::filesystem::path& FilePath, FStaticMeshSourcePayload& OutPayload)
 	{
 		const std::filesystem::path Extension = FilePath.extension();
 
 		if (Extension == ".obj")
 		{
-			FObjImporter Importer;
-			FObjInfo ObjInfo;
-			FMeshDescription MeshDescription;
-
-			if (!Importer.ParseObj(FString(FilePath.string()), ObjInfo))
-			{
-				return false;
-			}
-			if (!Importer.ConvertToMeshDescription(ObjInfo, MeshDescription))
-			{
-				return false;
-			}
-
-			OutPayload.MeshDescription = std::move(MeshDescription);
-			OutPayload.Materials = ObjInfo.Materials;
-			return true;
+			return LoadFromObj(FilePath, OutPayload);
 		}
 
 		return false;
 	}
 
-	static bool Save(FArchive& Ar, FStaticMeshBuildData& InData)
+	static bool Save(FArchive& Ar, FStaticMeshPayload& InPayload)
 	{
-		Ar << InData.Vertices;
-		Ar << InData.Indices;
-		Ar << InData.Sections;
+		Ar << InPayload.Vertices;
+		Ar << InPayload.Indices;
+		Ar << InPayload.Sections;
+		Ar << InPayload.Materials;
 
 		return true;
 	}
-	
+
 private:
+	static bool LoadFromObj(const std::filesystem::path& FilePath, FStaticMeshSourcePayload& OutPayload);
+	static bool ParseObjFaceVertex(const FString& Token, const FObjInfo& ObjInfo, FObjVertexIndex& OutIndex);
+	static bool ParseObjMaterial(const std::filesystem::path& ParentPath, const std::filesystem::path& MaterialFilePath, FObjInfo& OutInfo);
+	static bool ConvertStaticMeshSourcePayload(FObjInfo& ObjInfo, FStaticMeshSourcePayload& OutPayload);
 };
 
 // Material 전용 Payload, IO
-struct  FMaterialPayload
+struct FMaterialPayload
 {
 	FVector AmbientColor;
 	FVector DiffuseColor;
 	FVector SpecularColor;
 	FGuid DiffuseTexture;
-	FGuid SpecularTexture;
+	FGuid SpecularTexture ;
 	FGuid NormalTexture;
-	float Opacity;
+	float Shininess = 32.0f;
+	float Opacity = 1.0f;
 };
 
 class FMaterialFileIO
@@ -141,6 +142,7 @@ public:
 		Ar << OutPayload.DiffuseTexture;
 		Ar << OutPayload.SpecularTexture;
 		Ar << OutPayload.NormalTexture;
+		Ar << OutPayload.Shininess;
 		Ar << OutPayload.Opacity;
 		
 		return true;
@@ -155,6 +157,7 @@ public:
 		Ar << InPayload.DiffuseTexture;
 		Ar << InPayload.SpecularTexture;
 		Ar << InPayload.NormalTexture;
+		Ar << InPayload.Shininess;
 		Ar << InPayload.Opacity;
 		
 		return true;

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "FMeshDescription.h"
+#include "AssetFileIOs.h"
 #include <cmath>
 
 // 모든 메시가 공유하는 고정 설정입니다. 변경 시 다시 빌드하고 에셋을 로드합니다.
@@ -21,5 +22,4 @@ namespace MeshLOD
 
 // 원본 위치와 속성은 이동하지 않고 인덱스를 단순화한 뒤 사용 정점만 압축합니다.
 // 따라서 모든 생성 LOD는 원본 AABB 안에 남습니다.
-bool BuildSimplifiedMeshLOD(const FStaticMeshBuildData& Source, float Ratio, float MaxError,
-    FStaticMeshBuildData& Out, float& OutError);
+bool BuildSimplifiedMeshLOD(const FStaticMeshPayload& Source, float Ratio, float MaxError, FStaticMeshPayload& Out, float& OutError);

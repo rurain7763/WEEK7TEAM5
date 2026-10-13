@@ -531,26 +531,11 @@ void FPropertyWindow::RenderStaticMeshComponent(UStaticMeshComponent* StaticMesh
 		FString currentMaterialName = currentMaterial ? currentMaterial->GetAssetName().ToString() : "None";
 
 		// Path에서 확장자 빼고 파일명만 parsing 하여 보여주기
-		std::filesystem::path materialPath = std::filesystem::path(static_cast<std::string>(currentMaterialName)).stem();
-		FString simpleMaterialName = materialPath.stem().string();
-
-		if (ImGui::BeginCombo("Material", simpleMaterialName.CStr()))
+		FGuid MaterialGuid = currentMaterial ? currentMaterial->GetAssetID() : FGuid();
+		if (FEditorUtils::DrawAssetCombo("Material", EAssetType::Material, MaterialGuid))
 		{
-			for (const FAssetMetaInfo& metaInfo : materialMetaInfos)
-			{
-				// Path에서 확장자 빼고 파일명만 parsing 하여 보여주기
-				std::filesystem::path metaPath = std::filesystem::path(metaInfo.AssetName.ToString().ToString()).stem();
-				FString simpleMetaPath = metaPath.stem().string();
-
-				bool isSelected = (currentMaterialName == metaInfo.AssetName.ToString());
-				if (ImGui::Selectable((simpleMetaPath.ToString() + "##" + metaInfo.AssetID.ToString().ToString()).c_str(), isSelected))
-				{
-					TSharedPtr<FMaterialAsset> materialAsset = mAssetManager->GetAssetAs<FMaterialAsset>(metaInfo.AssetID, true);
-					StaticMeshComponent->SetMaterial(i, materialAsset);
-				}
-				if (ImGui::IsItemHovered()) ImGui::SetTooltip("%s", metaInfo.AssetName.ToString().CStr()); if (isSelected) ImGui::SetItemDefaultFocus();
-			}
-			ImGui::EndCombo();
+			TSharedPtr<FMaterialAsset> materialAsset = mAssetManager->GetAssetAs<FMaterialAsset>(MaterialGuid, true);
+			StaticMeshComponent->SetMaterial(i, materialAsset);
 		}
 
 		FVector2 UVOffset = StaticMeshComponent->GetUVOffset(i);
@@ -558,7 +543,6 @@ void FPropertyWindow::RenderStaticMeshComponent(UStaticMeshComponent* StaticMesh
 		{
 			StaticMeshComponent->SetUVOffset(i, UVOffset);
 		}
-		ImGui::PopID();
 
 		FVector4 MeshColor = StaticMeshComponent->GetColor();
 		FLinearColor ColorInput = FLinearColor(MeshColor.x, MeshColor.y, MeshColor.z, MeshColor.w);
@@ -566,6 +550,8 @@ void FPropertyWindow::RenderStaticMeshComponent(UStaticMeshComponent* StaticMesh
 		{
 			StaticMeshComponent->SetColor(FVector4(ColorInput.R, ColorInput.G, ColorInput.B, ColorInput.A));
 		}
+
+		ImGui::PopID();
 	}
 }
 

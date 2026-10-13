@@ -1,7 +1,6 @@
 #pragma once
 
 #include "PrimitiveComponent.h"
-#include "UStaticMesh.h"
 
 class UStaticMeshComponent : public UPrimitiveComponent
 {

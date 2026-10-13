@@ -137,8 +137,10 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	{
 		for (ULightComponentBase* Light : World->GetLightComponents())
 		{
-			if (UPointLightComponent* PointLight = Light->Cast<UPointLightComponent>())
+			if (Light->GetClass() == UPointLightComponent::GetStaticClass())
 			{
+				UPointLightComponent* PointLight = Light->Cast<UPointLightComponent>();
+
 				FLightInfo& Info = mLightInfos.Emplace();
 				Info.Type = ELightType::Point;
 				Info.Position = PointLight->GetWorldLocation();
@@ -149,8 +151,10 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 				continue;
 			}
 
-			if (USpotLightComponent* SpotLight = Light->Cast<USpotLightComponent>())
+			if (Light->GetClass() == USpotLightComponent::GetStaticClass())
 			{
+				USpotLightComponent* SpotLight = Light->Cast<USpotLightComponent>();
+
 				FLightInfo& Info = mLightInfos.Emplace();
 				Info.Type = ELightType::Spot;
 				Info.Position = SpotLight->GetWorldLocation();
@@ -273,6 +277,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			if (Info.Material)
 			{
 				const FTexture2DAsset* DiffuseTexture = Info.Material->GetDiffuseTexture();
+				const FTexture2DAsset* SpecularTexture = Info.Material->GetSpecularTexture();
 				const FTexture2DAsset* NormalTexture = Info.Material->GetNormalTexture();
 
 				if (DiffuseTexture)
@@ -281,14 +286,20 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 					EnumSetFlags(Constants.BindedTextureMapFlags, TM_BaseColor, true);
 				}
 
+				if (SpecularTexture)
+				{
+					Pipeline->SetShaderResource(1, SpecularTexture->GetSRV());
+					EnumSetFlags(Constants.BindedTextureMapFlags, TM_Specular, true);
+				}
+
 				if (NormalTexture)
 				{
-					Pipeline->SetShaderResource(1, NormalTexture->GetSRV());
+					Pipeline->SetShaderResource(2, NormalTexture->GetSRV());
 					EnumSetFlags(Constants.BindedTextureMapFlags, TM_Normal, true);
 				}
 			}
 
-			Pipeline->SetShaderResource(2, mLightInfoBuffer->SRV);
+			Pipeline->SetShaderResource(3, mLightInfoBuffer->SRV);
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);
 

@@ -7,9 +7,9 @@
 #include "FGuid.h"
 #include "FAsset.h"
 #include "Transform.h"
-#include "FObjImporter.h"
 #include "FQuaternion.h"
 #include "Object.h"
+#include "FMeshDescription.h"
 
 // FVector Serializers (x, y, z)
 template <>
@@ -55,18 +55,18 @@ struct FArchiveSerializer<FVertex>
 		Ar << Value.Normal;
 		Ar << Value.Color;
 		Ar << Value.UV;
+		Ar << Value.Tangent;
 	}
 };
 
 template <>
-struct FArchiveSerializer<FStaticMeshSection>
+struct FArchiveSerializer<FMeshSection>
 {
-	static void Serialize(FArchive& Ar, FStaticMeshSection& Value)
+	static void Serialize(FArchive& Ar, FMeshSection& Value)
 	{
 		Ar << Value.FirstIndex;
 		Ar << Value.IndexCount;
-		Ar << Value.MaterialName;
-		Ar << Value.MaterialAssetID;
+		Ar << Value.MaterialIndex;
 	}
 };
 

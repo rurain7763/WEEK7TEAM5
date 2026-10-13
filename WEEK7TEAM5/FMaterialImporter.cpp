@@ -5,6 +5,7 @@
 #include "FGuid.h"
 #include "Serializers.h"
 #include "FTexture2DImporter.h"
+#include "FileManager.h"
 
 bool FMaterialImporter::ImportDefault(const std::filesystem::path& InPath, const std::filesystem::path& OutPath, FAssetFileHeader& OutHead)
 {
@@ -38,74 +39,99 @@ bool FMaterialImporter::ImportDefault(const std::filesystem::path& InPath, const
     return true;
 }
 
-bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::filesystem::path& InPath, const std::filesystem::path& OutPath, FAssetFileHeader& OutHead)
+bool FMaterialImporter::Import(const FMeshMaterial& Material, const std::filesystem::path& InPath, const std::filesystem::path& OutPath, FAssetFileHeader& OutHead)
 {
-    OutHead.Version = 1;
-    OutHead.AssetType = EAssetType::Material;
-    OutHead.AssetID = FGuid::NewGuid();
+	TArray<FMeshMaterial> Materials;
+	Materials.Add(Material);
 
-    try
-    {
-        FGuid DiffuseTextureID;
+	FMaterialImportResult MaterialsResult;
+	if (!Import(Materials, InPath, OutPath.parent_path(), MaterialsResult))
+	{
+		return false;
+	}
 
-        if (MaterialInfo.DiffuseTexturePath.Len() != 0)
-        {
-            // 1차 검색 : Textures 폴더에서 찾기
-           // std::filesystem::path TexturePath = InPath.parent_path() / "Textures" / MaterialInfo.DiffuseTexturePath.CStr();
-            const std::filesystem::path TexturePath = (InPath / MaterialInfo.DiffuseTexturePath.CStr()).lexically_normal().generic_string();
+	OutHead = MaterialsResult.Headers[0];
 
-            // InPath는 원본 OBJ의 폴더
-            // 텍스처 원본은 여기서 읽고, uasset은 Material과 같은 프로젝트 Assets 폴더에 저장
-            std::optional<std::filesystem::path> TextureUAssetPath = FTexture2DImporter::GetorImport(TexturePath, OutPath.parent_path());
-            
-            // 2차 검색 : mtl과 같은 폴더 (Mashes)에서 찾기
-            if (!TextureUAssetPath)
-            {
-                const std::filesystem::path FallPath = InPath / MaterialInfo.DiffuseTexturePath.CStr();
-                TextureUAssetPath = FTexture2DImporter::GetorImport(FallPath, OutPath.parent_path());
-                
-            }
-            
-            // 그래도 없으면 에러 로그
-            if (!TextureUAssetPath)
-            {
-                UE_LOG_ERROR("Failed to find Diffuse Texture: %s", TexturePath.string().c_str());
-                return false;
-
-            }
-            
-            FWindowsBinReader Reader(*TextureUAssetPath);
-            FAssetFileHeader TextureHeader;
-            Reader << TextureHeader;
-            DiffuseTextureID = TextureHeader.AssetID;
-            
-        }   
-        
-        FVector ZeroVector(0.0f);
-        FGuid EmptyGuid;
-        FWindowsBinWriter FileWriter(OutPath);
-
-        FVector DiffuseColor = MaterialInfo.DiffuseColor;  // const 떼어내기
-        float Opacity = MaterialInfo.Opacity;
-        	
-        FMaterialPayload Payload;
-
-        Payload.AmbientColor = DiffuseColor;
-        Payload.DiffuseColor = DiffuseColor;
-        Payload.SpecularColor = ZeroVector;
-        Payload.DiffuseTexture = DiffuseTextureID;
-        Payload.SpecularTexture = EmptyGuid;
-        Payload.NormalTexture = EmptyGuid;
-        Payload.Opacity = Opacity;
-
-        FileWriter << OutHead;
-        FMaterialFileIO::Save(FileWriter, Payload);
-    }
-    catch(const std::exception&)
-    {
-        UE_LOG_ERROR("Failed to write to %s", OutPath.string().c_str());
-        return false;
-    }
-
-    return true;
+	return true;
 }
+
+bool FMaterialImporter::Import(const TArray<FMeshMaterial>& Materials, const std::filesystem::path& InPath, const std::filesystem::path& OutParentPath, FMaterialImportResult& OutResult)
+{
+	OutResult.MaterialIDs.Empty();
+	OutResult.OutputPaths.Empty();
+	OutResult.Headers.Empty();
+
+	try
+	{
+		TMap<std::filesystem::path, FGuid> TextureMap;
+		for (const FMeshMaterial& Material : Materials)
+		{
+			FGuid& MaterialID = OutResult.MaterialIDs.Emplace();
+			std::filesystem::path& MaterialOutputPath = OutResult.OutputPaths.Emplace();
+			FAssetFileHeader& MaterialHeader = OutResult.Headers.Emplace();
+
+			MaterialID = FGuid::NewGuid();
+
+			MaterialOutputPath = OutParentPath / std::format("{}.uasset", Material.Name.CStr());
+			MaterialOutputPath = MakeUniquePath(MaterialOutputPath);
+
+			MaterialHeader.Version = 1;
+			MaterialHeader.AssetType = EAssetType::Material;
+			MaterialHeader.AssetID = MaterialID;
+
+			FWindowsBinWriter FileWriter(MaterialOutputPath);
+
+			FileWriter << MaterialHeader;
+
+			FMaterialPayload Payload;
+			Payload.AmbientColor = Material.AmbientColor;
+			Payload.DiffuseColor = Material.DiffuseColor;
+			Payload.SpecularColor = Material.SpecularColor;
+			Payload.DiffuseTexture = GetOrImportTexture(Material.DiffuseTexturePath, OutParentPath, TextureMap);
+			Payload.SpecularTexture = GetOrImportTexture(Material.SpecularTexturePath, OutParentPath, TextureMap);
+			Payload.NormalTexture = GetOrImportTexture(Material.NormalTexturePath, OutParentPath, TextureMap);
+			Payload.Opacity = Material.Opacity;
+
+			FMaterialFileIO::Save(FileWriter, Payload);
+		}
+	}
+	catch (const std::exception&)
+	{
+		UE_LOG_ERROR("Failed to import materials from %s", InPath.string().c_str());
+		return false;
+	}
+
+	return true;
+}
+
+FGuid FMaterialImporter::GetOrImportTexture(const std::filesystem::path& InPath, const std::filesystem::path& OutParentPath, TMap<std::filesystem::path, FGuid>& TextureMap)
+{
+	if (InPath.empty())
+	{
+		return FGuid();
+	}
+
+	if (TextureMap.Contains(InPath))
+	{
+		return TextureMap[InPath];
+	}
+	else
+	{
+		std::filesystem::path DestTexturePath = OutParentPath / InPath.filename();
+		DestTexturePath.replace_extension(".uasset");
+		DestTexturePath = MakeUniquePath(DestTexturePath);
+
+		FAssetFileHeader TextureHeader;
+		if (FTexture2DImporter::Import(InPath, DestTexturePath, TextureHeader))
+		{
+			TextureMap.Add(InPath, TextureHeader.AssetID);
+			return TextureHeader.AssetID;
+		}
+		else
+		{
+			UE_LOG_ERROR("Failed to import texture: %s", DestTexturePath.string().c_str());
+			return FGuid();
+		}
+	}
+}
+

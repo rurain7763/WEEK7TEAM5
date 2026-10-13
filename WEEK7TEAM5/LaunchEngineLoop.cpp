@@ -21,8 +21,6 @@
 #include <FLogManager.h>
 #include "Assets.h"
 #include "FMeshDescription.h"
-#include "FStaticMeshBuilder.h"
-#include "FObjImporter.h"
 #include "UStaticMeshComponent.h"
 #include "Serializers.h"
 #include "NativeFileDialog.h"

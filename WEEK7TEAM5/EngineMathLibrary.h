@@ -429,3 +429,14 @@ inline void CalculateTangents(T* Vertices, int32 VertexCount, const uint32* Indi
 		Vertices[i].Tangent = Tangents[i];
 	}
 }
+
+inline FVector CalculateNormal(const FVector& P0, const FVector& P1, const FVector& P2)
+{
+	FVector Edge1 = P1 - P0;
+	FVector Edge2 = P2 - P0;
+
+	FVector Normal = FVector::cross(Edge1, Edge2);
+	Normal.SafeNormalize();
+
+	return Normal;
+}

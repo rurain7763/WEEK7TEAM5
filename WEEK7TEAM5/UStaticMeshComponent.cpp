@@ -158,7 +158,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
 	int32 ActiveSectionCount = 0;
     for (int32 SectionIndex = 0; SectionIndex < Sections.Num(); ++SectionIndex)
     {
-        const FStaticMeshSection& Section = Sections[SectionIndex];
+        const FMeshSection& Section = Sections[SectionIndex];
         if (Section.IndexCount == 0) continue;
 
         FMaterialAsset* Material = mMaterialAssets[SectionIndex].get();
@@ -275,7 +275,12 @@ void UStaticMeshComponent::SetMesh(const TSharedPtr<FStaticMeshAsset>& InMesh, u
         for (int32 i = 0; i < Sections.Num(); i++)
         {
             auto& Section = Sections[i];
-            mMaterialAssets[i] = Section.MaterialAssetID.IsValid() ? FAssetManager::Get().GetAssetAs<FMaterialAsset>(Section.MaterialAssetID, true) : nullptr;
+			
+            mMaterialAssets[i] = nullptr;
+			if (Section.MaterialIndex != -1)
+			{
+				mMaterialAssets[i] = InMesh->GetMaterial(Section.MaterialIndex);
+			}
         }
         mMeshAsset = InMesh;
     }

@@ -2,8 +2,7 @@
 #include "ThirdParty/meshoptimizer/meshoptimizer.h"
 #include <algorithm>
 
-bool BuildSimplifiedMeshLOD(const FStaticMeshBuildData& Source, float Ratio, float MaxError,
-    FStaticMeshBuildData& Out, float& OutError)
+bool BuildSimplifiedMeshLOD(const FStaticMeshPayload& Source, float Ratio, float MaxError, FStaticMeshPayload& Out, float& OutError)
 {
     if (!std::isfinite(Ratio) || Ratio <= 0 || Ratio > 1 || !std::isfinite(MaxError)
         || MaxError < 0 || MaxError > 1 || Source.Vertices.IsEmpty()
@@ -23,16 +22,17 @@ bool BuildSimplifiedMeshLOD(const FStaticMeshBuildData& Source, float Ratio, flo
         Attributes.Add(A);
     }
     const float Weights[9] = { .5f, .5f, .5f, 1.f, 1.f, .25f, .25f, .25f, .25f };
-    FStaticMeshBuildData Result;
+
+    FStaticMeshPayload Result;
     float Error = 0;
     uint32 ExpectedFirst = 0;
-    for (const FStaticMeshSection& Section : Source.Sections)
+    for (const FMeshSection& Section : Source.Sections)
     {
         // 재질 섹션별로 분리하여 경계를 잠그고 슬롯 순서를 유지합니다.
         if (Section.FirstIndex != ExpectedFirst || Section.IndexCount % 3
             || static_cast<uint64>(Section.FirstIndex) + Section.IndexCount > static_cast<uint64>(Source.Indices.Num())) return false;
         ExpectedFirst += Section.IndexCount;
-        FStaticMeshSection NewSection = Section;
+        FMeshSection NewSection = Section;
         NewSection.FirstIndex = static_cast<uint32>(Result.Indices.Num());
         TArray<uint32> Simplified;
         Simplified.SetNum(Section.IndexCount);

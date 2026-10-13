@@ -92,7 +92,8 @@ enum class EEndPlayReason
 enum ETextureMap : uint32
 {
 	TM_BaseColor = 1 << 0,
-	TM_Normal = 1 << 1,
+	TM_Specular = 1 << 1,
+	TM_Normal = 1 << 2,
 };
 
 inline void EnumSetFlags(uint32& Flags, int32 FlagToSet, bool bEnable)

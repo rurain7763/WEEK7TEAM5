@@ -2,6 +2,7 @@
 #include "ImGui/imgui_internal.h"
 #include "Assets.h"
 #include "FMaterialImporter.h"
+#include "FileManager.h"
 
 void FContentBrowser::Initialize(const std::filesystem::path& InitDirectory)
 {
@@ -28,30 +29,6 @@ void FContentBrowser::Render(const float BottomBarHeight)
 	{
 		RenderDrawer(BottomBarHeight);
 	}
-}
-
-// Static Mesh 같은 경로, 같은 이름 파일 다시 import 하면
-// 이름 뒤에 _2, _3 붙여서 반환하는 helper
-static std::filesystem::path ResolveImportPath(const std::filesystem::path& InPath)
-{
-	// 같은 이름이 존재하지 않으면 그냥 그 경로로 진행
-	if (!std::filesystem::exists(InPath))
-	{
-		return InPath;
-	}
-
-	// 같은 이름이 존재하는 경우 Suffix 1씩 늘려가며 check
-	int32 Suffix = 1;
-	std::filesystem::path Candidate;
-
-	do
-	{
-		Candidate = InPath.parent_path() / (InPath.stem().string() + "_" + std::to_string(Suffix) + InPath.extension().string());
-		++Suffix;
-
-	} while (std::filesystem::exists(Candidate));
-
-	return Candidate;
 }
 
 void FContentBrowser::RenderDrawer(const float BottomBarHeight)
@@ -109,7 +86,7 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 			if (ImGui::MenuItem("Create Material"))
 			{
 				std::filesystem::path NewPath = CurrentDirectory / "NewMaterial.uasset";
-				NewPath = ResolveImportPath(NewPath);
+				NewPath = MakeUniquePath(NewPath);
 
 				FAssetFileHeader Header;
 				if (FMaterialImporter::ImportDefault(NewPath, NewPath, Header))
@@ -137,7 +114,7 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 				NewFilePath.replace_extension(".uasset");   // CurrentDirectory 대신 원본 옆에 저장
 				
 				// 경로 중복되는지 확인
-				NewFilePath = ResolveImportPath(NewFilePath);
+				NewFilePath = MakeUniquePath(NewFilePath);
 
 				if (FTexture2DImporter::Import(TargetPath, NewFilePath, Header))
 				{
@@ -163,7 +140,7 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 				NewFilePath.replace_extension(".uasset");   // CurrentDirectory 대신 원본 옆에 저장
 
 				// 경로 중복되는지 확인
-				NewFilePath = ResolveImportPath(NewFilePath);
+				NewFilePath = MakeUniquePath(NewFilePath);
 
 				if (FStaticMeshImporter::Import(TargetPath, NewFilePath, Header))
 				{

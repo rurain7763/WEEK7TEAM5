@@ -1,7 +1,11 @@
 #define PI 3.14159265359
 
-#define TEXTURE_MAP_BASE_COLOR 0x1
-#define TEXTURE_MAP_NORMAL 0x2
+#define TEXTURE_MAP_BASE_COLOR 1 << 0
+#define TEXTURE_MAP_SPECULAR 1 << 1
+#define TEXTURE_MAP_NORMAL 1 << 2
+
+#define LIGHTING_MODEL_GOURAUD 1
+#define LIGHTING_MODEL_BLINN_PHONG 1
 
 struct LightInfo
 {
@@ -54,6 +58,17 @@ struct VS_INPUT
     float4 tangent : TANGENT;
 };
 
+#if LIGHTING_MODEL_GOURAUD
+struct PS_INPUT
+{
+    float4 position : SV_POSITION;
+    float3 normal : NORMAL;
+    float4 color : COLOR;
+    float3 diffuse : COLOR1;
+    float3 specular : COLOR2;
+    float2 uv : TEXCOORD0;
+};
+#else
 struct PS_INPUT
 {
 	float4 position : SV_POSITION;
@@ -63,6 +78,7 @@ struct PS_INPUT
     float2 uv : TEXCOORD0;
     float3 world_position : TEXCOORD1;
 };
+#endif
 
 struct PS_OUTPUT
 {
@@ -71,8 +87,9 @@ struct PS_OUTPUT
 };
 
 Texture2D base_color_texture : register(t0);
-Texture2D normal_texture : register(t1);
-StructuredBuffer<LightInfo> lights : register(t2);
+Texture2D specular_texture : register(t1);
+Texture2D normal_texture : register(t2);
+StructuredBuffer<LightInfo> lights : register(t3);
 
 SamplerState default_sampler : register(s0);
 
@@ -86,7 +103,7 @@ void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_l
     diffuse = light_color * NdotL;
     specular = float3(0.0, 0.0, 0.0);
 
-#if 1 // LIGHTING_MODEL_BLINN_PHONG
+#if LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(L + V);
@@ -111,7 +128,7 @@ void calculate_point(float3 N, float3 V, LightInfo light, float3 world_position,
     diffuse = light_color * NdotL * attenuation;
     specular = float3(0.0, 0.0, 0.0);
     
-#if 1 // LIGHTING_MODEL_BLINN_PHONG
+#if LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(L + V);
@@ -133,7 +150,7 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
     float inner_cos = cos(light.inner_cone_angle);
     float outer_cos = cos(light.outer_cone_angle);
     
-    float spot_factor = saturate((cos_theta - outer_cos) / (inner_cos - outer_cos));
+    float spot_factor = saturate((cos_theta - outer_cos) / max((inner_cos - outer_cos), 1e-6));
     
     float NdotL = max(dot(N, -light_to_point), 0.0);
     
@@ -143,7 +160,7 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
     diffuse = light_color * NdotL * spot_factor * attenuation;
     specular = float3(0.0, 0.0, 0.0);
     
-#if 1 // LIGHTING_MODEL_BLINN_PHONG
+#if LIGHTING_MODEL_BLINN_PHONG
     if (NdotL > 0.0)
     {
         float3 H = normalize(-light_to_point + V);
@@ -160,7 +177,6 @@ PS_INPUT mainVS(VS_INPUT input)
     
     float4 world_position = mul(input.position, Model);   
     float3 N = normalize(mul(input.normal, transpose((float3x3)inv_model)));
-    float4 T = float4(normalize(mul(input.tangent.xyz, (float3x3) Model)), input.tangent.w);
     
     float4 output_color = float4(0.0, 0.0, 0.0, 1.0);
     if (UseVertexColor)
@@ -172,7 +188,7 @@ PS_INPUT mainVS(VS_INPUT input)
         output_color = Color;
     }
     
-#if 0 // LIGHTING_MODEL_GOURAUD
+#if LIGHTING_MODEL_GOURAUD
     float3 V = normalize(view_position - world_position.xyz);
     
     float3 ambient = ambient_color.rgb * ambient_intensity;
@@ -203,16 +219,20 @@ PS_INPUT mainVS(VS_INPUT input)
         total_specular += specular;
     }
     
-    output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
+    output.diffuse = total_diffuse;
+    output.specular = total_specular;
+#else
+    float4 T = float4(normalize(mul(input.tangent.xyz, (float3x3) Model)), input.tangent.w);
+
+    output.tangent = T;
+    output.world_position = world_position.xyz;
 #endif
     
     output.position = mul(world_position, view_projection);
+    output.normal = N;
     output.uv = input.uv + uv_offset;
     output.color = output_color;
-    output.normal = N;
-    output.tangent = T;
-    output.world_position = world_position.xyz;
-    
+        
 	return output;
 }
 
@@ -222,13 +242,22 @@ PS_OUTPUT mainPS(PS_INPUT input)
     PS_OUTPUT output;
     
     float4 output_color = input.color;
+    float3 ambient = ambient_color.rgb * ambient_intensity;
     float3 N = normalize(input.normal);
     
-#if 0 //LIGHTING_MODEL_GOURAUD
+#if LIGHTING_MODEL_GOURAUD
     if (binded_texture_map_flags & TEXTURE_MAP_BASE_COLOR)
     {
         output_color *= base_color_texture.Sample(default_sampler, input.uv);
     }
+    
+    float3 specular = input.specular;
+    if (binded_texture_map_flags & TEXTURE_MAP_SPECULAR)
+    {
+        specular *= specular_texture.Sample(default_sampler, input.uv).rgb;
+    }
+    
+    output_color.rgb = output_color.rgb * (ambient + input.diffuse) + specular;
 #else
     if (binded_texture_map_flags & TEXTURE_MAP_BASE_COLOR)
     {
@@ -250,7 +279,6 @@ PS_OUTPUT mainPS(PS_INPUT input)
     
     float3 V = normalize(view_position - input.world_position);
     
-    float3 ambient = ambient_color.rgb * ambient_intensity;
     float3 total_diffuse = float3(0.0, 0.0, 0.0);
     float3 total_specular = float3(0.0, 0.0, 0.0);
 
@@ -278,9 +306,14 @@ PS_OUTPUT mainPS(PS_INPUT input)
         total_specular += specular;
     }
     
+    if (binded_texture_map_flags & TEXTURE_MAP_SPECULAR)
+    {
+        total_specular *= specular_texture.Sample(default_sampler, input.uv).rgb;
+    }
+    
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
 #endif
-    
+        
     output.color = output_color;
     output.normal = N;
     

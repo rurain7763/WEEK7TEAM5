@@ -10,6 +10,7 @@ struct VS_INPUT
 {
     float4 position : POSITION; // Input position from vertex buffer
     float4 color : COLOR; // Input color from vertex buffer
+    float4 tangent : TANGENT; // xyz: local tangent, w: handedness
 };
 
 struct PS_INPUT

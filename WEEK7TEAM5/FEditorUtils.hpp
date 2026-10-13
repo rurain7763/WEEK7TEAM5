@@ -179,6 +179,14 @@ public:
 			ImGui::EndDragDropTarget();
 		}
 
+		ImGui::SameLine();
+
+		if (ImGui::Button(std::format("Clear##{}", label).c_str()))
+		{
+			SelectedAssetGuid = FGuid();
+			IsDirty = true;
+		}
+
 		return IsDirty;
 	}
 };
