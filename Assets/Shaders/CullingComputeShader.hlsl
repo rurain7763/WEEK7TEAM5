@@ -32,8 +32,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 {
     uint2 tile = id.xy; 
 
-    if (tile.x >= TileCount.x || tile.y >= TileCount.y)
-        return;
+    if (tile.x >= tile_size.x || tile.y >= tile_size.y) return;
 
-    uint tileIndex = tile.y * TileCount.x + tile.x;
+    uint tileIndex = tile.y * tile_size.x + tile.x;
 }
