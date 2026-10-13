@@ -195,12 +195,16 @@ void FMainToolbar::RenderSpawnActorControl(const FGuiReference& GuiReference)
 				NewActor = FObjectFactory::ConstructObject<AActor>();
 				NewActor->Rename(FName("DirectionalLightActor"));
 
-				UDirectionalLightComponent* DirectionalLightComponent = NewActor->CreateDefaultSubobject<UDirectionalLightComponent>(FName("DirectionalComponent"));
-				NewActor->SetRootComponent(DirectionalLightComponent);
+				USceneComponent* RootComponent = NewActor->CreateDefaultSubobject<USceneComponent>(FName("RootComponent"));
+				NewActor->SetRootComponent(RootComponent);
 
 				UAmbientLightComponent* AmbientLightComponent = NewActor->CreateDefaultSubobject<UAmbientLightComponent>(FName("AmbientLightComponent"));
-				AmbientLightComponent->SetupAttachment(DirectionalLightComponent);
+				AmbientLightComponent->SetupAttachment(RootComponent);
 				NewActor->AddOwnedComponent(AmbientLightComponent);
+
+				UDirectionalLightComponent* DirectionalLightComponent = NewActor->CreateDefaultSubobject<UDirectionalLightComponent>(FName("DirectionalComponent"));
+				DirectionalLightComponent->SetupAttachment(RootComponent);
+				NewActor->AddOwnedComponent(DirectionalLightComponent);
 			}
 			else if (strcmp(ActorTypeName, "PointLight") == 0)
 			{

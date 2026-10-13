@@ -25,8 +25,14 @@ bool FStaticMeshImporter::Import(const std::filesystem::path& InPath, const std:
         UE_LOG_ERROR("Failed to build cooked mesh data: %s", InPath.string().c_str());
         return false;
     }
+
+    //탄젠트가 없다면 계산
+    if (!FStaticMeshBuilder::HasTangents)
+    {
+        FStaticMeshBuilder::CalculateTangents(BuildData.Vertices, BuildData.Indices);
+    }
     
-    OutHead.Version = 1;
+    OutHead.Version = 2;
     OutHead.AssetType = EAssetType::StaticMesh;
     OutHead.AssetID = FGuid::NewGuid();
 
@@ -87,8 +93,14 @@ bool FStaticMeshImporter::Export(const std::filesystem::path& InPath, const std:
         Vertex.Normal.Normalize();
     }
 
+    //탄젠트가 없다면 계산
+    if (!FStaticMeshBuilder::HasTangents)
+    {
+        FStaticMeshBuilder::CalculateTangents(BuildData.Vertices, BuildData.Indices);
+    }
 
-    OutHead.Version = 1;
+
+    OutHead.Version = 2;
     OutHead.AssetType = EAssetType::StaticMesh;
     OutHead.AssetID = FGuid::NewGuid();
 

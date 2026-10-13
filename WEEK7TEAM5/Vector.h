@@ -256,6 +256,7 @@ typedef struct FVector4
 	//4차원에는 외적이 없다.
 
 	float Length() const { return FMath::Sqrt(x * x + y * y + z * z + w * w); }
+	float LengthSquared() const { return x * x + y * y + z * z + w * w; }
 
 	FVector3 ToVec3() const { return FVector3(x, y, z); }
 

@@ -11,99 +11,101 @@
 #include "FAssetManager.h"
 #include "FTexture2DImporter.h"
 #include "AssetFileIOs.h"
+#include "FStaticMeshBuilder.h"
 
 namespace
 {
-void CalculateNormals(FStaticMeshBuildData& MeshData)
-{
-	for (FVertex& Vertex : MeshData.Vertices)
+	void CalculateNormals(FStaticMeshBuildData& MeshData)
 	{
-		Vertex.Normal = FVector(0.0f);
-	}
-
-	for (uint32 Index = 0; Index + 2 < static_cast<uint32>(MeshData.Indices.Num()); Index += 3)
-	{
-		const uint32 Index0 = MeshData.Indices[Index];
-		const uint32 Index1 = MeshData.Indices[Index + 1];
-		const uint32 Index2 = MeshData.Indices[Index + 2];
-		if (Index0 >= static_cast<uint32>(MeshData.Vertices.Num())
-			|| Index1 >= static_cast<uint32>(MeshData.Vertices.Num())
-			|| Index2 >= static_cast<uint32>(MeshData.Vertices.Num()))
+		for (FVertex& Vertex : MeshData.Vertices)
 		{
-			continue;
+			Vertex.Normal = FVector(0.0f);
 		}
 
-		const FVector FaceNormal = FVector::cross(
-			MeshData.Vertices[Index1].Pos - MeshData.Vertices[Index0].Pos,
-			MeshData.Vertices[Index2].Pos - MeshData.Vertices[Index0].Pos);
-		MeshData.Vertices[Index0].Normal += FaceNormal;
-		MeshData.Vertices[Index1].Normal += FaceNormal;
-		MeshData.Vertices[Index2].Normal += FaceNormal;
+		for (uint32 Index = 0; Index + 2 < static_cast<uint32>(MeshData.Indices.Num()); Index += 3)
+		{
+			const uint32 Index0 = MeshData.Indices[Index];
+			const uint32 Index1 = MeshData.Indices[Index + 1];
+			const uint32 Index2 = MeshData.Indices[Index + 2];
+			if (Index0 >= static_cast<uint32>(MeshData.Vertices.Num())
+				|| Index1 >= static_cast<uint32>(MeshData.Vertices.Num())
+				|| Index2 >= static_cast<uint32>(MeshData.Vertices.Num()))
+			{
+				continue;
+			}
+
+			const FVector FaceNormal = FVector::cross(
+				MeshData.Vertices[Index1].Pos - MeshData.Vertices[Index0].Pos,
+				MeshData.Vertices[Index2].Pos - MeshData.Vertices[Index0].Pos);
+			MeshData.Vertices[Index0].Normal += FaceNormal;
+			MeshData.Vertices[Index1].Normal += FaceNormal;
+			MeshData.Vertices[Index2].Normal += FaceNormal;
+		}
+
+		for (FVertex& Vertex : MeshData.Vertices)
+		{
+			if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
+			{
+				Vertex.Normal.Normalize();
+			}
+			else
+			{
+				Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
+			}
+		}
 	}
 
-	for (FVertex& Vertex : MeshData.Vertices)
+	FStaticMeshBuildData BuildFromVertices(const FVertex* InVertices, uint32 InVertexCount,
+										   const uint32* InIndices, uint32 InIndexCount)
 	{
-		if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
+		FStaticMeshBuildData BuildData;
+		BuildData.Vertices.Reserve(InVertexCount);
+
+		for (uint32 Index = 0; Index < InVertexCount; ++Index)
 		{
-			Vertex.Normal.Normalize();
+			BuildData.Vertices.Add(InVertices[Index]);
+		}
+
+		if (InIndices && InIndexCount > 0)
+		{
+			BuildData.Indices.Reserve(InIndexCount);
+			for (uint32 Index = 0; Index < InIndexCount; ++Index)
+			{
+				BuildData.Indices.Add(InIndices[Index]);
+			}
 		}
 		else
 		{
-			Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
+			BuildData.Indices.Reserve(InVertexCount);
+			for (uint32 Index = 0; Index < InVertexCount; ++Index)
+			{
+				BuildData.Indices.Add(Index);
+			}
 		}
-	}
-}
 
-FStaticMeshBuildData BuildFromVertices(const FVertex* InVertices, uint32 InVertexCount,
-	const uint32* InIndices, uint32 InIndexCount)
-{
-	FStaticMeshBuildData BuildData;
-	BuildData.Vertices.Reserve(InVertexCount);
+		FStaticMeshSection& Section = BuildData.Sections.Emplace();
+		Section.FirstIndex = 0;
+		Section.IndexCount = static_cast<uint32>(BuildData.Indices.Num());
 
-	for (uint32 Index = 0; Index < InVertexCount; ++Index)
-	{
-		BuildData.Vertices.Add(InVertices[Index]);
-	}
-
-	if (InIndices && InIndexCount > 0)
-	{
-		BuildData.Indices.Reserve(InIndexCount);
-		for (uint32 Index = 0; Index < InIndexCount; ++Index)
+		// 입력 데이터에 노멀이 하나도 없을 때만 면 노멀 평균으로 계산한다.
+		// 노멀이 들어 있는 메시(예: Sphere)는 그대로 써야 UV 이음새에서 노멀이 갈라지지 않는다.
+		bool bHasNormals = false;
+		for (const FVertex& Vertex : BuildData.Vertices)
 		{
-			BuildData.Indices.Add(InIndices[Index]);
+			if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
+			{
+				bHasNormals = true;
+				break;
+			}
 		}
-	}
-	else
-	{
-		BuildData.Indices.Reserve(InVertexCount);
-		for (uint32 Index = 0; Index < InVertexCount; ++Index)
+
+		if (!bHasNormals)
 		{
-			BuildData.Indices.Add(Index);
+			CalculateNormals(BuildData);
 		}
-	}
 
-	FStaticMeshSection& Section = BuildData.Sections.Emplace();
-	Section.FirstIndex = 0;
-	Section.IndexCount = static_cast<uint32>(BuildData.Indices.Num());
-
-	// 입력 데이터에 노멀이 하나도 없을 때만 면 노멀 평균으로 계산한다.
-	// 노멀이 들어 있는 메시(예: Sphere)는 그대로 써야 UV 이음새에서 노멀이 갈라지지 않는다.
-	bool bHasNormals = false;
-	for (const FVertex& Vertex : BuildData.Vertices)
-	{
-		if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
-		{
-			bHasNormals = true;
-			break;
-		}
+		return BuildData;
 	}
-
-	if (!bHasNormals)
-	{
-		CalculateNormals(BuildData);
-	}
-	return BuildData;
-}
 }
 
 TSharedPtr<FArchive> FFileAssetSource::CreateArchive()
@@ -138,10 +140,25 @@ FStaticMeshAsset::FStaticMeshAsset(const FGuid& InAssetID, const FName& InAssetN
 			BoundingBox.ExpandToInclude(InBuildData.Vertices[i].Pos);
 		}
 	}
+
+	//탄젠트가 없다면 계산
+	//if (!HasTangents(Vertices))
+	//{
+	//	//CalculateTangents(BuildData);
+	//	CalculateTangents(Vertices, Indices);
+	//}
+
+	if (!FStaticMeshBuilder::HasTangents(Vertices))
+	{
+
+		FStaticMeshBuilder::CalculateTangents(Vertices, Indices);
+	}
 	
-	VertexBuffer = InRenderer.CreateVertexBuffer(InBuildData.Vertices.Data(), static_cast<uint32>(InBuildData.Vertices.Num()));
-	IndexBuffer = InRenderer.CreateIndexBuffer(InBuildData.Indices.Data(), static_cast<uint32>(InBuildData.Indices.Num()));
-    // 에셋 단위로 생성하며 모든 컴포넌트가 공유합니다.
+	//VertexBuffer = InRenderer.CreateVertexBuffer(InBuildData.Vertices.Data(), static_cast<uint32>(InBuildData.Vertices.Num()));
+	VertexBuffer = InRenderer.CreateVertexBuffer(Vertices.Data(), static_cast<uint32>(Vertices.Num()));
+	IndexBuffer = InRenderer.CreateIndexBuffer(Indices.Data(), static_cast<uint32>(Indices.Num()));
+    
+	// 에셋 단위로 생성하며 모든 컴포넌트가 공유합니다.
     if (!BuildLODs(InRenderer))
         LocalOctree.Build(Vertices, Indices, BoundingBox, MeshLOD::OctreeDepths[0]);
 }

@@ -77,6 +77,15 @@ StructuredBuffer<LightInfo> lights : register(t8);
 
 SamplerState default_sampler : register(s0);
 
+//안전하게 정규화
+float3 SafeNormalize(float3 v)
+{
+    //dot(v,v) : 자기 자신을 내적 : 벡터 길이의 제곱(length^2)
+    //rsqrt : 역 제곱근 : 1/루트x
+    //v / 길이로 하기 위해 제곱을 구한 dot 결과를 역제곱근한다.
+    return v * rsqrt(max(dot(v, v), 1e-12));
+}
+
 void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, out float3 diffuse, out float3 specular)
 {
     float3 light_color = p_light_color * light_intensity;
@@ -181,9 +190,10 @@ PS_INPUT mainVS(VS_INPUT input)
     PS_INPUT output;
     
     float4 world_position = mul(input.position, Model);
-    float3 N = normalize(mul(input.normal, transpose((float3x3)inv_model)));    
-    float4 T = normalize(float4(mul(input.tangent.xyz, (float3x3) Model), input.tangent.w));
-    float4 output_color = float4(0.0, 0.0, 0.0, 1.0);
+    //어차피 PS에 넘어가면서 보간되어 정규화가 깨진다. Normalize하지 않는다.
+    float3 N = mul(input.normal, transpose((float3x3)inv_model));    
+    float4 T = float4(mul(input.tangent.xyz, (float3x3) Model), input.tangent.w);
+    float4 output_color = float4(0.0, 0.0, 0.0, 1.0);    
     if (UseVertexColor)
     {
         output_color = input.color;
@@ -241,25 +251,41 @@ PS_INPUT mainVS(VS_INPUT input)
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float4 output_color = float4(0.0, 0.0, 0.0, 1.0);
+    float3 Normal = float3(0.0, 0.0, 0.0);
     
-    float3 N = normalize(input.normal);
+    float3 N = SafeNormalize(input.normal);
     
     // 임시: 정점 Tangent가 없을 때 N에 수직인 아무 T나 만든다
-    float3 axis = abs(N.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0); // N과 거의 평행하면 다른 축
-    float3 T = normalize(axis - N * dot(axis, N)); // axis에서 N 성분을 빼면 N에 수직
-    float w = 1.0;
+    //float3 axis = abs(N.z) < 0.999 ? float3(0, 0, 1) : float3(1, 0, 0); // N과 거의 평행하면 다른 축
+    //float3 T = normalize(axis - N * dot(axis, N)); // axis에서 N 성분을 빼면 N에 수직
+    //float w = 1.0;
     
-    //float3 T = normalize(input.tangent.xyz - N * dot(input.tangent.xyz, N));
-    //float3 B = cross(N, T) * input.tangent.w;
-    //float w = input.tangent.w;    
-    float3 B = cross(N, T) * w;
+    float3 T = SafeNormalize(input.tangent.xyz - N * dot(input.tangent.xyz, N));
+    
+    //직교화 후 크기가 너무 작다면 정점의 노멀을 사용하도록 한다.
+    if (dot(T, T) < 1e-8)
+    {
+        Normal = N;
+    }
+    else
+    {
+        //오차가 있어도 정확히 -1 혹은 1이 되도록
+        float w = input.tangent.w < 0 ? -1 : 1;
+    
+        float3 B = cross(N, T) * w;
+    
     
     //샘플러랑 uv는 다시 확인.
     //* 2.0 - 1.0으로 색상 -> 벡터 변환.
-    float3 SamplingNormal = normal_texture.Sample(default_sampler, input.uv).xyz * 2.0 - 1.0;
+        float3 SamplingNormal = normal_texture.Sample(default_sampler, input.uv).xyz * 2.0 - 1.0;
         
     //Default NormalMap이라면 0,0,1과 곱하게 되어 버텍스의 노멀값이된다.
-    float3 MappingNormal = normalize(mul(SamplingNormal, float3x3(T, B, N)));
+    //Default NormalMap은 (0.5, 0.5, 1.0, 1.0)이다. 색상을 벡터 변환하면 0,0,1이 된다.
+        float3 MappingNormal = SafeNormalize(mul(SamplingNormal, float3x3(T, B, N)));
+        
+        Normal = MappingNormal;
+    }
+    
     
     if (UseWorldNormalView)
     {        
@@ -268,7 +294,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         //normal을 색으로 변환 
         //-1 ~ 1 -> 0.0 ~ 1.0
         //감마보정을 대비해 2.2승
-        output_color.rgb = pow((MappingNormal + 1.0) * 0.5, 2.2);
+        output_color.rgb = pow((Normal + 1.0) * 0.5, 2.2);
         
         //아래의 식대로 출력하면 본래 월드 노멀보다 조금 밝은 색이 나온다.
         //이유는 백버퍼에 쓸 때 감마보정이 들어가기 때문
@@ -293,7 +319,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
         }
     
         //float3 N = normalize(input.normal);
-        float3 V = normalize(view_position - input.world_position);
+        float3 V = SafeNormalize(view_position - input.world_position);
     
         float3 ambient = ambient_color.rgb * ambient_intensity;
         float3 total_diffuse = float3(0.0, 0.0, 0.0);
@@ -301,7 +327,7 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 
         float3 diffuse = float3(0.0, 0.0, 0.0);
         float3 specular = float3(0.0, 0.0, 0.0);
-        calculate_diretional(MappingNormal, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
+        calculate_diretional(Normal, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
     
         total_diffuse += diffuse;
         total_specular += specular;
@@ -312,11 +338,11 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 
             if (light.type == 1)
             {
-                calculate_point(MappingNormal, V, light, input.world_position, diffuse, specular);
+                calculate_point(Normal, V, light, input.world_position, diffuse, specular);
             }
             else if (light.type == 2)
             {
-                calculate_spot(MappingNormal, V, light, input.world_position, diffuse, specular);
+                calculate_spot(Normal, V, light, input.world_position, diffuse, specular);
             }
         
             total_diffuse += diffuse;

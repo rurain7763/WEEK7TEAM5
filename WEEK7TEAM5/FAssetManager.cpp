@@ -28,6 +28,7 @@ void FAssetManager::RegisterAsset(const FName& AssetName, const TSharedPtr<FAsse
 	MetaInfo.PayloadOffset = Archive->Tell();
 	MetaInfo.AssetLoader = AssetLoader;
 	MetaInfo.AssetSource = AssetSource;
+	MetaInfo.Version = Header.Version;
 
 	AssetMetaInfos.Add(MetaInfo.AssetID, MetaInfo);
 	NameToAssetID.Add(MetaInfo.AssetName, MetaInfo.AssetID);
@@ -206,11 +207,11 @@ void FAssetManager::ScanDirectory(const std::filesystem::path& RootDir, URendere
 			}
 			default:
 				continue;
-	}
+		}
 
-	// Asset 등록
-	RegisterAsset(AssetName, Loader, MakeShared<FFileAssetSource>(Entry.path()));
-	
+		// Asset 등록
+		RegisterAsset(AssetName, Loader, MakeShared<FFileAssetSource>(Entry.path()));
+
 	}
 }
 
@@ -237,6 +238,7 @@ TSharedPtr<FAsset> FAssetManager::LoadAsset(const FGuid& AssetID)
 
 	TSharedPtr<FArchive> Archive = MetaInfoPtr->AssetSource->CreateArchive();
 	Archive->Seek(MetaInfoPtr->PayloadOffset);
+	Archive->SetVersion(MetaInfoPtr->Version);
 
 	TSharedPtr<FAsset> asset = MetaInfoPtr->AssetLoader->LoadAsset(MetaInfoPtr->AssetID, MetaInfoPtr->AssetName, *Archive);
 	if (asset)

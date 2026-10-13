@@ -72,9 +72,43 @@ class FStaticMeshFileIO
 public:
 	static bool Load(FArchive& Ar, FStaticMeshBuildData& OutData)
 	{
-		Ar << OutData.Vertices;
+		//옛날 버전
+		if (Ar.GetVersion() < 2)
+		{
+			struct FVertex1
+			{
+				FVector Pos;
+				FVector Normal;
+				FVector4 Color;
+				FVector2 Tex;
+			};
+
+			static_assert(sizeof(FVertex1) == 48, "Version 1 정점은 48바이트여야 한다");
+
+			TArray<FVertex1> Vertices1;
+			Ar << Vertices1;
+
+			//FVertex1을 FVertex로 옮기기
+			OutData.Vertices.SetNum(Vertices1.Num());
+			for (int i = 0; i < Vertices1.Num(); i++)
+			{
+				OutData.Vertices[i].Pos = Vertices1[i].Pos;
+				OutData.Vertices[i].Normal = Vertices1[i].Normal;
+				OutData.Vertices[i].Color = Vertices1[i].Color;
+				OutData.Vertices[i].Tex = Vertices1[i].Tex;
+			}
+
+			//Tangent는 StaticMeshAsset 생성자에서 처리합니다.
+		}
+		//최신버전
+		else
+		{
+			Ar << OutData.Vertices;
+		}
+
 		Ar << OutData.Indices;
 		Ar << OutData.Sections;
+		
 		return true;
 	}
 
