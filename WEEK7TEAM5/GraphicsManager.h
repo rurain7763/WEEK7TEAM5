@@ -12,6 +12,7 @@
 #include "ShowFlags.h"
 #include "FFogProcess.h"
 #include "FDepthPreviewProcess.h"
+#include "FNormalPreviewProcess.h"
 #include "FFXAAProcess.h"
 #include "FRenderGraph.h"
 
@@ -202,6 +203,7 @@ private:
 	FFogProcess mFogProcess;
 	FFXAAProcess mFXAAProcess;
 	FDepthPreviewProcess mDepthPreviewProcess;
+	FNormalPreviewProcess mNormalPreviewProcess;
 
 	int32 GridGap = 1;
 	bool bGpuTimerActive = false;

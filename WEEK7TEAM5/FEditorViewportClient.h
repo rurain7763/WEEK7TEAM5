@@ -7,6 +7,7 @@
 #include "RenderInfo.h"
 #include "Gizmo.h"
 #include "Enum.h"
+#include "FGBuffer.h"
 
 class AActor;
 class FEditorEngine;
@@ -142,11 +143,13 @@ public:
 	
 	inline void Swap() { FrontRenderTargetIndex = 1 - FrontRenderTargetIndex; }
 
+	inline FGBuffer* GetGBuffer() { return &GBuffer; }
 	inline FRenderTarget2D* GetFrontRenderTarget() { return RenderTargets[FrontRenderTargetIndex].get(); }
 	inline FRenderTarget2D* GetBackRenderTarget() { return RenderTargets[1 - FrontRenderTargetIndex].get(); }
 	inline FDepthStencil* GetDepthStencil() { return DepthStencil.get(); }
 
 private:
+	FGBuffer GBuffer;
 	TSharedPtr<FRenderTarget2D> RenderTargets[2];
 	int32 FrontRenderTargetIndex = 0;
 

@@ -215,6 +215,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 
 	FRGTextureRef FrontRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetFrontRenderTarget());
 	FRGTextureRef BackRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetBackRenderTarget());
+	FRGTextureRef NormalRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetGBuffer()->Normal.get());
 	FRGTextureRef DepthStencilHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetDepthStencil());
 
     PROFILE_SCOPE("Viewport/GraphicsRender");
@@ -234,7 +235,12 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 		});
     }
 
-	mRenderer->BindRenderTarget(mViewport->GetFrontRenderTarget(), mViewport->GetDepthStencil(), false);
+	FBindRenderTargetsDesc BindDesc;
+	BindDesc.AddRenderTarget(mViewport->GetFrontRenderTarget(), false);
+	BindDesc.AddRenderTarget(mViewport->GetGBuffer()->Normal.get(), true);
+	BindDesc.SetDepthStencil(mViewport->GetDepthStencil(), true);
+
+	mRenderer->BindRenderTargets(BindDesc);
 
 	{
 		PROFILE_SCOPE("Viewport/GraphicsRender/SubmitMeshes");
@@ -351,11 +357,13 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent() && mViewModeIndex != EViewModeIndex::VMI_WorldNormal);
 	mFXAAProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::FXAA));
 	mDepthPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_SceneDepth);
+	mNormalPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_WorldNormal);
 
-	FPostProcess* PostProcesses[] = { 
+	FPostProcess* PostProcesses[] = {
 		&mFogProcess,
 		&mFXAAProcess,
 		&mDepthPreviewProcess,
+		&mNormalPreviewProcess,
 	};
 
 	FPostProcessContext PostProcessContext;
@@ -375,6 +383,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 
 		FPostProcessInputs PostProcessInputs;
 		PostProcessInputs.InputColorTexture = FrontRenderTargetHandle;
+		PostProcessInputs.InputNormalTexture = NormalRenderTargetHandle;
 		PostProcessInputs.InputDepthTexture = DepthStencilHandle;
 		PostProcessInputs.OverrideOutputTexture = BackRenderTargetHandle;
 

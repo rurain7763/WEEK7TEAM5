@@ -82,7 +82,7 @@ public:
 	static bool Load(FArchive& Ar, FStaticMeshPayload& OutPayload)
 	{
 		//옛날 버전
-		if (Ar.GetVersion() < 2)
+		if (Ar.GetVersion() < 1)
 		{
 			struct FVertex1
 			{
@@ -112,6 +112,7 @@ public:
 			
 			Ar << OutPayload.Indices;
 			Ar << OutPayload.Sections;
+			Ar << OutPayload.Materials;
 		}
 		//최신버전
 		else

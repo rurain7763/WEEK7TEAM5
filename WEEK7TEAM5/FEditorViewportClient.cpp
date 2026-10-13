@@ -444,6 +444,8 @@ void FViewport::Resize(URenderer& Renderer, uint32 Width, uint32 Height)
 		return;
 	}
 
+	GBuffer.Normal = Renderer.CreateRenderTarget2D(Width, Height, DXGI_FORMAT_R8G8B8A8_SNORM);
+
 	RenderTargets[0] = Renderer.CreateRenderTarget2D(Width, Height, DXGI_FORMAT_R8G8B8A8_UNORM);
 	RenderTargets[0]->Width = Width;
 	RenderTargets[0]->Height = Height;
