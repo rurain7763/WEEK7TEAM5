@@ -4,9 +4,6 @@
 #define TEXTURE_MAP_SPECULAR 1 << 1
 #define TEXTURE_MAP_NORMAL 1 << 2
 
-#define LIGHTING_MODEL_GOURAUD 1
-#define LIGHTING_MODEL_BLINN_PHONG 1
-
 struct LightInfo
 {
     float3 position;
@@ -173,7 +170,7 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
 // Vertex Shader
 PS_INPUT mainVS(VS_INPUT input)
 {
-    PS_INPUT output;
+    PS_INPUT output = (PS_INPUT) 0;
     
     float4 world_position = mul(input.position, Model);   
     float3 N = normalize(mul(input.normal, transpose((float3x3)inv_model)));
@@ -218,9 +215,11 @@ PS_INPUT mainVS(VS_INPUT input)
         total_diffuse += diffuse;
         total_specular += specular;
     }
-    
+
+#if ENABLE_LIGHTING    
     output.diffuse = total_diffuse;
     output.specular = total_specular;
+#endif
 #else
     float4 T = float4(normalize(mul(input.tangent.xyz, (float3x3) Model)), input.tangent.w);
 
@@ -311,7 +310,9 @@ PS_OUTPUT mainPS(PS_INPUT input)
         total_specular *= specular_texture.Sample(default_sampler, input.uv).rgb;
     }
     
+#if ENABLE_LIGHTING
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
+#endif
 #endif
         
     output.color = output_color;

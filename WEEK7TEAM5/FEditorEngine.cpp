@@ -47,6 +47,7 @@
 #include "FInstrumentor.h"
 #include "FEditorUIManager.h"
 #include "EngineMathLibrary.h"
+#include "FLightShader.h"
 
 #if IS_OBJ_VIEWER
 #include "FObjViewer.h"
@@ -113,6 +114,8 @@ void FEditorEngine::Initialize(HINSTANCE hInstance, WNDPROC WndProc)
 
 	CreateNewMapForEditing();
 
+	mGraphicsManager->Initialize();
+
 #ifdef IS_OBJ_VIEWER
 	mObjViewer.Initialize(GEditor, *mGraphicsManager->GetRenderer(), *mFileManager);
 #endif
@@ -165,6 +168,15 @@ void FEditorEngine::InitAssetManager()
 	TSharedPtr<FFontAsset> TestFontAsset = mAssetManager->GetAssetAs<FFontAsset>(FName("TestFont"), true);
 	TSharedPtr<FFontAtlasAsset> FontAtlasAsset = MakeShared<FFontAtlasAsset>(FGuid::NewGuid(), FName("TestFontAtlas"), *renderer, TestFontAsset, 512, 512, 2, 2);
 	mAssetManager->RegisterAsset(FontAtlasAsset);
+
+	TSharedPtr<FLightShader> LightShader = renderer->CreateShaderInstance<FLightShader>("Assets/Shaders/StaticMeshShader.hlsl");
+	LightShader->SetLightingEnabled(true);
+	LightShader->SetGouraudModeEnabled(false);
+	LightShader->UseBlinnPhongModel();
+	LightShader->Compile();
+
+	TSharedPtr<FShaderAsset> LightShaderAsset = MakeShared<FShaderAsset>(BuiltInAssetID::LightShader, FName("LightShader"), LightShader);
+	mAssetManager->RegisterAsset(LightShaderAsset);
 }
 
 void FEditorEngine::OnCreateWorldContext(FWorldContext& NewContext)
@@ -214,6 +226,8 @@ void FEditorEngine::Cleanup()
 	ImGui_ImplDX11_Shutdown();
 	ImGui_ImplWin32_Shutdown();
 	ImGui::DestroyContext();
+
+	mGraphicsManager->Cleanup();
 
 	FEngine::Cleanup();
 }
@@ -452,7 +466,7 @@ void FEditorEngine::Render(float DeltaTime)
 			{
 				PROFILE_SCOPE("Viewport/Render");
 				CurrentViewport->Viewport->Resize(*mGraphicsManager->GetRenderer(), static_cast<uint32>(ViewportRect.Width), static_cast<uint32>(ViewportRect.Height));
-				mGraphicsManager->Prepare(&CurrentViewport->Client->mCamera, CurrentRatio, ViewProjection, InvViewProjection, *CurrentViewport->Viewport, World, CurrentViewport->Client->GetViewMode(), CurrentViewport->Client->GetViewportType());
+				mGraphicsManager->Prepare(&CurrentViewport->Client->mCamera, CurrentRatio, ViewProjection, InvViewProjection, *CurrentViewport->Viewport, World, CurrentViewport->Client->GetViewMode(), CurrentViewport->Client->GetLightingEvaluationStage(), CurrentViewport->Client->GetLightingModel(), CurrentViewport->Client->GetViewportType());
 				mGraphicsManager->Render(HighlightedComponents);
 
 				CurrentViewport->Client->mGizmo.Render(SelectedComponent, CurrentViewport->Client->mCamera.Transform.GetLocation(), CurrentViewport->Client->mCamera.GetForwardVector(), CurrentViewport->Window->Rect, ViewProjection, CurrentViewport->Client->IsOrtho(), CurrentViewport->Client->GetCamera().mOrthoDistance);

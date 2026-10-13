@@ -432,13 +432,16 @@ struct FLightBuffer
 	}
 };
 
-
 struct FShader
 {
+	ID3D11Device* Device;
+
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> InputLayout;
 	uint32 Stride;
+
+	virtual ~FShader() = default;
 };
 
 struct FBindRenderTargetsDesc
@@ -568,8 +571,23 @@ public:
 	TSharedPtr<FRenderTarget2D> CreateRenderTarget2D(uint32 Width, uint32 Height, DXGI_FORMAT Format);
 	TSharedPtr<FDepthStencil> CreateDepthStencil(uint32 Width, uint32 Height);
 
-	TSharedPtr<FShader> CreateShader(const FString& ShaderPath);
-	TSharedPtr<FShader> CreateShaderFromMemory(const FString& ShaderMemory);
+	TSharedPtr<FShader> CreateShader(const FString& ShaderPath, const D3D_SHADER_MACRO* Macros = nullptr);
+	TSharedPtr<FShader> CreateShaderFromMemory(const FString& ShaderMemory, const D3D_SHADER_MACRO* Macros = nullptr);
+
+	template <typename T, typename... TArgs>
+	requires std::is_base_of_v<FShader, T>
+	TSharedPtr<T> CreateShaderInstance(TArgs... Args)
+	{
+		TSharedPtr<T> Shader = MakeShared<T>(std::forward<TArgs>(Args)...);
+		if (!Shader)
+		{
+			return nullptr;
+		}
+
+		Shader->Device = Device;
+
+		return Shader;
+	}
 
 	//Rendering
 	void Prepare(const FMatrix& ViewProjectionMatrix);

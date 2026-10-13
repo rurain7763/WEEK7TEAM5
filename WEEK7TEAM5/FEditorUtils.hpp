@@ -3,10 +3,55 @@
 #include "ImGui/imgui.h"
 #include "FAssetManager.h"
 #include <format>
+#include <string>
 
 class FEditorUtils
 {
 public:
+	// Selection storage belongs to the caller. Labels and Selected must contain ItemCount entries.
+	// Use a unique Label (or an enclosing PushID) for each combo.
+	// Width == 0 fits the preview; other values follow ImGui::SetNextItemWidth semantics.
+	static bool MultiSelectCombo(const char* Label, const char* const* Labels, bool* Selected, int ItemCount, const char* Preview = nullptr, float Width = 0.0f)
+	{
+		IM_ASSERT(ItemCount >= 0);
+		IM_ASSERT(ItemCount == 0 || (Labels && Selected));
+
+		if (ItemCount < 0 || (ItemCount > 0 && (!Labels || !Selected)))
+		{
+			return false;
+		}
+
+		int SelectedCount = 0;
+		for (int Index = 0; Index < ItemCount; ++Index)
+		{
+			SelectedCount += Selected[Index] ? 1 : 0;
+		}
+
+		const std::string DefaultPreview = std::format("{} selected", SelectedCount);
+		const char* PreviewText = Preview ? Preview : DefaultPreview.c_str();
+		const float AutoWidth = ImGui::CalcTextSize(PreviewText).x
+			+ ImGui::GetStyle().FramePadding.x * 2.0f + ImGui::GetFrameHeight();
+		ImGui::SetNextItemWidth(Width == 0.0f ? AutoWidth : Width);
+
+		bool bChanged = false;
+		if (ImGui::BeginCombo(Label, PreviewText))
+		{
+			for (int Index = 0; Index < ItemCount; ++Index)
+			{
+				ImGui::PushID(Index);
+				if (ImGui::Selectable(Labels[Index], &Selected[Index], ImGuiSelectableFlags_NoAutoClosePopups))
+				{
+					bChanged = true;
+				}
+				ImGui::PopID();
+			}
+
+			ImGui::EndCombo();
+		}
+
+		return bChanged;
+	}
+
 	static void DrawObjIcon(const ImVec2 PMin, const ImVec2 PMax, ImDrawList* DrawList, const bool bHovered, const bool bActive)
 	{
 		ImVec2 Center = ImVec2((PMin.x + PMax.x) * 0.5f, (PMin.y + PMax.y) * 0.5f - 4.0f);

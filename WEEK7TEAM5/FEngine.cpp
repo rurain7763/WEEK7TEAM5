@@ -73,16 +73,13 @@ void FEngine::Initialize(HINSTANCE hInstance, WNDPROC WndProc)
 	rid.dwFlags = 0;		// 포커스 있을 때만 수신
 	rid.hwndTarget = mHWnd;
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
-
-	mGraphicsManager = new FGraphicsManager(mHWnd);
-	FNativeFileDialog::Initialize(mHWnd);
-
-	const FVector4 NearTint(1.0f, 0.65f, 0.15f, 0.85f); // 주황 = 가까운 쪽
-	const FVector4 FarTint(0.25f, 0.55f, 1.0f, 0.85f); // 파랑 = 먼 쪽
-
+	
 	mFileManager = new FFileManager();
+	FNativeFileDialog::Initialize(mHWnd);
 	mFontManager = new FFontManager();
 	mAssetManager = new FAssetManager();
+
+	mGraphicsManager = new FGraphicsManager(mHWnd);
 }
 
 void FEngine::Cleanup()

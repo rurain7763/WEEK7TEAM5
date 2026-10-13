@@ -470,3 +470,9 @@ bool FStaticMeshAsset::BuildLODs(URenderer& Renderer)
 		return false; 
 	}
 }
+
+FShaderAsset::FShaderAsset(const FGuid& InAssetID, const FName& InAssetName, const TSharedPtr<FShader>& InShader)
+	: FAsset(InAssetID, InAssetName, EAssetType::Shader)
+	, Shader(InShader)
+{
+}

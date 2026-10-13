@@ -42,6 +42,18 @@ enum class EViewModeIndex
 	VMI_Max,
 };
 
+enum EShaderStage
+{
+	Vertex,
+	Pixel
+};
+
+enum ELightingModel
+{
+	Lambert,
+	BlinnPhong
+};
+
 enum class ECoordinateSpace
 {
 	World,
@@ -106,5 +118,10 @@ inline void EnumSetFlags(uint32& Flags, int32 FlagToSet, bool bEnable)
 	{
 		Flags &= ~FlagToSet;
 	}
+}
+
+inline bool EnumHasFlags(uint32 Flags, int32 FlagToCheck)
+{
+	return (Flags & FlagToCheck) == FlagToCheck;
 }
 
