@@ -2,6 +2,8 @@
 #include "ImGui/imgui_internal.h"
 #include "Assets.h"
 
+#include "FObjImporter.h"
+
 void FContentBrowser::Initialize(const std::filesystem::path& InitDirectory)
 {
 	RootDirectory = InitDirectory;
@@ -52,6 +54,61 @@ static std::filesystem::path ResolveImportPath(const std::filesystem::path& InPa
 
 	return Candidate;
 }
+
+// Todo: Delete later
+bool FContentBrowser::LoadMtlMaterials(const std::filesystem::path& SourcePath, TArray<FObjMaterialInfo>& OutMaterials)
+{
+	OutMaterials.Empty();
+
+	FObjImporter Importer;
+	FObjInfo ObjInfo;
+
+	if (!Importer.ParseMtl(
+		FString(SourcePath.string()), ObjInfo))
+	{
+		UE_LOG_ERROR("Failed to read MTL: %s", SourcePath.string().c_str()); return false;
+	}
+
+	if (ObjInfo.Materials.Num() == 0)
+	{
+		UE_LOG_ERROR("No materials found in MTL: %s", SourcePath.string().c_str());
+		return false;
+	}
+
+	OutMaterials = ObjInfo.Materials;
+	return true;
+}
+
+// Todo: Delete later
+void FContentBrowser::ImportMaterialSource(const std::filesystem::path& SourcePath)
+{
+	TArray<FObjMaterialInfo> Materials;
+	if (!LoadMtlMaterials(SourcePath, Materials))
+	{
+		return;
+	}
+
+	for (int32 MaterialIndex = 0; MaterialIndex < Materials.Num(); ++MaterialIndex)
+	{
+		const std::string AssetFileName = SourcePath.stem().string() + "_material_" + std::to_string(MaterialIndex + 1) + ".uasset";
+		const std::filesystem::path OutputPath = ResolveImportPath(CurrentDirectory / AssetFileName);
+
+		FAssetFileHeader Header{};
+		if (!FMaterialImporter::Import(Materials[MaterialIndex], SourcePath.parent_path(), OutputPath, Header))
+		{
+			UE_LOG_ERROR("Failed to import material: %s", Materials[MaterialIndex].Name.CStr());
+		}
+	}
+
+	if (EventHandler)
+	{
+		EventHandler->RefreshContentBrowser(
+			CurrentDirectory);
+	}
+
+	RefreshCache();
+}
+
 
 void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 {
@@ -147,6 +204,17 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 			}
 
 		}
+
+		ImGui::SameLine();
+		if (ImGui::Button("Import Material"))
+		{
+			std::filesystem::path SourcePath;
+			if (FNativeFileDialog::OpenFileDialog(CurrentDirectory, { FFileFilter{ L"MTL Files", L"*.mtl;" } }, L"", SourcePath))
+			{
+				ImportMaterialSource(SourcePath);
+			}
+		}
+
 		ImGui::SameLine();
 		ImGui::Text(" | Current: %s", CurrentDirectory.string().c_str());
 

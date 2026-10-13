@@ -6,7 +6,6 @@
 #define LIGHTING_MODEL_BLINN_PHONG (2U)
 */
 
-
 //#define LIGHTING_MODEL_GOURAUD (1U)
 #define LIGHTING_MODEL_LAMBERT (1U)
 //#define LIGHTING_MODEL_BLINN_PHONG (1U)
@@ -35,7 +34,9 @@ cbuffer ModelConstants : register(b0) // FConstants
 	int UseVertexColor;
     int HasTexture;
     int light_count;
-    float3 padding;
+    //float3 padding;
+    int HasNormalTexture;
+    float2 padding;
 }
 
 cbuffer ViewConstants : register(b1) // FConstants
@@ -62,6 +63,7 @@ struct VS_INPUT
     float3 normal : NORMAL;
 	float4 color : COLOR;
     float2 uv : TEXCOORD0;
+    float4 tangent : TANGENT;
 };
 
 struct PS_INPUT
@@ -71,10 +73,12 @@ struct PS_INPUT
     float4 color : COLOR;
     float2 uv : TEXCOORD0;
     float3 world_position : TEXCOORD1;
+    float4 tangent : TEXCOORD2;
 };
 
 Texture2D main_texture : register(t0);
 StructuredBuffer<LightInfo> lights : register(t1);
+Texture2D normal_texture : register(t2);
 
 SamplerState default_sampler : register(s0);
 
@@ -189,13 +193,43 @@ void shade(float3 world_position, float3 world_normal, inout float4 out_color)
     out_color.rgb = out_color.rgb * (ambient + total_diffuse) + total_specular;
 }
 
+float3 calculate_world_normal(PS_INPUT input, float3 normal)
+{
+    float3 N = normalize(input.normal);
+    float3 T = input.tangent.xyz;
+    T -= (N * dot(T, N));
+
+    if (dot(T, T) <= 1.0e-8f)
+    {
+        return N;
+    }
+
+    T = normalize(T);
+    float handedness = input.tangent.w < 0.0f ? -1.0f : 1.0f;
+    float3 B = handedness * cross(N, T);
+    
+    float3 tangent_normal = normal * 2.0f - 1.0f;
+    if (dot(tangent_normal, tangent_normal) <= 1.0e-8f)
+    {
+        return N;
+    }
+
+    return normalize(tangent_normal.x * T + tangent_normal.y * B + tangent_normal.z * N);
+}
+
 // Vertex Shader
 PS_INPUT mainVS(VS_INPUT input)
 {
     PS_INPUT output;
     
     float4 world_position = mul(input.position, Model);
-    float3 N = normalize(mul(input.normal, transpose((float3x3)inv_model)));    
+    float3 N = normalize(mul(input.normal, transpose((float3x3)inv_model)));
+    
+    float3x3 model_basis = (float3x3) Model;
+    float3 T = mul(input.tangent.xyz, model_basis);
+    T = normalize(T - N * dot(T, N));
+    float model_handedness = (determinant(model_basis) < 0.0f) ? -1.0f : 1.0f;
+    
     float4 output_color = float4(0.0, 0.0, 0.0, 1.0);
     if (UseVertexColor)
     {
@@ -215,6 +249,7 @@ PS_INPUT mainVS(VS_INPUT input)
     output.color = output_color;
     output.normal = N;
     output.world_position = world_position.xyz;
+    output.tangent = float4(T, input.tangent.w * model_handedness);
     
 	return output;
 }
@@ -223,9 +258,15 @@ PS_INPUT mainVS(VS_INPUT input)
 float4 mainPS(PS_INPUT input) : SV_TARGET
 {
     float3 world_normal = normalize(input.normal);
-    float4 output_color = input.color;
     
-    if (IsWorldNormalViewMode == 1)
+    if (HasNormalTexture != 0)
+    {
+        float3 textureNormal = normal_texture.Sample(default_sampler, input.uv).rgb;
+        world_normal = calculate_world_normal(input, textureNormal);
+    }
+    
+    float4 output_color = input.color;
+    if (IsWorldNormalViewMode != 0)
     {
         output_color = float4((world_normal * 0.5 + 0.5), 1.0f);
         
@@ -242,6 +283,8 @@ float4 mainPS(PS_INPUT input) : SV_TARGET
 #else 
     shade(input.world_position, world_normal, output_color);
 #endif
+    
+    
     
     return output_color;
 }

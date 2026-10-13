@@ -54,6 +54,10 @@ public:
 
 	const float GetDrawerHeight() { return DrawerHeight; }
 private:
+	// Todo: Delete later
+	bool LoadMtlMaterials(const std::filesystem::path& SourcePath, TArray<FObjMaterialInfo>& OutMaterials);
+	void ImportMaterialSource(const std::filesystem::path& SourcePath);
+
 	void RenderDrawer(const float BottomBarHeight);
 	void RenderFolderNode(const std::filesystem::path& DirectoryPath);
 private:

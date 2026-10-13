@@ -265,6 +265,16 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 
 			Pipeline->SetShaderResource(1, mLightInfoBuffer->SRV);
 			
+			// Todo: Change later
+			Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> NormalTextureSRV;
+
+			if (Info.NormalTexture)
+			{
+				NormalTextureSRV = Info.NormalTexture->GetSRV();
+			}
+
+			Pipeline->SetShaderResource(2, NormalTextureSRV);
+
 			// 개별 Draw의 상수는 기존 동적 상수 버퍼에 Map/Unmap으로 갱신합니다.
 			FMeshContants Constants;
 			Constants.Matrix = Info.Model;
@@ -274,7 +284,8 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.HasTexture = Info.Texture ? 1 : 0;
 			Constants.LightCount = mLightInfos.Num();
-			
+			Constants.HasNormalTexture = (NormalTextureSRV.Get() != nullptr) ? 1 : 0;
+
 			Pipeline->UpdateConstantBuffer(0, Constants);
 
 			if (Info.IndexBuffer)

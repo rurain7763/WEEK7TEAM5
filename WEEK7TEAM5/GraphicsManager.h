@@ -97,7 +97,6 @@ private:
 		int32 Padding;
 	};
 
-
 	struct FLightInfo
 	{
 		FVector Position;
@@ -137,7 +136,9 @@ private:
 		int32 UseVertexColor;
 		int32 HasTexture;
 		int32 LightCount;
-		int32 Padding[3];
+		//int32 Padding[3];
+		int32 HasNormalTexture;
+		int32 Padding[2];
 	};
 
 	struct FViewConstants

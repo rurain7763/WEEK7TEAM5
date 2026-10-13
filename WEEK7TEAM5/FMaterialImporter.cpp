@@ -46,9 +46,28 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
             FAssetFileHeader TextureHeader;
             Reader << TextureHeader;
             DiffuseTextureID = TextureHeader.AssetID;
-            
         }   
         
+        FGuid NormalTextureID;
+
+        if (MaterialInfo.NormalTexturePath.Len() != 0)
+        {
+            const std::filesystem::path TexturePath(MaterialInfo.NormalTexturePath.CStr());
+            const auto TextureUAssetPath = FTexture2DImporter::GetorImport(TexturePath, OutPath.parent_path());
+            if (!TextureUAssetPath)
+            {
+                UE_LOG_ERROR("Failed to import Normal Texture: %s", TexturePath.string().c_str());
+
+                return false;
+            }
+
+            FWindowsBinReader Reader(*TextureUAssetPath);
+            FAssetFileHeader TextureHeader;
+            Reader << TextureHeader;
+
+            NormalTextureID = TextureHeader.AssetID;
+        }
+
         FVector ZeroVector(0.0f);
         FGuid EmptyGuid;
         FWindowsBinWriter FileWriter(OutPath);
@@ -65,6 +84,7 @@ bool FMaterialImporter::Import(const FObjMaterialInfo& MaterialInfo, const std::
         Payload.SpecularTexture = EmptyGuid;
         Payload.NormalTexture = EmptyGuid;
         Payload.Opacity = Opacity;
+        Payload.NormalTexture = NormalTextureID;
 
         FileWriter << OutHead;
         FMaterialFileIO::Save(FileWriter, Payload);

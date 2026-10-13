@@ -54,6 +54,93 @@ void CalculateNormals(FStaticMeshBuildData& MeshData)
 	}
 }
 
+void CaclulateTangents(TArray<FVertex>* OutVertices, const TArray<uint32> Indices)
+{
+	TArray<FVector> TangentSums;
+	TArray<FVector> BitangentSums;
+
+	TangentSums.Init(FVector(0.0f), OutVertices->Num());
+	BitangentSums.Init(FVector(0.0f), OutVertices->Num());
+
+	constexpr float UV_TOLERANCE = 1.0e-8f;
+	for (int32 Index = 0; Index + 2 < Indices.Num(); Index += 3)
+	{
+		FVector RawTangent;
+		FVector RawBitangent;
+
+		// Calculate triangle tangents
+		{
+			FVertex Vertex0 = (*OutVertices)[Indices[Index]];
+			FVertex Vertex1 = (*OutVertices)[Indices[Index + 1]];
+			FVertex Vertex2 = (*OutVertices)[Indices[Index + 2]];
+
+			const FVector Edge1 = Vertex1.Pos - Vertex0.Pos;
+			const FVector Edge2 = Vertex2.Pos - Vertex0.Pos;
+
+			const FVector2 UVDelta1 = Vertex1.Tex - Vertex0.Tex;
+			const FVector2 UVDelta2 = Vertex2.Tex - Vertex0.Tex;
+
+			const float Determinant = UVDelta1.X * UVDelta2.Y - UVDelta1.Y * UVDelta2.X;
+			if (FMath::Abs(Determinant) <= UV_TOLERANCE)
+			{
+				continue;
+			}
+
+			const float InverseDeterminant = 1.0f / Determinant;
+			RawTangent = (Edge1 * UVDelta2.Y - Edge2 * UVDelta1.Y) * InverseDeterminant;
+			RawBitangent = (Edge2 * UVDelta1.X - Edge1 * UVDelta2.X) * InverseDeterminant;
+		}
+
+		for (int32 CornerIndex = 0; CornerIndex < 3; ++CornerIndex)
+		{
+			const uint32 VertexIndex = Indices[Index + CornerIndex];
+
+			TangentSums[VertexIndex] += RawTangent;
+			BitangentSums[VertexIndex] += RawBitangent;
+		}
+	}
+
+	// Todo: Constants
+	constexpr float NORMAL_TOLERANCE = 1.0e-8f;
+	constexpr float TANGENT_TOLERANCE = NORMAL_TOLERANCE;
+
+	for (int32 VertexIndex = 0; VertexIndex < OutVertices->Num(); ++VertexIndex)
+	{
+		// Set vertex tangent
+		{
+			if ((*OutVertices)[VertexIndex].Normal.LengthSquared() <= NORMAL_TOLERANCE)
+			{
+				(*OutVertices)[VertexIndex].Normal = FVector(0.0f, 0.0f, 1.0f);
+			}
+
+			(*OutVertices)[VertexIndex].Normal.Normalize();
+
+			FVector Normal = (*OutVertices)[VertexIndex].Normal;
+			FVector RawTangent = TangentSums[VertexIndex];
+
+			FVector Tangent;
+
+			//Make Tangent
+			{
+				Tangent = RawTangent - Normal * FVector::dot(RawTangent, Normal);
+
+				if (Tangent.LengthSquared() <= TANGENT_TOLERANCE)
+				{
+					const FVector ReferenceAxis = (FMath::Abs(Normal.z) < 0.999f) ? FVector(0.0f, 0.0f, 1.0f) : FVector(0.0f, 1.0f, 0.0f);
+					Tangent = FVector::cross(ReferenceAxis, Normal);
+				}
+
+				Tangent.Normalize();
+			}
+
+			const FVector ReconstructedBitangent = FVector::cross(Normal, Tangent);
+			const float Handedness = (FVector::dot(ReconstructedBitangent, BitangentSums[VertexIndex]) < 0.0f) ? -1.0f : 1.0f;
+
+			(*OutVertices)[VertexIndex].Tangent = FVector4(Tangent, Handedness);
+		}
+	}
+}
+
 FStaticMeshBuildData BuildFromVertices(const FVertex* InVertices, uint32 InVertexCount,
 	const uint32* InIndices, uint32 InIndexCount)
 {
@@ -123,7 +210,10 @@ FStaticMeshAsset::FStaticMeshAsset(const FGuid& InAssetID, const FName& InAssetN
 		}
 	}
 	
-	VertexBuffer = InRenderer.CreateVertexBuffer(InBuildData.Vertices.Data(), static_cast<uint32>(InBuildData.Vertices.Num()));
+	CaclulateTangents(&Vertices, Indices);
+
+	//VertexBuffer = InRenderer.CreateVertexBuffer(InBuildData.Vertices.Data(), static_cast<uint32>(InBuildData.Vertices.Num()));
+	VertexBuffer = InRenderer.CreateVertexBuffer(Vertices.Data(), static_cast<uint32>(Vertices.Num()));
 	IndexBuffer = InRenderer.CreateIndexBuffer(InBuildData.Indices.Data(), static_cast<uint32>(InBuildData.Indices.Num()));
     // 에셋 단위로 생성하며 모든 컴포넌트가 공유합니다.
     if (!BuildLODs(InRenderer))
@@ -472,6 +562,9 @@ bool FStaticMeshAsset::BuildLODs(URenderer& Renderer)
             {
                 LODError = FString("Invalid source mesh or simplification failed"); return false;
             }
+
+			CaclulateTangents(&LOD.Data.Vertices, LOD.Data.Indices);
+
             LOD.VertexBuffer = Renderer.CreateVertexBuffer(LOD.Data.Vertices.Data(), LOD.Data.Vertices.Num());
             LOD.IndexBuffer = Renderer.CreateIndexBuffer(LOD.Data.Indices.Data(), LOD.Data.Indices.Num());
             if (!LOD.VertexBuffer || !LOD.IndexBuffer || !LOD.VertexBuffer->Buffer || !LOD.IndexBuffer->Buffer)

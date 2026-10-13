@@ -357,6 +357,21 @@ bool FObjImporter::ParseMtl(const FString& FilePath, FObjInfo& OutObjInfo)
             Stream >> TexturePath;
             CurrentMaterial->DiffuseTexturePath = FString(TexturePath);
         }
+        else if (Command == "norm")
+        {
+            std::string TexturePath;
+            std::getline(Stream >> std::ws, TexturePath);
+
+            if (TexturePath.empty())
+            {
+                continue;
+            }
+
+            const std::filesystem::path MaterialDirectory = std::filesystem::path(FilePath.CStr()).parent_path();
+            const std::filesystem::path NormalTexturePath = std::filesystem::absolute(MaterialDirectory / TexturePath).lexically_normal();
+            CurrentMaterial->NormalTexturePath = FString(NormalTexturePath.generic_string());
+        }
+
     }
 
     return true;

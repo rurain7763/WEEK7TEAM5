@@ -164,6 +164,8 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
         const FMaterialAsset* Material = mMaterialAssets[SectionIndex].get();
 
 		FRenderInfo& RenderInfo = mRenderProxy->GetRenderInfo(ActiveSectionCount++);
+        RenderInfo.NormalTexture = (Material != nullptr) ? Material->GetNormalTexture().get() : nullptr;
+
         if (Material)
         {
 		    const FVector& DiffuseColor = Material->GetDiffuseColor();
