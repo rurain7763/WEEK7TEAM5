@@ -41,6 +41,7 @@ namespace BuiltInAssetID
 	inline const FGuid SpotLightIcon(0xB17B0001, 0x00000000, 0x00000000, 0x00003000);
 	inline const FGuid HeightFogIcon(0xB17B0001, 0x00000000, 0x00000000, 0x00003001);
 	inline const FGuid PointLightIcon(0xB17B0001, 0x00000000, 0x00000000, 0x00003002);
+	inline const FGuid DefaultNoramlMap(0xB17B0001, 0x00000000, 0x00000000, 0x00004000);
 }
 
 class FFileAssetSource : public FAssetSource

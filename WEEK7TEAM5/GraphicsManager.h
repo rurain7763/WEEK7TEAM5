@@ -19,6 +19,7 @@ class FAssetManager;
 struct FViewport;
 class UWorld;
 class UPrimitiveComponent;
+class FTexture2DAsset;
 
 struct FBuffer
 {
@@ -84,6 +85,9 @@ public:
 	void UpdateGpuRenderTime();
 	float GetGpuRenderTime() { return GpuRenderTime; }
 
+	//Default Normal Map 가져오기
+	TSharedPtr<FTexture2DAsset> GetDefaultNormalMap();
+
 private:
 	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
 
@@ -102,13 +106,18 @@ private:
 	{
 		FVector Position;
 		ELightType Type;
+
 		FLinearColor Color;
 		FVector Direction;
 		float Range;
+
 		float Intensity;
 		float FallOf;
 		float InnerConeAngle;
 		float OuterConeAngle;
+
+		float Shininess;
+		float LightPadding[3];
 	};
 
 	struct FDirectionalLightInfo
@@ -197,4 +206,6 @@ private:
 
 	int32 GridGap = 1;
 	bool bGpuTimerActive = false;
+
+	TSharedPtr<FTexture2DAsset> DefaultNormalMap = nullptr;
 };

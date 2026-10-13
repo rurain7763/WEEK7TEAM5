@@ -246,6 +246,7 @@ TSharedPtr<FAsset> FTexture2DAssetLoader::LoadAsset(const FGuid& AssetID, const 
 	return MakeShared<FTexture2DAsset>(AssetID, AssetName, Texture, SRV);
 }
 
+
 void FTexture2DAssetLoader::UnloadAsset(TSharedPtr<FAsset> Asset)
 {
 	// NOTE: Nothing to do for now

@@ -159,6 +159,18 @@ void FEditorEngine::InitAssetManager()
 	TSharedPtr<FFontAsset> TestFontAsset = mAssetManager->GetAssetAs<FFontAsset>(FName("TestFont"), true);
 	TSharedPtr<FFontAtlasAsset> FontAtlasAsset = MakeShared<FFontAtlasAsset>(FGuid::NewGuid(), FName("TestFontAtlas"), *renderer, TestFontAsset, 512, 512, 2, 2);
 	mAssetManager->RegisterAsset(FontAtlasAsset);
+	
+	//Default Normal Map 생성 (0.5, 0.5, 1, 1) = (128, 128, 255, 255)으로 생성.
+	FMemoryWriter Writer;
+	int32 Width = 1;
+	int32 Height = 1;
+	int32 Channels = 4;
+	TArray<uint8> Pixels = { 128, 128, 255, 255 };
+	Writer << Width << Height << Channels << Pixels;
+
+	FMemoryReader Reader(Writer.GetData());
+	TSharedPtr<FAsset> DefaultNormal2DAsset = TextureLoader->LoadAsset(BuiltInAssetID::DefaultNoramlMap, FName("DefaultNormalMap"), Reader);
+	mAssetManager->RegisterAsset(DefaultNormal2DAsset);
 }
 
 void FEditorEngine::OnCreateWorldContext(FWorldContext& NewContext)

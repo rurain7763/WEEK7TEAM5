@@ -48,7 +48,11 @@ struct FRenderInfo
 	ID3D11Buffer* IndexBuffer = nullptr;
 	uint32 StartIndex = 0;
 	uint32 IndexCount = 0;
+	//TODO 텍스처가 더 늘어난다면 그냥 머티리얼을 들고 있게 하는게 어떤지 고려
+	//	바인드할 때 머티리얼이 들고 있는 거 슬롯표 따라서 꺼내면 된다.
+	//	머티리얼이 바뀔때나 바인딩하도록 해도 된다.
 	FTexture2DAsset* Texture = nullptr;
+	FTexture2DAsset* NormalTexture = nullptr;
 	FVector2 UVOffset = { 0.f, 0.f };
 	FMatrix Model;
 	uint32 ObjectInternalIndex;

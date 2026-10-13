@@ -148,6 +148,7 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 				Info.Intensity = PointLight->GetIntensity();
 				Info.Range = PointLight->GetRadius();
 				Info.FallOf = PointLight->GetRadiusFallOff();
+				Info.Shininess = PointLight->GetShininess();
 				continue;
 			}
 
@@ -165,6 +166,7 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 				Info.FallOf = SpotLight->GetRadiusFallOff();
 				Info.InnerConeAngle = SpotLight->GetInnerConeAngle();
 				Info.OuterConeAngle = SpotLight->GetOuterConeAngle();
+				Info.Shininess = SpotLight->GetShininess();
 				continue;
 			}
 
@@ -263,7 +265,10 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 				Pipeline->SetShaderResource(0, Info.Texture->GetSRV());
 			}
 
-			Pipeline->SetShaderResource(1, mLightInfoBuffer->SRV);
+			//Normal Map이 없으면 기본 NormalMap 사용.
+			Pipeline->SetShaderResource(1, Info.NormalTexture ? Info.NormalTexture->GetSRV() : GetDefaultNormalMap()->GetSRV());
+			
+			Pipeline->SetShaderResource(8, mLightInfoBuffer->SRV);
 			
 			// 개별 Draw의 상수는 기존 동적 상수 버퍼에 Map/Unmap으로 갱신합니다.
 			FMeshContants Constants;
@@ -401,6 +406,16 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 	}
 }
 
+
+TSharedPtr<FTexture2DAsset> FGraphicsManager::GetDefaultNormalMap()
+{
+	if (DefaultNormalMap == nullptr)
+	{
+		DefaultNormalMap = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(BuiltInAssetID::DefaultNoramlMap, true);
+	}
+
+	return DefaultNormalMap;
+}
 
 void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives)
 {
