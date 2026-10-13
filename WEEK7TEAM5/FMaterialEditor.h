@@ -29,6 +29,7 @@ public:
 		NewPayload.SpecularTexture = MaterialAsset->HasSpecularTexture() ? MaterialAsset->GetSpecularTexture()->GetAssetID() : FGuid();
 		NewPayload.NormalTexture = MaterialAsset->HasNormalTexture() ? MaterialAsset->GetNormalTexture()->GetAssetID() : FGuid();
 		NewPayload.Opacity = MaterialAsset->GetOpacity();
+		NewPayload.Shininess = MaterialAsset->GetShininess();
 
 		bIsOpen = true;
 	}
@@ -42,6 +43,7 @@ public:
 		bIsDirty |= FEditorUtils::DrawAssetCombo("Diffuse Texture", EAssetType::Texture2D, NewPayload.DiffuseTexture);
 		bIsDirty |= FEditorUtils::DrawAssetCombo("Specular Texture", EAssetType::Texture2D, NewPayload.SpecularTexture);
 		bIsDirty |= FEditorUtils::DrawAssetCombo("Normal Texture", EAssetType::Texture2D, NewPayload.NormalTexture);
+		bIsDirty |= ImGui::InputFloat("Shininess", &NewPayload.Shininess);
 
 		if (bIsDirty && ImGui::Button("Save"))
 		{
@@ -61,6 +63,7 @@ public:
 		MaterialAsset->SetDiffuseTexture(NewPayload.DiffuseTexture);
 		MaterialAsset->SetSpecularTexture(NewPayload.SpecularTexture);
 		MaterialAsset->SetNormalTexture(NewPayload.NormalTexture);
+		MaterialAsset->SetShininess(NewPayload.Shininess);
 		
 		FWindowsBinWriter Writer(AssetFilePath);
 

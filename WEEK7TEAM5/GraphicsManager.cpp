@@ -273,6 +273,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.BindedTextureMapFlags = 0;
 			Constants.LightCount = mLightInfos.Num();
+			Constants.Shininess = 32.f;
 
 			if (Info.Material)
 			{
@@ -297,6 +298,8 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 					Pipeline->SetShaderResource(2, NormalTexture->GetSRV());
 					EnumSetFlags(Constants.BindedTextureMapFlags, TM_Normal, true);
 				}
+
+				Constants.Shininess = Info.Material->GetShininess();
 			}
 
 			Pipeline->SetShaderResource(3, mLightInfoBuffer->SRV);
@@ -351,12 +354,12 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 		}
 	}
 
-	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent());
+	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent() && mViewModeIndex != EViewModeIndex::VMI_WorldNormal);
 	mFXAAProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::FXAA));
 	mDepthPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_SceneDepth);
 	mNormalPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_WorldNormal);
 
-	FPostProcess* PostProcesses[] = { 
+	FPostProcess* PostProcesses[] = {
 		&mFogProcess,
 		&mFXAAProcess,
 		&mDepthPreviewProcess,
@@ -429,6 +432,16 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 	}
 }
 
+
+TSharedPtr<FTexture2DAsset> FGraphicsManager::GetDefaultNormalMap()
+{
+	if (DefaultNormalMap == nullptr)
+	{
+		DefaultNormalMap = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(BuiltInAssetID::DefaultNoramlMap, true);
+	}
+
+	return DefaultNormalMap;
+}
 
 void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives)
 {

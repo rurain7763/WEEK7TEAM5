@@ -31,6 +31,9 @@ public:
 
 	virtual bool Serialize(void* Data, uint64 Size) = 0;
 
+	void SetVersion(uint32 pVersion) { Version = pVersion; }
+	uint32 GetVersion() const { return Version; }
+
 	// int, float, double 등 (enum 제외)
 	template <typename T>
 	requires (CArchiveArithmetic<T> && !std::is_enum_v<T>)
@@ -70,6 +73,7 @@ public:
 
 private:
 	EArchiveMode Mode;
+	uint32 Version = UINT32_MAX;
 };
 
 // 커스텀 struct/class 직렬화 포인트를 위한 기본 템플릿

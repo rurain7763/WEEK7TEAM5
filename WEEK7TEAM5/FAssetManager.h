@@ -30,6 +30,8 @@ struct FAssetMetaInfo
 	uint64 PayloadOffset;
 	TSharedPtr<FAssetLoader> AssetLoader;
 	TSharedPtr<FAssetSource> AssetSource;
+
+	uint32 Version = UINT32_MAX;
 };
 
 class FAssetManager

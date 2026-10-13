@@ -28,7 +28,11 @@ public:
 	inline void SetRadiusFallOff(float InRadiusFallOff) { RadiusFallOff = InRadiusFallOff; }
 	inline float GetRadiusFallOff() const { return RadiusFallOff; }
 
+	inline void SetShininess(float InShininess) { Shininess = InShininess; }
+	inline float GetShininess() const { return Shininess; }
+
 private:
 	float Radius = 5.f;
 	float RadiusFallOff = 1.f;
+	float Shininess = 32.f;
 };

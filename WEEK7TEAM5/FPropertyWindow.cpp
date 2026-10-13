@@ -753,6 +753,12 @@ void FPropertyWindow::RenderPointLightComponent(UPointLightComponent* PointLight
 	{
 		PointLightComponent->SetRadiusFallOff(RadiusFallOffInput);
 	}
+
+	float ShininessInput = PointLightComponent->GetShininess();
+	if (ImGui::DragFloat("Shininess", &ShininessInput, 0.1f, 0.001f, FLT_MAX, "%.3f", ImGuiSliderFlags_AlwaysClamp))
+	{
+		PointLightComponent->SetShininess(ShininessInput);
+	}
 }
 
 void FPropertyWindow::RenderAmbientLightComponent(UAmbientLightComponent* AmbientLightComponent)
