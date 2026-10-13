@@ -1,62 +1,52 @@
 #include "FStaticMeshImporter.h"
-#include "FObjImporter.h"
 #include "FArchive.h"
 #include "FLogManager.h"
 #include "FGuid.h"
 #include "Serializers.h"
-#include "FStaticMeshBuilder.h"
 #include "FMaterialImporter.h"
 #include "AssetFileIOs.h"
 #include "Matrix.h"
+#include "FTexture2DImporter.h"
+#include "FileManager.h"
 
 // .obj -> .uasset 변환
 bool FStaticMeshImporter::Import(const std::filesystem::path& InPath, const std::filesystem::path& OutPath, FAssetFileHeader& OutHead)
 {
-    FStaticMeshPayload Payload;
-    FStaticMeshBuildData BuildData;
-
-    if (!FStaticMeshFileIO::Load(InPath, Payload))
+    FStaticMeshSourcePayload SourcePayload;
+    if (!FStaticMeshFileIO::Load(InPath, SourcePayload))
     {
         UE_LOG_ERROR("Failed to load static mesh source: %s", InPath.string().c_str());
         return false;
     }
-    if (!FStaticMeshBuilder::Build(Payload.MeshDescription, BuildData))
-    {
-        UE_LOG_ERROR("Failed to build cooked mesh data: %s", InPath.string().c_str());
-        return false;
-    }
 
-    //탄젠트가 없다면 계산
-    if (!FStaticMeshBuilder::HasTangents)
-    {
-        FStaticMeshBuilder::CalculateTangents(BuildData.Vertices, BuildData.Indices);
-    }
-    
-    OutHead.Version = 2;
+    OutHead.Version = 1;
     OutHead.AssetType = EAssetType::StaticMesh;
     OutHead.AssetID = FGuid::NewGuid();
 
     try
     {
-        for (FObjMaterialInfo Material : Payload.Materials)
-        {
-            std::filesystem::path MaterialPath = OutPath.parent_path() / (OutPath.stem().string() + "_" + Material.Name.CStr() + "_material" + ".uasset");
-            FAssetFileHeader MaterialHeader;
-            FMaterialImporter::Import(Material, InPath.parent_path(), MaterialPath, MaterialHeader);
-            
-            for (FStaticMeshSection& Section : BuildData.Sections)
-            {
-                if (Section.MaterialName == Material.Name)
-                {
-                    Section.MaterialAssetID = MaterialHeader.AssetID;
-                }
-            }
-        }
+        FStaticMeshPayload Payload;
+		Payload.Vertices = SourcePayload.Vertices;
+		Payload.Indices = SourcePayload.Indices;
+		Payload.Sections = SourcePayload.Sections;
+
+		FMaterialImportResult MaterialsResult;
+		if (!FMaterialImporter::Import(SourcePayload.Materials, InPath, OutPath.parent_path(), MaterialsResult))
+		{
+			UE_LOG_ERROR("Failed to import materials from %s", InPath.string().c_str());
+			return false;
+		}
+
+		for (int32 i = 0; i < SourcePayload.Materials.Num(); ++i)
+		{
+			Payload.Materials.Add(MaterialsResult.MaterialIDs[i]);
+		}
+
         FWindowsBinWriter FileWriter(OutPath);
         
         FileWriter << OutHead;
 
-        FStaticMeshFileIO::Save(FileWriter, BuildData);
+        FStaticMeshFileIO::Save(FileWriter, Payload);
     }
     catch(const std::exception&)
     {
@@ -67,64 +57,53 @@ bool FStaticMeshImporter::Import(const std::filesystem::path& InPath, const std:
     return true;
 }   
 
-bool FStaticMeshImporter::Export(const std::filesystem::path& InPath, const std::filesystem::path& OutPath, 
-    FAssetFileHeader& OutHead, const FTransform& Transform, const FVector4& OverrideColor)
+bool FStaticMeshImporter::Import(const std::filesystem::path& InPath, const std::filesystem::path& OutPath, FAssetFileHeader& OutHead, const FTransform& Transform, const FVector4& OverrideColor)
 {
-    FStaticMeshPayload Payload;
-    FStaticMeshBuildData BuildData;
-
-    if (!FStaticMeshFileIO::Load(InPath, Payload))
+    FStaticMeshSourcePayload SourcePayload;
+    if (!FStaticMeshFileIO::Load(InPath, SourcePayload))
     {
         UE_LOG_ERROR("Failed to load static mesh source: %s", InPath.string().c_str());
-        return false;
-    }
-    if (!FStaticMeshBuilder::Build(Payload.MeshDescription, BuildData))
-    {
-        UE_LOG_ERROR("Failed to build cooked mesh data: %s", InPath.string().c_str());
         return false;
     }
 
     const FMatrix BakeMatrix = Transform.MakeMatrix();
     const FMatrix NormalMatrix = BakeMatrix.AffineInverse().Transpose();
-    for (FVertex& Vertex : BuildData.Vertices)
+    for (FVertex& Vertex : SourcePayload.Vertices)
     {
-        Vertex.Pos = BakeMatrix.TransformPosition(Vertex.Pos);
+        Vertex.Position = BakeMatrix.TransformPosition(Vertex.Position);
         Vertex.Normal = NormalMatrix.TransformVector(Vertex.Normal);
         Vertex.Normal.Normalize();
+		Vertex.Color = OverrideColor;
     }
 
-    //탄젠트가 없다면 계산
-    if (!FStaticMeshBuilder::HasTangents)
-    {
-        FStaticMeshBuilder::CalculateTangents(BuildData.Vertices, BuildData.Indices);
-    }
-
-
-    OutHead.Version = 2;
+    OutHead.Version = 1;
     OutHead.AssetType = EAssetType::StaticMesh;
     OutHead.AssetID = FGuid::NewGuid();
 
     try
     {
-        for (FObjMaterialInfo Material : Payload.Materials)
-        {
-            std::filesystem::path MaterialPath = OutPath.parent_path() / (OutPath.stem().string() + "_" + Material.Name.CStr() + "_material" +".uasset");
-            FAssetFileHeader MaterialHeader;
-            FMaterialImporter::Import(Material, InPath.parent_path(), MaterialPath, MaterialHeader);
+        FStaticMeshPayload Payload;
+        Payload.Vertices = SourcePayload.Vertices;
+        Payload.Indices = SourcePayload.Indices;
+        Payload.Sections = SourcePayload.Sections;
 
-            for (FStaticMeshSection& Section : BuildData.Sections)
-            {
-                if (Section.MaterialName == Material.Name)
-                {
-                    Section.MaterialAssetID = MaterialHeader.AssetID;
-                }
-            }
+        FMaterialImportResult MaterialsResult;
+        if (!FMaterialImporter::Import(SourcePayload.Materials, InPath, OutPath.parent_path(), MaterialsResult))
+        {
+            UE_LOG_ERROR("Failed to import materials from %s", InPath.string().c_str());
+            return false;
         }
+
+        for (int32 i = 0; i < SourcePayload.Materials.Num(); ++i)
+        {
+            Payload.Materials.Add(MaterialsResult.MaterialIDs[i]);
+        }
+
         FWindowsBinWriter FileWriter(OutPath);
 
         FileWriter << OutHead;
 
-        FStaticMeshFileIO::Save(FileWriter, BuildData);
+        FStaticMeshFileIO::Save(FileWriter, Payload);
     }
     catch (const std::exception&)
     {
@@ -135,20 +114,5 @@ bool FStaticMeshImporter::Export(const std::filesystem::path& InPath, const std:
     return true;
 }
 
-// .uasset 반환 or 변환 후 반환
-std::optional<std::filesystem::path> FStaticMeshImporter::GetorImport(const std::filesystem::path& InPath)
-{
-    std::filesystem::path CheckPath = InPath;
-    CheckPath.replace_extension(".uasset");
-    
-    // .uasset 파일 있으면 그 경로 반환
-    if(std::filesystem::exists(CheckPath))
-        return CheckPath;
 
-    // 없으면 Import 함수로 생성
-    FAssetFileHeader OutHeader;
-    if (Import(InPath, CheckPath, OutHeader))
-        return CheckPath;
-    else
-        return std::nullopt;
-}
+

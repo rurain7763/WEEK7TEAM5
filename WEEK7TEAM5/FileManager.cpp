@@ -114,3 +114,25 @@ bool IsUnder(const std::filesystem::path& targetPath, const std::filesystem::pat
 
     return first != relative.end() && *first != L"..";
 }
+
+std::filesystem::path MakeUniquePath(const std::filesystem::path& InPath)
+{
+    // 같은 이름이 존재하지 않으면 그냥 그 경로로 진행
+    if (!std::filesystem::exists(InPath))
+    {
+        return InPath;
+    }
+
+    // 같은 이름이 존재하는 경우 Suffix 1씩 늘려가며 check
+    int32 Suffix = 1;
+    std::filesystem::path Candidate;
+
+    do
+    {
+        Candidate = InPath.parent_path() / (InPath.stem().string() + "_" + std::to_string(Suffix) + InPath.extension().string());
+        ++Suffix;
+
+    } while (std::filesystem::exists(Candidate));
+
+    return Candidate;
+}

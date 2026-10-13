@@ -26,7 +26,6 @@ class URenderer;
 struct FViewport;
 struct FEditorLayout;
 struct FEditorViewport;
-class UStaticMesh;
 class UActorComponent;
 class FEditorUIManager;
 class FComponentVisualizerManager;

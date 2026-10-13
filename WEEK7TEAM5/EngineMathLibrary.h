@@ -6,6 +6,7 @@
 #include "MathUtility.h"
 #include "Rotator.h"
 #include "FAABB.h"
+#include "TArray.h"
 #include <functional>
 
 template <typename T>
@@ -334,3 +335,108 @@ inline bool RayIntersectsAABB(const FRay& Ray, float Distance, const FAABB& AABB
 	return true;
 }
 
+inline void CalculateTangents(const FVector* Points, const FVector2* UVs, const FVector* Normals, int32 VertexCount, const FIntVector3* Triangles, int32 TriangleCount, TArray<FVector4>& OutTangents)
+{
+	FVector* Tangents = new FVector[VertexCount * 2];
+	FVector* Tangent0Array = Tangents;
+	FVector* Tangent1Array = Tangents + VertexCount;
+	std::memset(Tangents, 0, sizeof(FVector) * VertexCount * 2);
+
+	for (int32 i = 0; i < TriangleCount; i++)
+	{
+		const FIntVector3& Tri = Triangles[i];
+
+		const FVector& P0 = Points[Tri.X];
+		const FVector2& UV0 = UVs[Tri.X];
+
+		const FVector& P1 = Points[Tri.Y];
+		const FVector2& UV1 = UVs[Tri.Y];
+
+		const FVector& P2 = Points[Tri.Z];
+		const FVector2& UV2 = UVs[Tri.Z];
+
+		FVector Edge1 = P1 - P0;
+		FVector2 DeltaUV1 = UV1 - UV0;
+	
+		FVector Edge2 = P2 - P0;
+		FVector2 DeltaUV2 = UV2 - UV0;
+
+		float D = DeltaUV1.X * DeltaUV2.Y - DeltaUV2.X * DeltaUV1.Y;
+		float InvD = (D == 0.f) ? 0.f : 1.f / D;
+
+		FVector Tangent0 = (Edge1 * DeltaUV2.Y - Edge2 * DeltaUV1.Y) * InvD;
+		FVector Tangent1 = (Edge2 * DeltaUV1.X - Edge1 * DeltaUV2.X) * InvD;
+
+		Tangent0Array[Tri.X] += Tangent0;
+		Tangent0Array[Tri.Y] += Tangent0;
+		Tangent0Array[Tri.Z] += Tangent0;
+
+		Tangent1Array[Tri.X] += Tangent1;
+		Tangent1Array[Tri.Y] += Tangent1;
+		Tangent1Array[Tri.Z] += Tangent1;
+	}
+
+	OutTangents.SetNum(VertexCount);
+	for (int32 i = 0; i < VertexCount; i++)
+	{
+		const FVector& N = Normals[i];
+		const FVector& T0 = Tangent0Array[i];
+		const FVector& T1 = Tangent1Array[i];
+
+		// Gram-Schmidt orthogonalize
+		FVector Tangent = T0 - N * FVector::dot(N, T0);
+		Tangent.SafeNormalize();
+
+		// Calculate handedness
+		float M = (FVector::dot(FVector::cross(N, T0), T1) < 0.f) ? -1.f : 1.f;
+
+		OutTangents[i] = FVector4(Tangent.x, Tangent.y, Tangent.z, M);
+	}
+
+	delete[] Tangents;
+}
+
+template <typename T>
+inline void CalculateTangents(T* Vertices, int32 VertexCount, const uint32* Indices, int32 IndexCount)
+{
+	TArray<FVector> Points;
+	Points.SetNum(VertexCount);
+
+	TArray<FVector2> UVs;
+	UVs.SetNum(VertexCount);
+
+	TArray<FVector> Normals;
+	Normals.SetNum(VertexCount);
+
+	for (int32 i = 0; i < VertexCount; i++)
+	{
+		Points[i] = Vertices[i].Position;
+		UVs[i] = Vertices[i].UV;
+		Normals[i] = Vertices[i].Normal;
+	}
+
+	TArray<FIntVector3> Triangles;
+	for (int32 i = 0; i < IndexCount; i += 3)
+	{
+		Triangles.Emplace(Indices[i], Indices[i + 1], Indices[i + 2]);
+	}
+
+	TArray<FVector4> Tangents;
+	CalculateTangents(Points.Data(), UVs.Data(), Normals.Data(), VertexCount, Triangles.Data(), Triangles.Num(), Tangents);
+
+	for (int32 i = 0; i < VertexCount; i++)
+	{
+		Vertices[i].Tangent = Tangents[i];
+	}
+}
+
+inline FVector CalculateNormal(const FVector& P0, const FVector& P1, const FVector& P2)
+{
+	FVector Edge1 = P1 - P0;
+	FVector Edge2 = P2 - P0;
+
+	FVector Normal = FVector::cross(Edge1, Edge2);
+	Normal.SafeNormalize();
+
+	return Normal;
+}

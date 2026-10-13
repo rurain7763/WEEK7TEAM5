@@ -260,16 +260,6 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 				Pipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
 			}
 
-			if (Info.Texture)
-			{
-				Pipeline->SetShaderResource(0, Info.Texture->GetSRV());
-			}
-
-			//Normal Map이 없으면 기본 NormalMap 사용.
-			Pipeline->SetShaderResource(1, Info.NormalTexture ? Info.NormalTexture->GetSRV() : GetDefaultNormalMap()->GetSRV());
-			
-			Pipeline->SetShaderResource(8, mLightInfoBuffer->SRV);
-			
 			// 개별 Draw의 상수는 기존 동적 상수 버퍼에 Map/Unmap으로 갱신합니다.
 			FMeshContants Constants;
 			Constants.Matrix = Info.Model;
@@ -277,9 +267,35 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			Constants.Color = Info.Color;
 			Constants.UVOffset = Info.UVOffset;
 			Constants.UseVertexColor = Info.UseVertexColor;
-			Constants.HasTexture = Info.Texture ? 1 : 0;
+			Constants.BindedTextureMapFlags = 0;
 			Constants.LightCount = mLightInfos.Num();
-			Constants.UseWorldNormalView = (mViewModeIndex == EViewModeIndex::VMI_WorldNormal) ? 1 : 0;
+
+			if (Info.Material)
+			{
+				const FTexture2DAsset* DiffuseTexture = Info.Material->GetDiffuseTexture();
+				const FTexture2DAsset* SpecularTexture = Info.Material->GetSpecularTexture();
+				const FTexture2DAsset* NormalTexture = Info.Material->GetNormalTexture();
+
+				if (DiffuseTexture)
+				{
+					Pipeline->SetShaderResource(0, DiffuseTexture->GetSRV());
+					EnumSetFlags(Constants.BindedTextureMapFlags, TM_BaseColor, true);
+				}
+
+				if (SpecularTexture)
+				{
+					Pipeline->SetShaderResource(1, SpecularTexture->GetSRV());
+					EnumSetFlags(Constants.BindedTextureMapFlags, TM_Specular, true);
+				}
+
+				if (NormalTexture)
+				{
+					Pipeline->SetShaderResource(2, NormalTexture->GetSRV());
+					EnumSetFlags(Constants.BindedTextureMapFlags, TM_Normal, true);
+				}
+			}
+
+			Pipeline->SetShaderResource(3, mLightInfoBuffer->SRV);
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);
 
@@ -464,7 +480,7 @@ void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primi
 		Constants.Matrix = Primitive->GetWorldMatrix();
 		Constants.InvMatrix = Primitive->GetWorldMatrix().AffineInverse();
 		Constants.Color = FVector4(0.f, 0.f, 0.f, 0.f);
-		Constants.HasTexture = 0;
+		Constants.BindedTextureMapFlags = 0;
 		Constants.UseVertexColor = 0;
 		Constants.UVOffset = FVector2(0.f, 0.f);
 		Constants.LightCount = 0;

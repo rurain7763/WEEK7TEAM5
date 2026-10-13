@@ -1,5 +1,7 @@
 ﻿#pragma once
 
+#include "Core.h"
+
 enum class EAxis : int { X = 0, Y = 1, Z = 2 };
 
 enum class EPrimitive
@@ -86,3 +88,23 @@ enum class EEndPlayReason
 	RemovedFromWorld,
 	Quit,
 };
+
+enum ETextureMap : uint32
+{
+	TM_BaseColor = 1 << 0,
+	TM_Specular = 1 << 1,
+	TM_Normal = 1 << 2,
+};
+
+inline void EnumSetFlags(uint32& Flags, int32 FlagToSet, bool bEnable)
+{
+	if (bEnable)
+	{
+		Flags |= FlagToSet;
+	}
+	else
+	{
+		Flags &= ~FlagToSet;
+	}
+}
+

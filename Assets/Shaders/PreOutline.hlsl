@@ -27,6 +27,7 @@ struct VS_INPUT
     float3 normal : NORMAL;
 	float4 color : COLOR;
     float2 uv : TEXCOORD0;
+    float4 tangent : TANGENT; // xyz: local tangent, w: handedness
 };
 
 struct PS_INPUT

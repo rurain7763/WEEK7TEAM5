@@ -158,10 +158,10 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
 	int32 ActiveSectionCount = 0;
     for (int32 SectionIndex = 0; SectionIndex < Sections.Num(); ++SectionIndex)
     {
-        const FStaticMeshSection& Section = Sections[SectionIndex];
+        const FMeshSection& Section = Sections[SectionIndex];
         if (Section.IndexCount == 0) continue;
 
-        const FMaterialAsset* Material = mMaterialAssets[SectionIndex].get();
+        FMaterialAsset* Material = mMaterialAssets[SectionIndex].get();
 
 		FRenderInfo& RenderInfo = mRenderProxy->GetRenderInfo(ActiveSectionCount++);
         if (Material)
@@ -179,7 +179,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
             RenderInfo.IndexBuffer = mMeshAsset->GetIndexBuffer(LOD);
             RenderInfo.StartIndex = Section.FirstIndex;
             RenderInfo.IndexCount = Section.IndexCount;
-            RenderInfo.Texture = Material->GetDiffuseTexture().get();
+            RenderInfo.Material = Material;
             RenderInfo.UVOffset = mUVOffsets[SectionIndex];
             RenderInfo.Model = GetWorldMatrix();
             RenderInfo.Color = FVector4(DiffuseColor.x, DiffuseColor.y, DiffuseColor.z, Opacity);
@@ -194,7 +194,7 @@ void UStaticMeshComponent::Render(FRenderCollector& RenderCollector)
 			RenderInfo.IndexBuffer = mMeshAsset->GetIndexBuffer(LOD);
 			RenderInfo.StartIndex = Section.FirstIndex;
 			RenderInfo.IndexCount = Section.IndexCount;
-			RenderInfo.Texture = nullptr;
+			RenderInfo.Material = nullptr;
 			RenderInfo.UVOffset = mUVOffsets[SectionIndex];
             RenderInfo.Model = GetWorldMatrix();
 			RenderInfo.Color = Color;
@@ -275,7 +275,12 @@ void UStaticMeshComponent::SetMesh(const TSharedPtr<FStaticMeshAsset>& InMesh, u
         for (int32 i = 0; i < Sections.Num(); i++)
         {
             auto& Section = Sections[i];
-            mMaterialAssets[i] = Section.MaterialAssetID.IsValid() ? FAssetManager::Get().GetAssetAs<FMaterialAsset>(Section.MaterialAssetID, true) : nullptr;
+			
+            mMaterialAssets[i] = nullptr;
+			if (Section.MaterialIndex != -1)
+			{
+				mMaterialAssets[i] = InMesh->GetMaterial(Section.MaterialIndex);
+			}
         }
         mMeshAsset = InMesh;
     }

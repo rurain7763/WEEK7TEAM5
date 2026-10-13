@@ -14,6 +14,8 @@
 #include "USpotLightComponent.h"
 #include "World.h"
 #include "FEngine.h"
+#include "FAssetEditor.h"
+#include "FMaterialEditor.h"
 
 FEditorUIManager::FEditorUIManager(URenderer& InRenderer)
 	: mRenderer(InRenderer)
@@ -177,6 +179,20 @@ void FEditorUIManager::Render(FGuiReference& GuiReference)
 	ConsoleWindow::Get().Process(BottomBarHeight);
 	mContentBrowser.Render(BottomBarHeight);
 #endif
+
+	for (int32 i = 0; i < mAssetEditors.Num(); ++i)
+	{
+		TSharedPtr<FAssetEditor> AssetEditor = mAssetEditors[i];
+		if (AssetEditor->IsOpen())
+		{
+			AssetEditor->Render();
+		}
+		else
+		{
+			mAssetEditors.RemoveAtSwap(i);
+			--i;
+		}
+	}
 }
 
 void FEditorUIManager::RenderMenuBar(FGuiReference& GuiReference)
@@ -230,7 +246,7 @@ void FEditorUIManager::RenderMenuBar(FGuiReference& GuiReference)
 								FWorldContext* NewWorldContext = GEditor.GetEditorWorldContext();
 								UWorld* NewWorld = NewWorldContext->World();
 								LoadMap(NewWorld, Camera, selectedPath.value(), *FileManager);
-								});
+							});
 
 							// 파일 로드가 실행된 뒤에만 카메라를 초기화한다.
 							GuiReference.ViewportClient->Reset();
@@ -487,7 +503,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 				GuiReference.EditorLayout->MaximizedViewportIndex = CurrentViewportIndex;
 				GuiReference.EditorLayout->bIsSplitView = false;
 			}
-			FEditorIconUtils::DrawMaximizeButtonIcon(DrawList);
+			FEditorUtils::DrawMaximizeButtonIcon(DrawList);
 
 			ImGui::SameLine();
 
@@ -495,7 +511,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 			{
 				GuiReference.EditorLayout->bIsSplitView = true;
 			}
-			FEditorIconUtils::DrawSplitButtonIcon(DrawList);
+			FEditorUtils::DrawSplitButtonIcon(DrawList);
 
 			ImGui::PopStyleColor(10);
 			ImGui::PopID();
@@ -632,8 +648,21 @@ void FEditorUIManager::OnDeleteAssetFile(const std::filesystem::path& FilePath)
 {
 	FAssetManager& AssetManager = FAssetManager::Get();
 
-	std::string CanonicalPath = std::filesystem::weakly_canonical(FilePath).string();
+	std::string CanonicalPath = FilePath.lexically_normal().generic_string();
 	AssetManager.UnregisterAsset(FName(CanonicalPath.c_str()));
+}
+
+void FEditorUIManager::OnClickedAssetFile(const FAssetMetaInfo& MetaInfo, const std::filesystem::path& FilePath)
+{
+	if (MetaInfo.AssetType == EAssetType::Material)
+	{
+		TSharedPtr<FAssetEditor> AssetEditor = MakeShared<FMaterialEditor>(MetaInfo, FilePath);
+		mAssetEditors.Add(AssetEditor);
+	}
+	else
+	{
+		UE_LOG_ERROR("Unsupported asset type");
+	}
 }
 
 void FEditorUIManager::RefreshContentBrowser(const std::filesystem::path& TargetDirectory)

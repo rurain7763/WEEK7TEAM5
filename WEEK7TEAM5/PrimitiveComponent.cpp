@@ -112,9 +112,9 @@ bool UPrimitiveComponent::RayCastComponent(const FPickingRay& PickingRay, float&
 	// 삼각형 리스트라 정점 3개씩 묶인다
 	for (int32 i = 0; i < indices.Num(); i += 3)
 	{
-		const FVector V0 = vertices[indices[i]].GetPosition();
-		const FVector V1 = vertices[indices[i + 1]].GetPosition();
-		const FVector V2 = vertices[indices[i + 2]].GetPosition();
+		const FVector V0 = vertices[indices[i]].Position;
+		const FVector V1 = vertices[indices[i + 1]].Position;
+		const FVector V2 = vertices[indices[i + 2]].Position;
 
 		float OutT, OutU, OutV;
 		if (RayIntersectsTriangle(LocalNear, LocalFar, V0, V1, V2, OutT, OutU, OutV) && OutT <= NearestT)

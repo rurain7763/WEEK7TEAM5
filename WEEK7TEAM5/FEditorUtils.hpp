@@ -1,7 +1,10 @@
 #pragma once
-#include "ImGui/imgui.h"
 
-class FEditorIconUtils
+#include "ImGui/imgui.h"
+#include "FAssetManager.h"
+#include <format>
+
+class FEditorUtils
 {
 public:
 	static void DrawObjIcon(const ImVec2 PMin, const ImVec2 PMax, ImDrawList* DrawList, const bool bHovered, const bool bActive)
@@ -99,5 +102,91 @@ public:
 
 		DrawList->AddLine(ImVec2(midX, iconMin.y), ImVec2(midX, iconMax.y), IconLineColor, LineThickness);
 		DrawList->AddLine(ImVec2(iconMin.x, midY), ImVec2(iconMax.x, midY), IconLineColor, LineThickness);
+	}
+
+	static bool DrawAssetCombo(const char* label, EAssetType TargetAssetType, FGuid& SelectedAssetGuid)
+	{
+		FAssetManager& AssetManager = FAssetManager::Get();
+
+		bool IsDirty = false;
+
+		ImGui::Text("%s", label);
+		ImGui::SameLine();
+
+		FName CurrentSelectedAssetName;
+		TArray<const FAssetMetaInfo*> AssetInfos;
+		AssetManager.ForEachMetaInfo([&](const FAssetMetaInfo& metaInfo)
+		{
+			if (metaInfo.AssetType != TargetAssetType)
+			{
+				return;
+			}
+
+			if (metaInfo.AssetID == SelectedAssetGuid)
+			{
+				CurrentSelectedAssetName = metaInfo.AssetName;
+			}
+
+			AssetInfos.Add(&metaInfo);
+		});
+
+		if (ImGui::BeginCombo(std::format("##{}", label).c_str(), CurrentSelectedAssetName.IsValid() ? CurrentSelectedAssetName.ToString().c_str() : "None"))
+		{
+			for (int32 i = 0; i < AssetInfos.Num(); ++i)
+			{
+				const FAssetMetaInfo* Info = AssetInfos[i];
+
+				bool IsSelected = Info->AssetID == SelectedAssetGuid;
+
+				ImGui::PushID(i);
+
+				// Path에서 확장자 빼고 파일명만 parsing 하여 보여주기
+				std::filesystem::path AssetPath = Info->AssetName.ToString().c_str();
+				if (ImGui::Selectable(AssetPath.stem().generic_string().c_str(), IsSelected))
+				{
+					SelectedAssetGuid = Info->AssetID;
+					IsDirty = true;
+				}
+				ImGui::PopID();
+
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("%s", Info->AssetName.ToString().c_str());
+				}
+
+				if (IsSelected)
+				{
+					ImGui::SetItemDefaultFocus();
+				}
+			}
+
+			ImGui::EndCombo();
+		}
+
+		if (ImGui::BeginDragDropTarget())
+		{
+			if (const ImGuiPayload* Payload = ImGui::AcceptDragDropPayload("ASSET_GUID"))
+			{
+				const FGuid& AssetGuid = *static_cast<const FGuid*>(Payload->Data);
+				const FAssetMetaInfo& AssetMetaInfo = AssetManager.GetMetaInfo(AssetGuid);
+
+				if (AssetMetaInfo.AssetType == TargetAssetType)
+				{
+					SelectedAssetGuid = AssetGuid;
+					IsDirty = true;
+				}
+			}
+			ImGui::EndDragDropTarget();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button(std::format("Clear##{}", label).c_str()))
+		{
+			SelectedAssetGuid = FGuid();
+			IsDirty = true;
+		}
+
+		return IsDirty;
 	}
 };

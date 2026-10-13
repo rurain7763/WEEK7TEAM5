@@ -6,10 +6,9 @@
 #include "FArchive.h"
 #include "Serializers.h"
 #include "Object.h"
-#include "FStaticMeshBuilder.h"
-#include "FObjImporter.h"
+#include "FObjInfo.h"
+#include "FMeshDescription.h"
 #include <filesystem>
-
 
 // Texture 전용 Payload, FileIO
 struct FImagePayload
@@ -62,15 +61,25 @@ public:
 
 struct FStaticMeshPayload
 {
-	FMeshDescription MeshDescription;
-	TArray<FObjMaterialInfo> Materials;
+	TArray<FVertex> Vertices;
+	TArray<uint32> Indices;
+	TArray<FGuid> Materials;
+	TArray<FMeshSection> Sections;
+};
+
+struct FStaticMeshSourcePayload
+{
+	TArray<FVertex> Vertices;
+	TArray<uint32> Indices;
+	TArray<FMeshMaterial> Materials;
+	TArray<FMeshSection> Sections;
 };
 
 // StaicMesh 전용 IO
 class FStaticMeshFileIO
 {
 public:
-	static bool Load(FArchive& Ar, FStaticMeshBuildData& OutData)
+	static bool Load(FArchive& Ar, FStaticMeshPayload& OutPayload)
 	{
 		//옛날 버전
 		if (Ar.GetVersion() < 2)
@@ -89,78 +98,73 @@ public:
 			Ar << Vertices1;
 
 			//FVertex1을 FVertex로 옮기기
-			OutData.Vertices.SetNum(Vertices1.Num());
+			OutPayload.Vertices.SetNum(Vertices1.Num());
 			for (int i = 0; i < Vertices1.Num(); i++)
 			{
-				OutData.Vertices[i].Pos = Vertices1[i].Pos;
-				OutData.Vertices[i].Normal = Vertices1[i].Normal;
-				OutData.Vertices[i].Color = Vertices1[i].Color;
-				OutData.Vertices[i].Tex = Vertices1[i].Tex;
+				OutPayload.Vertices[i].Position = Vertices1[i].Pos;
+				OutPayload.Vertices[i].Normal = Vertices1[i].Normal;
+				OutPayload.Vertices[i].Color = Vertices1[i].Color;
+				OutPayload.Vertices[i].UV = Vertices1[i].Tex;
 			}
 
-			//Tangent는 StaticMeshAsset 생성자에서 처리합니다.
+			//Tangent 계산
+			CalculateTangents(OutPayload.Vertices.Data(), OutPayload.Vertices.Num(), OutPayload.Indices.Data(), OutPayload.Indices.Num());
+			
+			Ar << OutPayload.Indices;
+			Ar << OutPayload.Sections;
 		}
 		//최신버전
 		else
 		{
-			Ar << OutData.Vertices;
+			Ar << OutPayload.Vertices;
+			Ar << OutPayload.Indices;
+			Ar << OutPayload.Sections;
+			Ar << OutPayload.Materials;
 		}
-
-		Ar << OutData.Indices;
-		Ar << OutData.Sections;
 		
 		return true;
 	}
 
-	static bool Load(const std::filesystem::path& FilePath,
-		FStaticMeshPayload& OutPayload)
+	static bool Load(const std::filesystem::path& FilePath, FStaticMeshSourcePayload& OutPayload)
 	{
 		const std::filesystem::path Extension = FilePath.extension();
 
 		if (Extension == ".obj")
 		{
-			FObjImporter Importer;
-			FObjInfo ObjInfo;
-			FMeshDescription MeshDescription;
-
-			if (!Importer.ParseObj(FString(FilePath.string()), ObjInfo))
-			{
-				return false;
-			}
-			if (!Importer.ConvertToMeshDescription(ObjInfo, MeshDescription))
-			{
-				return false;
-			}
-
-			OutPayload.MeshDescription = std::move(MeshDescription);
-			OutPayload.Materials = ObjInfo.Materials;
-			return true;
+			return LoadFromObj(FilePath, OutPayload);
 		}
 
 		return false;
 	}
 
-	static bool Save(FArchive& Ar, FStaticMeshBuildData& InData)
+	static bool Save(FArchive& Ar, FStaticMeshPayload& InPayload)
 	{
-		Ar << InData.Vertices;
-		Ar << InData.Indices;
-		Ar << InData.Sections;
+		Ar << InPayload.Vertices;
+		Ar << InPayload.Indices;
+		Ar << InPayload.Sections;
+		Ar << InPayload.Materials;
+
 		return true;
 	}
-	
+
 private:
+	static bool LoadFromObj(const std::filesystem::path& FilePath, FStaticMeshSourcePayload& OutPayload);
+	static bool ParseObjFaceVertex(const FString& Token, const FObjInfo& ObjInfo, FObjVertexIndex& OutIndex);
+	static bool ParseObjMaterial(const std::filesystem::path& ParentPath, const std::filesystem::path& MaterialFilePath, FObjInfo& OutInfo);
+	static bool ConvertStaticMeshSourcePayload(FObjInfo& ObjInfo, FStaticMeshSourcePayload& OutPayload);
 };
 
 // Material 전용 Payload, IO
-struct  FMaterialPayload
+struct FMaterialPayload
 {
 	FVector AmbientColor;
 	FVector DiffuseColor;
 	FVector SpecularColor;
 	FGuid DiffuseTexture;
-	FGuid SpecularTexture;
+	FGuid SpecularTexture ;
 	FGuid NormalTexture;
-	float Opacity;
+	float Shininess = 32.0f;
+	float Opacity = 1.0f;
 };
 
 class FMaterialFileIO
@@ -174,6 +178,7 @@ public:
 		Ar << OutPayload.DiffuseTexture;
 		Ar << OutPayload.SpecularTexture;
 		Ar << OutPayload.NormalTexture;
+		Ar << OutPayload.Shininess;
 		Ar << OutPayload.Opacity;
 		
 		return true;
@@ -188,10 +193,9 @@ public:
 		Ar << InPayload.DiffuseTexture;
 		Ar << InPayload.SpecularTexture;
 		Ar << InPayload.NormalTexture;
+		Ar << InPayload.Shininess;
 		Ar << InPayload.Opacity;
 		
 		return true;
 	}
-	
-	private:
 };

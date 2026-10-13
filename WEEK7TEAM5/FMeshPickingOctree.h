@@ -33,9 +33,9 @@ public:
             if (Indices[I] >= static_cast<uint32>(Vertices.Num())
                 || Indices[I+1] >= static_cast<uint32>(Vertices.Num())
                 || Indices[I+2] >= static_cast<uint32>(Vertices.Num())) continue;
-            const FVector A = Vertices[Indices[I]].Pos;
-            const FVector B = Vertices[Indices[I+1]].Pos;
-            const FVector C = Vertices[Indices[I+2]].Pos;
+            const FVector A = Vertices[Indices[I]].Position;
+            const FVector B = Vertices[Indices[I+1]].Position;
+            const FVector C = Vertices[Indices[I+2]].Position;
             if (!Finite(A) || !Finite(B) || !Finite(C)) continue;
             FAABB Triangle(A, A);
             Triangle.ExpandToInclude(B); Triangle.ExpandToInclude(C);
@@ -64,8 +64,8 @@ public:
         auto Visit = [&](uint32 First)
         {
             float T, U, V;
-            if (RayIntersectsTriangle(Ray.Near, Ray.Far, Vertices[Indices[First]].Pos,
-                Vertices[Indices[First+1]].Pos, Vertices[Indices[First+2]].Pos, T, U, V)
+            if (RayIntersectsTriangle(Ray.Near, Ray.Far, Vertices[Indices[First]].Position,
+                Vertices[Indices[First+1]].Position, Vertices[Indices[First+2]].Position, T, U, V)
                 && std::isfinite(T) && T <= BestT)
             {
                 BestT = T;

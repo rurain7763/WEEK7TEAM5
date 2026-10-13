@@ -1,6 +1,8 @@
 #include "FContentBrowser.h"
 #include "ImGui/imgui_internal.h"
 #include "Assets.h"
+#include "FMaterialImporter.h"
+#include "FileManager.h"
 
 void FContentBrowser::Initialize(const std::filesystem::path& InitDirectory)
 {
@@ -27,30 +29,6 @@ void FContentBrowser::Render(const float BottomBarHeight)
 	{
 		RenderDrawer(BottomBarHeight);
 	}
-}
-
-// Static Mesh 같은 경로, 같은 이름 파일 다시 import 하면
-// 이름 뒤에 _2, _3 붙여서 반환하는 helper
-static std::filesystem::path ResolveImportPath(const std::filesystem::path& InPath)
-{
-	// 같은 이름이 존재하지 않으면 그냥 그 경로로 진행
-	if (!std::filesystem::exists(InPath))
-	{
-		return InPath;
-	}
-
-	// 같은 이름이 존재하는 경우 Suffix 1씩 늘려가며 check
-	int32 Suffix = 1;
-	std::filesystem::path Candidate;
-
-	do
-	{
-		Candidate = InPath.parent_path() / (InPath.stem().string() + "_" + std::to_string(Suffix) + InPath.extension().string());
-		++Suffix;
-
-	} while (std::filesystem::exists(Candidate));
-
-	return Candidate;
 }
 
 void FContentBrowser::RenderDrawer(const float BottomBarHeight)
@@ -80,7 +58,6 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 
 	const ImGuiViewport* Viewport = ImGui::GetMainViewport();
 
-
 	const ImVec2 DrawerPos = { Viewport->WorkPos.x, Viewport->WorkPos.y + Viewport->WorkSize.y - BottomBarHeight - DrawerHeight };
 	const ImVec2 DrawerSize = { Viewport->WorkSize.x, DrawerHeight };
 
@@ -98,6 +75,35 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 	if (ImGui::Begin("Content Drawer", &bIsDrawerOpen, DrawerFlags))
 	{
 		DrawerHeight = ImGui::GetWindowHeight();
+
+		if (ImGui::Button("+ Add"))
+		{
+			ImGui::OpenPopup("AddAssetMenu");
+		}
+
+		if (ImGui::BeginPopup("AddAssetMenu"))
+		{
+			if (ImGui::MenuItem("Create Material"))
+			{
+				std::filesystem::path NewPath = CurrentDirectory / "NewMaterial.uasset";
+				NewPath = MakeUniquePath(NewPath);
+
+				FAssetFileHeader Header;
+				if (FMaterialImporter::ImportDefault(NewPath, NewPath, Header))
+				{
+					if (EventHandler)
+					{
+						EventHandler->OnNewAssetFile(Header, NewPath);
+					}
+					RefreshCache();
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+
+		ImGui::SameLine();
+
 		if (ImGui::Button("Import Texture2D"))
 		{
 			std::filesystem::path TargetPath;
@@ -108,11 +114,10 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 				NewFilePath.replace_extension(".uasset");   // CurrentDirectory 대신 원본 옆에 저장
 				
 				// 경로 중복되는지 확인
-				NewFilePath = ResolveImportPath(NewFilePath);
+				NewFilePath = MakeUniquePath(NewFilePath);
 
 				if (FTexture2DImporter::Import(TargetPath, NewFilePath, Header))
 				{
-					//NewAssetFiles.Emplace(FAssetFileEntry{ Header, NewFilePath });
 					if (EventHandler)
 					{
 						EventHandler->OnNewAssetFile(Header, NewFilePath);
@@ -121,7 +126,9 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 				}
 			}
 		}
+
 		ImGui::SameLine();
+
 		if (ImGui::Button("Import StaticMesh"))
 		{
 			std::filesystem::path TargetPath;
@@ -133,7 +140,7 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 				NewFilePath.replace_extension(".uasset");   // CurrentDirectory 대신 원본 옆에 저장
 
 				// 경로 중복되는지 확인
-				NewFilePath = ResolveImportPath(NewFilePath);
+				NewFilePath = MakeUniquePath(NewFilePath);
 
 				if (FStaticMeshImporter::Import(TargetPath, NewFilePath, Header))
 				{
@@ -145,9 +152,10 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 					RefreshCache();
 				}
 			}
-
 		}
+
 		ImGui::SameLine();
+
 		ImGui::Text(" | Current: %s", CurrentDirectory.string().c_str());
 
 		ImGui::SameLine(ImGui::GetWindowWidth() - 70.0f);
@@ -208,7 +216,7 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 						DrawList->AddRectFilled(PMin, PMax, BgColor, 4.0f);
 					}
 
-					FEditorIconUtils::DrawFolderIcon(PMin, PMax, DrawList, bHovered, bActive);
+					FEditorUtils::DrawFolderIcon(PMin, PMax, DrawList, bHovered, bActive);
 
 					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + (TileWidth - ImGui::CalcTextSize("..").x) * 0.5f);
 					ImGui::TextUnformatted("..");
@@ -256,7 +264,7 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 
 					if (bIsDirectory)
 					{
-						if (ImGui::IsItemClicked())
+						if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
 						{
 							std::filesystem::path NextDirectory = Path;
 							CurrentDirectory = NextDirectory;
@@ -266,35 +274,42 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 							break;
 						}
 
-						FEditorIconUtils::DrawFolderIcon(PMin, PMax, DrawList, bHovered, bActive);
+						FEditorUtils::DrawFolderIcon(PMin, PMax, DrawList, bHovered, bActive);
 					}
 					else
 					{
+						std::filesystem::path TargetPath = Path.lexically_normal();
+						
+						FName AssetKey(TargetPath.generic_string().c_str());
+
+						if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+						{
+							if (EventHandler)
+							{
+								const FAssetMetaInfo& MetaInfo = FAssetManager::Get().GetMetaInfo(AssetKey);
+								EventHandler->OnClickedAssetFile(MetaInfo, TargetPath);
+							}
+						}
+
 						switch (AssetType)
 						{
 						case EAssetType::StaticMesh:
 						{
-							FEditorIconUtils::DrawObjIcon(PMin, PMax, DrawList, bHovered, bActive);
+							FEditorUtils::DrawObjIcon(PMin, PMax, DrawList, bHovered, bActive);
 							break;
 						}
 						case EAssetType::Texture2D:
 						{
 							bool bDrawn = false;
-							if (AssetManager)
+							TSharedPtr<FTexture2DAsset> TextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(AssetKey, true);
+							if (TextureAsset && TextureAsset->GetSRV())
 							{
-								std::string CanonicalKey = Path.lexically_normal().generic_string();
-								FName AssetKey(CanonicalKey.c_str());
-
-								TSharedPtr<FTexture2DAsset> TextureAsset = AssetManager->GetAssetAs<FTexture2DAsset>(FName(AssetKey), true);
-								if (TextureAsset && TextureAsset->GetSRV())
-								{
-									ImTextureID TexID = (ImTextureID)TextureAsset->GetSRV().Get();
-									ImVec2 ImgMin = ImVec2(PMin.x + 8.0f, PMin.y + 8.0f);
-									ImVec2 ImgMax = ImVec2(PMax.x - 8.0f, PMax.y - 8.0f);
-									DrawList->AddImage(TexID, ImgMin, ImgMax);
-									DrawList->AddRect(ImgMin, ImgMax, 0x44FFFFFF, 2.0f);
-									bDrawn = true;
-								}
+								ImTextureID TexID = (ImTextureID)TextureAsset->GetSRV().Get();
+								ImVec2 ImgMin = ImVec2(PMin.x + 8.0f, PMin.y + 8.0f);
+								ImVec2 ImgMax = ImVec2(PMax.x - 8.0f, PMax.y - 8.0f);
+								DrawList->AddImage(TexID, ImgMin, ImgMax);
+								DrawList->AddRect(ImgMin, ImgMax, 0x44FFFFFF, 2.0f);
+								bDrawn = true;
 							}
 
 							if (!bDrawn)
@@ -305,12 +320,12 @@ void FContentBrowser::RenderDrawer(const float BottomBarHeight)
 						}
 						case EAssetType::Material:
 						{
-							FEditorIconUtils::DrawMaterialIcon(PMin, PMax, DrawList, bHovered, bActive);
+							FEditorUtils::DrawMaterialIcon(PMin, PMax, DrawList, bHovered, bActive);
 							break;
 						}
 						default:
 						{
-							FEditorIconUtils::DrawDocumentIcon(PMin, PMax, DrawList);
+							FEditorUtils::DrawDocumentIcon(PMin, PMax, DrawList);
 							break;
 						}
 						}

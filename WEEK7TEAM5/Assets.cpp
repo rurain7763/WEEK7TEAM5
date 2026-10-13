@@ -6,107 +6,11 @@
 #include "Renderer.h"
 #include "FFontManager.h"
 #include "MathUtility.h"
-#include "FObjImporter.h"
 #include "Serializers.h"
 #include "FAssetManager.h"
 #include "FTexture2DImporter.h"
 #include "AssetFileIOs.h"
 #include "FStaticMeshBuilder.h"
-
-namespace
-{
-	void CalculateNormals(FStaticMeshBuildData& MeshData)
-	{
-		for (FVertex& Vertex : MeshData.Vertices)
-		{
-			Vertex.Normal = FVector(0.0f);
-		}
-
-		for (uint32 Index = 0; Index + 2 < static_cast<uint32>(MeshData.Indices.Num()); Index += 3)
-		{
-			const uint32 Index0 = MeshData.Indices[Index];
-			const uint32 Index1 = MeshData.Indices[Index + 1];
-			const uint32 Index2 = MeshData.Indices[Index + 2];
-			if (Index0 >= static_cast<uint32>(MeshData.Vertices.Num())
-				|| Index1 >= static_cast<uint32>(MeshData.Vertices.Num())
-				|| Index2 >= static_cast<uint32>(MeshData.Vertices.Num()))
-			{
-				continue;
-			}
-
-			const FVector FaceNormal = FVector::cross(
-				MeshData.Vertices[Index1].Pos - MeshData.Vertices[Index0].Pos,
-				MeshData.Vertices[Index2].Pos - MeshData.Vertices[Index0].Pos);
-			MeshData.Vertices[Index0].Normal += FaceNormal;
-			MeshData.Vertices[Index1].Normal += FaceNormal;
-			MeshData.Vertices[Index2].Normal += FaceNormal;
-		}
-
-		for (FVertex& Vertex : MeshData.Vertices)
-		{
-			if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
-			{
-				Vertex.Normal.Normalize();
-			}
-			else
-			{
-				Vertex.Normal = FVector(0.0f, 0.0f, 1.0f);
-			}
-		}
-	}
-
-	FStaticMeshBuildData BuildFromVertices(const FVertex* InVertices, uint32 InVertexCount,
-										   const uint32* InIndices, uint32 InIndexCount)
-	{
-		FStaticMeshBuildData BuildData;
-		BuildData.Vertices.Reserve(InVertexCount);
-
-		for (uint32 Index = 0; Index < InVertexCount; ++Index)
-		{
-			BuildData.Vertices.Add(InVertices[Index]);
-		}
-
-		if (InIndices && InIndexCount > 0)
-		{
-			BuildData.Indices.Reserve(InIndexCount);
-			for (uint32 Index = 0; Index < InIndexCount; ++Index)
-			{
-				BuildData.Indices.Add(InIndices[Index]);
-			}
-		}
-		else
-		{
-			BuildData.Indices.Reserve(InVertexCount);
-			for (uint32 Index = 0; Index < InVertexCount; ++Index)
-			{
-				BuildData.Indices.Add(Index);
-			}
-		}
-
-		FStaticMeshSection& Section = BuildData.Sections.Emplace();
-		Section.FirstIndex = 0;
-		Section.IndexCount = static_cast<uint32>(BuildData.Indices.Num());
-
-		// 입력 데이터에 노멀이 하나도 없을 때만 면 노멀 평균으로 계산한다.
-		// 노멀이 들어 있는 메시(예: Sphere)는 그대로 써야 UV 이음새에서 노멀이 갈라지지 않는다.
-		bool bHasNormals = false;
-		for (const FVertex& Vertex : BuildData.Vertices)
-		{
-			if (Vertex.Normal.LengthSquared() > SMALL_NUMBER)
-			{
-				bHasNormals = true;
-				break;
-			}
-		}
-
-		if (!bHasNormals)
-		{
-			CalculateNormals(BuildData);
-		}
-
-		return BuildData;
-	}
-}
 
 TSharedPtr<FArchive> FFileAssetSource::CreateArchive()
 {
@@ -114,53 +18,99 @@ TSharedPtr<FArchive> FFileAssetSource::CreateArchive()
 }
 
 FStaticMeshAsset::FStaticMeshAsset(const FGuid& InAssetID, const FName& InAssetName, URenderer& InRenderer, const FVertex* InVertices, uint32 InVertexCount)
-	: FStaticMeshAsset(InAssetID, InAssetName, InRenderer,
-		BuildFromVertices(InVertices, InVertexCount, nullptr, 0))
+	: FAsset(InAssetID, InAssetName, EAssetType::StaticMesh)
+	, BoundingBox(InVertices[0].Position, InVertices[0].Position)
+	, MeshID(NextMeshID++)
 {
+	Vertices.SetNum(InVertexCount);
+	for (uint32 i = 0; i < InVertexCount; ++i)
+	{
+		Vertices[i] = InVertices[i];
+		BoundingBox.ExpandToInclude(InVertices[i].Position);
+	}
+
+	VertexBuffer = InRenderer.CreateVertexBuffer(InVertices, InVertexCount);
+
+	Indices.SetNum(InVertexCount);
+	for (uint32 i = 0; i < InVertexCount; ++i)
+	{
+		Indices[i] = i;
+	}
+
+	IndexBuffer = InRenderer.CreateIndexBuffer(Indices.Data(), InVertexCount);
+
+	FMeshSection& Section = Sections.Emplace();
+	Section.FirstIndex = 0;
+	Section.IndexCount = InVertexCount;
+	Section.MaterialIndex = -1;
+
+	if (!BuildLODs(InRenderer))
+	{
+		LocalOctree.Build(Vertices, Indices, BoundingBox, MeshLOD::OctreeDepths[0]);
+	}
 }
 
 FStaticMeshAsset::FStaticMeshAsset(const FGuid& InAssetID, const FName& InAssetName, URenderer& InRenderer, const FVertex* InVertices, uint32 InVertexCount, const uint32* InIndices, uint32 InIndexCount)
-	: FStaticMeshAsset(InAssetID, InAssetName, InRenderer,
-		BuildFromVertices(InVertices, InVertexCount, InIndices, InIndexCount))
-{
-}
-
-FStaticMeshAsset::FStaticMeshAsset(const FGuid& InAssetID, const FName& InAssetName, URenderer& InRenderer, const FStaticMeshBuildData& InBuildData)
 	: FAsset(InAssetID, InAssetName, EAssetType::StaticMesh)
-	, Vertices(InBuildData.Vertices)
-	, Indices(InBuildData.Indices)
-	, Sections(InBuildData.Sections)
+	, BoundingBox(InVertices[0].Position, InVertices[0].Position)
 	, MeshID(NextMeshID++)
 {
-	if (InBuildData.Vertices.Num() > 0)
+	Vertices.SetNum(InVertexCount);
+	for (uint32 Index = 0; Index < InVertexCount; ++Index)
 	{
-		BoundingBox = FAABB(InBuildData.Vertices[0].Pos, InBuildData.Vertices[0].Pos);
-		for (int32 i = 1; i < InBuildData.Vertices.Num(); ++i)
-		{
-			BoundingBox.ExpandToInclude(InBuildData.Vertices[i].Pos);
-		}
+		Vertices[Index] = InVertices[Index];
+		BoundingBox.ExpandToInclude(InVertices[Index].Position);
 	}
 
-	//탄젠트가 없다면 계산
-	//if (!HasTangents(Vertices))
-	//{
-	//	//CalculateTangents(BuildData);
-	//	CalculateTangents(Vertices, Indices);
-	//}
+	VertexBuffer = InRenderer.CreateVertexBuffer(InVertices, InVertexCount);
 
-	if (!FStaticMeshBuilder::HasTangents(Vertices))
+	Indices.SetNum(InIndexCount);
+	for (uint32 Index = 0; Index < InIndexCount; ++Index)
 	{
-
-		FStaticMeshBuilder::CalculateTangents(Vertices, Indices);
+		Indices[Index] = InIndices[Index];
 	}
-	
-	//VertexBuffer = InRenderer.CreateVertexBuffer(InBuildData.Vertices.Data(), static_cast<uint32>(InBuildData.Vertices.Num()));
-	VertexBuffer = InRenderer.CreateVertexBuffer(Vertices.Data(), static_cast<uint32>(Vertices.Num()));
-	IndexBuffer = InRenderer.CreateIndexBuffer(Indices.Data(), static_cast<uint32>(Indices.Num()));
-    
-	// 에셋 단위로 생성하며 모든 컴포넌트가 공유합니다.
-    if (!BuildLODs(InRenderer))
+
+	IndexBuffer = InRenderer.CreateIndexBuffer(InIndices, InIndexCount);
+
+	FMeshSection& Section = Sections.Emplace();
+	Section.FirstIndex = 0;
+	Section.IndexCount = InIndexCount;
+	IndexBuffer = InRenderer.CreateIndexBuffer(InIndices, InIndexCount);
+	Section.MaterialIndex = -1;
+
+	if (!BuildLODs(InRenderer))
+	{
+		LocalOctree.Build(Vertices, Indices, BoundingBox, MeshLOD::OctreeDepths[0]);
+	}
+}
+
+FStaticMeshAsset::FStaticMeshAsset(const FGuid& InAssetID, const FName& InAssetName, URenderer& InRenderer, const FStaticMeshPayload& Payload)
+	: FAsset(InAssetID, InAssetName, EAssetType::StaticMesh)
+	, Vertices(Payload.Vertices)
+	, Indices(Payload.Indices)
+	, Sections(Payload.Sections)
+	, BoundingBox(Payload.Vertices[0].Position, Payload.Vertices[0].Position)
+	, MeshID(NextMeshID++)
+{
+	for (const FVertex& Vertex : Payload.Vertices)
+	{
+		BoundingBox.ExpandToInclude(Vertex.Position);
+	}
+
+	Materials.SetNum(Payload.Materials.Num());
+	for (uint32 i = 0; i < Payload.Materials.Num(); ++i)
+	{
+		Materials[i] = FAssetManager::Get().GetAssetAs<FMaterialAsset>(Payload.Materials[i], true);
+	}
+
+	VertexBuffer = InRenderer.CreateVertexBuffer(Payload.Vertices.Data(), static_cast<uint32>(Payload.Vertices.Num()));
+	IndexBuffer = InRenderer.CreateIndexBuffer(Payload.Indices.Data(), static_cast<uint32>(Payload.Indices.Num()));
+
+    // 에셋 단위로 생성하며 모든 컴포넌트가 공유합니다.
+	if (!BuildLODs(InRenderer))
+	{
         LocalOctree.Build(Vertices, Indices, BoundingBox, MeshLOD::OctreeDepths[0]);
+	}
 }
 
 bool FStaticMeshAsset::RayCastLocal(const FPickingRay& Ray, float& OutHitT, FMeshOctreeQueryStats* OutStats, float MaxHitT, uint32 LOD) const
@@ -194,12 +144,10 @@ uint32 FStaticMeshAsset::GetIndexCount(uint32 LOD) const
 
 TSharedPtr<FAsset> FStaticMeshAssetLoader::LoadAsset(const FGuid& AssetID, const FName& AssetName, FArchive& Ar)
 {
-	FStaticMeshBuildData BuildData;
+	FStaticMeshPayload Payload;
+	FStaticMeshFileIO::Load(Ar, Payload);
 
-	FStaticMeshFileIO::Load(Ar, BuildData);
-
-	return MakeShared<FStaticMeshAsset>(AssetID, AssetName, Renderer, BuildData);
-	
+	return MakeShared<FStaticMeshAsset>(AssetID, AssetName, Renderer, Payload);
 }
 
 void FStaticMeshAssetLoader::UnloadAsset(TSharedPtr<FAsset> Asset)
@@ -434,15 +382,27 @@ FMaterialAsset::FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName,
 	, AmbientColor(InAmbientColor)
 	, DiffuseColor(InDiffuseColor)
 	, SpecularColor(InSpecularColor)
-	, DiffuseTexture(InDiffuseTexture)
-	, SpecularTexture(InSpecularTexture)
-	, NormalTexture(InNormalTexture)
 	, Opacity(InOpacity)
 	, MaterialID(NextMaterialID++)
 {
-	DiffuseTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(DiffuseTexture, true);
-	SpecularTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(SpecularTexture, true);
-	NormalTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(NormalTexture, true);
+	DiffuseTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InDiffuseTexture, true);
+	SpecularTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InSpecularTexture, true);
+	NormalTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InNormalTexture, true);
+}
+
+void FMaterialAsset::SetDiffuseTexture(const FGuid& InDiffuseTextureAsset)
+{
+	DiffuseTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InDiffuseTextureAsset, true);
+}
+
+void FMaterialAsset::SetSpecularTexture(const FGuid& InSpecularTextureAsset)
+{
+	SpecularTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InSpecularTextureAsset, true);
+}
+
+void FMaterialAsset::SetNormalTexture(const FGuid& InNormalTextureAsset)
+{
+	NormalTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InNormalTextureAsset, true);
 }
 
 uint16 FMaterialAsset::GetPipelineID() const
@@ -456,18 +416,6 @@ TSharedPtr<FAsset> FMaterialAssetLoader::LoadAsset(const FGuid& AssetID, const F
 	FMaterialPayload Payload;
 	FMaterialFileIO::Load(Ar, Payload);
 	
-	#if 0
-	FVector AmbientColor, DiffuseColor, SpecularColor;
-	FGuid DiffuseTexture, SpecularTexture, NormalTexture;
-	Ar << AmbientColor;
-	Ar << DiffuseColor;
-	Ar << Opacity;
-	Ar << SpecularColor;
-	Ar << DiffuseTexture;
-	Ar << SpecularTexture;
-	Ar << NormalTexture;
-	#endif
-
 	return MakeShared<FMaterialAsset>(AssetID,
 									  AssetName,
 									  Payload.AmbientColor,
@@ -485,17 +433,12 @@ void FMaterialAssetLoader::UnloadAsset(TSharedPtr<FAsset> Asset)
 	// NOTE: Nothing to do for now
 }
 
-
-
-
-
-
 bool FStaticMeshAsset::BuildLODs(URenderer& Renderer)
 {
     PROFILE_SCOPE("Mesh/LODBuild");
     try
     {
-        FStaticMeshBuildData Source;
+        FStaticMeshPayload Source;
         Source.Vertices = Vertices; Source.Indices = Indices; Source.Sections = Sections;
         TSharedPtr<FGeneratedMeshLOD> Pending[2];
         for (uint32 I = 0; I < 2; ++I)
@@ -523,5 +466,9 @@ bool FStaticMeshAsset::BuildLODs(URenderer& Renderer)
         LODError = FString();
         return true;
     }
-    catch (const std::exception& Error) { LODError = FString(Error.what()); return false; }
+    catch (const std::exception& Error) 
+	{ 
+		LODError = FString(Error.what()); 
+		return false; 
+	}
 }

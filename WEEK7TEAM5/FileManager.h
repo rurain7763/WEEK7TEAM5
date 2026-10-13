@@ -33,3 +33,5 @@ private:
 };
 
 bool IsUnder(const std::filesystem::path& filePath, const std::filesystem::path& rootPath);
+
+std::filesystem::path MakeUniquePath(const std::filesystem::path& InPath);
