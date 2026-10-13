@@ -148,7 +148,6 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 				Info.Intensity = PointLight->GetIntensity();
 				Info.Range = PointLight->GetRadius();
 				Info.FallOf = PointLight->GetRadiusFallOff();
-				Info.Shininess = PointLight->GetShininess();
 				continue;
 			}
 
@@ -166,7 +165,6 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 				Info.FallOf = SpotLight->GetRadiusFallOff();
 				Info.InnerConeAngle = SpotLight->GetInnerConeAngle();
 				Info.OuterConeAngle = SpotLight->GetOuterConeAngle();
-				Info.Shininess = SpotLight->GetShininess();
 				continue;
 			}
 
@@ -269,6 +267,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			Constants.UseVertexColor = Info.UseVertexColor;
 			Constants.BindedTextureMapFlags = 0;
 			Constants.LightCount = mLightInfos.Num();
+			Constants.Shininess = 32.f;
 
 			if (Info.Material)
 			{
@@ -293,6 +292,8 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 					Pipeline->SetShaderResource(2, NormalTexture->GetSRV());
 					EnumSetFlags(Constants.BindedTextureMapFlags, TM_Normal, true);
 				}
+
+				Constants.Shininess = Info.Material->GetShininess();
 			}
 
 			Pipeline->SetShaderResource(3, mLightInfoBuffer->SRV);

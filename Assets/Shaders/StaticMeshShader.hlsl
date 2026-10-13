@@ -4,6 +4,10 @@
 #define TEXTURE_MAP_SPECULAR 1 << 1
 #define TEXTURE_MAP_NORMAL 1 << 2
 
+#define ENABLE_LIGHTING 1
+#define LIGHTING_MODEL_GOURAUD 0
+#define LIGHTING_MODEL_BLINN_PHONG 1
+
 struct LightInfo
 {
     float3 position;
@@ -26,7 +30,8 @@ cbuffer ModelConstants : register(b0) // FConstants
     int UseVertexColor;
     uint binded_texture_map_flags;
     int light_count;
-    float3 padding;
+    float shininess;
+    float2 padding;
 }
 
 cbuffer ViewConstants : register(b1) // FConstants
@@ -99,7 +104,7 @@ float3 SafeNormalize(float3 v)
     return v * rsqrt(max(dot(v, v), 1e-12));
 }
 
-void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, out float3 diffuse, out float3 specular)
+void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_light_color, float light_intensity, float light_shininess, out float3 diffuse, out float3 specular)
 {
     float3 light_color = p_light_color * light_intensity;
     
@@ -114,12 +119,12 @@ void calculate_diretional(float3 N, float3 V, float3 light_direction, float3 p_l
     {
         float3 H = SafeNormalize(L + V);
         float NdotH = max(dot(N, H), 0.0);
-        specular = light_color * pow(NdotH, 32.0);
+        specular = light_color * pow(NdotH, light_shininess);
     }
 #endif
 }
 
-void calculate_point(float3 N, float3 V, LightInfo light, float3 world_position, out float3 diffuse, out float3 specular)
+void calculate_point(float3 N, float3 V, LightInfo light, float3 world_position, float light_shininess, out float3 diffuse, out float3 specular)
 {
     float3 light_color = light.color.rgb * light.intensity;
     
@@ -139,12 +144,12 @@ void calculate_point(float3 N, float3 V, LightInfo light, float3 world_position,
     {
         float3 H = SafeNormalize(L + V);
         float NdotH = max(dot(N, H), 0.0);
-        specular = light_color * pow(NdotH, 32.0) * attenuation;
+        specular = light_color * pow(NdotH, light_shininess) * attenuation;
     }
 #endif
 }
 
-void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, out float3 diffuse, out float3 specular)
+void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, float light_shininess, out float3 diffuse, out float3 specular)
 {
     float3 light_color = light.color.rgb * light.intensity;
     
@@ -171,7 +176,7 @@ void calculate_spot(float3 N, float3 V, LightInfo light, float3 world_position, 
     {
         float3 H = SafeNormalize(-light_to_point + V);
         float NdotH = max(dot(N, H), 0.0);
-        specular = light_color * pow(NdotH, 32.0) * spot_factor * attenuation;
+        specular = light_color * pow(NdotH, light_shininess) * spot_factor * attenuation;
     }
 #endif
 }
@@ -203,7 +208,7 @@ PS_INPUT mainVS(VS_INPUT input)
 
     float3 diffuse = float3(0.0, 0.0, 0.0);
     float3 specular = float3(0.0, 0.0, 0.0);
-    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
+    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, shininess, diffuse, specular);
     
     total_diffuse += diffuse;
     total_specular += specular;
@@ -214,11 +219,11 @@ PS_INPUT mainVS(VS_INPUT input)
 
         if (light.type == 1)
         {
-            calculate_point(N, V, light, world_position.xyz, diffuse, specular);
+            calculate_point(N, V, light, world_position.xyz, shininess, diffuse, specular);
         }
         else if (light.type == 2)
         {
-            calculate_spot(N, V, light, world_position.xyz, diffuse, specular);
+            calculate_spot(N, V, light, world_position.xyz, shininess, diffuse, specular);
         }
         
         total_diffuse += diffuse;
@@ -292,7 +297,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
     float3 diffuse = float3(0.0, 0.0, 0.0);
     float3 specular = float3(0.0, 0.0, 0.0);
-    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, diffuse, specular);
+    calculate_diretional(N, V, dl_directional, dl_color.rgb, dl_intensity, shininess, diffuse, specular);
     
     total_diffuse += diffuse;
     total_specular += specular;
@@ -303,11 +308,11 @@ PS_OUTPUT mainPS(PS_INPUT input)
 
         if (light.type == 1)
         {
-            calculate_point(N, V, light, input.world_position, diffuse, specular);
+            calculate_point(N, V, light, input.world_position, shininess, diffuse, specular);
         }
         else if (light.type == 2)
         {
-            calculate_spot(N, V, light, input.world_position, diffuse, specular);
+            calculate_spot(N, V, light, input.world_position, shininess, diffuse, specular);
         }
         
         total_diffuse += diffuse;

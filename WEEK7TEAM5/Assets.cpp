@@ -10,7 +10,6 @@
 #include "FAssetManager.h"
 #include "FTexture2DImporter.h"
 #include "AssetFileIOs.h"
-#include "FStaticMeshBuilder.h"
 
 TSharedPtr<FArchive> FFileAssetSource::CreateArchive()
 {
@@ -383,6 +382,7 @@ FMaterialAsset::FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName,
 	, DiffuseColor(InDiffuseColor)
 	, SpecularColor(InSpecularColor)
 	, Opacity(InOpacity)
+	, Shininess(32.f)
 	, MaterialID(NextMaterialID++)
 {
 	DiffuseTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InDiffuseTexture, true);

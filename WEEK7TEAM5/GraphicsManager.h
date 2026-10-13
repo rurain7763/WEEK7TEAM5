@@ -115,9 +115,6 @@ private:
 		float FallOf;
 		float InnerConeAngle;
 		float OuterConeAngle;
-
-		float Shininess;
-		float LightPadding[3];
 	};
 
 	struct FDirectionalLightInfo
@@ -142,11 +139,13 @@ private:
 		FMatrix Matrix;
 		FMatrix InvMatrix;
 		FVector4 Color;
+
 		FVector2 UVOffset;
 		int32 UseVertexColor;
 		uint32 BindedTextureMapFlags;
+
 		int32 LightCount;
-		int32 UseWorldNormalView;
+		float Shininess;
 		int32 Padding[2];
 	};
 

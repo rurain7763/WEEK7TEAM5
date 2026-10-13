@@ -286,6 +286,9 @@ public:
 	inline bool HasNormalTexture() const { return NormalTextureAsset != nullptr; }
 	inline const FTexture2DAsset* GetNormalTexture() const { return NormalTextureAsset.get(); }
 
+	inline float GetShininess() { return Shininess; }
+	inline void SetShininess(float Shininess) { this->Shininess = Shininess; }
+
 	inline uint32 GetMaterialID() const { return MaterialID; }
 
 	inline const TSharedPtr<FRenderPipeline>& GetPipeline() const { return Pipeline; }
@@ -305,6 +308,7 @@ private:
 	TSharedPtr<FTexture2DAsset> NormalTextureAsset;
 	
 	float Opacity;
+	float Shininess;
 	uint32 MaterialID = 0;
 };
 
