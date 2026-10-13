@@ -20,10 +20,13 @@
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
 
+//EShowFlag LastShowFlag;
+
 FGraphicsManager::FGraphicsManager(HWND hWindow) 
 	: mbPerspectiveProjection(true)
 	, mProjectionRatio(1.0f)
 {
+	//LastShowFlag = FShowFlags::Get();
 	mRenderer = new URenderer;
 	mRenderer->Create(hWindow);
 
@@ -211,6 +214,18 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 
 void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 {
+	/*if (LastShowFlag != FShowFlags::Get())
+	{
+		switch (FShowFlags::Get())
+		{
+			case 0
+				Shader->use();
+				Shaer->Use();
+		}
+
+		Shader->Compile();
+	}*/
+
 	mRenderGraph.Clear();
 
 	FRGTextureRef FrontRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetFrontRenderTarget());

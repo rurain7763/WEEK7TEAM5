@@ -313,3 +313,26 @@ public:
 	virtual void UnloadAsset(TSharedPtr<FAsset> Asset) override;
 	virtual EAssetType GetAssetType() const override { return EAssetType::Material; }
 };
+
+struct LightShader : public FShader
+{
+	void SetGouraudShading();
+	void SetLambertShading();
+	void SetBlinnPhongShading();
+	void SetUnlitShading();
+	void CompileShader();
+};
+
+class FShaderAsset : public FAsset
+{
+public:
+	FShaderAsset(FGuid GUID, const FName& AssetName, FShader* Shader) 
+		: Shader(Shader)
+	{
+
+	}
+
+	inline FShader* GetShader() { return Shader; }\
+private:
+	FShader* Shader; // LightShader
+};

@@ -1,0 +1,15 @@
+newmtl NM_BrickColorOnly
+Kd 1.0 1.0 1.0
+d 1.0
+map_Kd Sources/brick_wall_001_diffuse_1k.png
+
+newmtl NM_BrickColorNormal
+Kd 1.0 1.0 1.0
+d 1.0
+map_Kd Sources/brick_wall_001_diffuse_1k.png
+map_Bump Sources/brick_wall_001_nor_dx_1k.png
+
+newmtl NM_BrickNormalOnly
+Kd 0.65 0.65 0.65
+d 1.0
+map_Bump Sources/brick_wall_001_nor_dx_1k.png
