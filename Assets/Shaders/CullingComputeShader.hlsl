@@ -40,8 +40,14 @@ cbuffer CullingConstants : register(b0)
     int light_count;
 }
 
-RWStructuredBuffer<float> TileLightnum : register(u0);
-RWStructuredBuffer<float> TileLightindex : register(u1);
+struct TileInfo
+{
+   float TileLightnum;
+   float TileLightindex[200];
+};
+
+RWStructuredBuffer<TileInfo> TileInfomation: register(u0);
+
 StructuredBuffer<LightInfo> lights : register(t0);
 
 float3 PixeltoView(float2 pixelposition,bool isDepthNear)
@@ -97,14 +103,41 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     tile.position = id.xy;
     tile.start_position = float2(id.x * tile_pixel_size.x, id.y * tile_pixel_size.y);
     tile.end_position = float2(tile.start_position.x + tile_pixel_size.x, tile.start_position.y + tile_pixel_size.y);
-    if (tile.position.x >= tile_size.x || tile.position.y >= tile_size.y) return;
+    if (tile.position.x >= tile_size.x || tile.position.y >= tile_size.y)
+        return;
     tile.tileindex = uint(tile.position.y * tile_size.x) + uint(tile.position.x);
     ComputeCellBounds(tile);
-
+    uint count = 0;
     for (int i = 0; i < light_count; ++i)
     {
         LightInfo light = lights[i];
+        float3 Lightposition = mul(float4(light.position,1.0f),view).xyz;
+        if (light.type = 0)
+        {
+            TileInfomation[tile.tileindex].TileLightindex[count] = i;
+            count++;
+        }
+        if (light.type == 1)
+        {
+            if ((tile.AABB.ViewAabbMin.x - light.range < Lightposition.x && tile.AABB.ViewAabbMax.x + light.range > Lightposition.x)
+                && (tile.AABB.ViewAabbMin.y - light.range < Lightposition.y && tile.AABB.ViewAabbMax.y + light.range > Lightposition.y)
+                && (tile.AABB.ViewAabbMin.z - light.range < Lightposition.z && tile.AABB.ViewAabbMax.z + light.range > Lightposition.z))
+            {
+                TileInfomation[tile.tileindex].TileLightindex[count] = i;
+                count++;
+            }          
+        }
+        if (light.type = 2)
+        {
+            if ((tile.AABB.ViewAabbMin.x - light.range < Lightposition.x && tile.AABB.ViewAabbMax.x + light.range > Lightposition.x)
+                && (tile.AABB.ViewAabbMin.y - light.range < Lightposition.y && tile.AABB.ViewAabbMax.y + light.range > Lightposition.y)
+                && (tile.AABB.ViewAabbMin.z - light.range < Lightposition.z && tile.AABB.ViewAabbMax.z + light.range > Lightposition.z))
+            {
+                TileInfomation[tile.tileindex].TileLightindex[count] = i;
+                count++;
+            }
+        }
+        TileInfomation[tile.tileindex].TileLightnum = count;
     }
-    
 }
 
