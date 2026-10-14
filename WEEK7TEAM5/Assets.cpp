@@ -10,6 +10,9 @@
 #include "FAssetManager.h"
 #include "FTexture2DImporter.h"
 #include "AssetFileIOs.h"
+#include "FEngine.h"
+#include "GraphicsManager.h"
+#include "FRenderPipeline.h"
 
 TSharedPtr<FArchive> FFileAssetSource::CreateArchive()
 {
@@ -376,14 +379,14 @@ const FVector4& FSpriteAtlasAsset::GetFrameSubUV(int32 FrameIndex) const
 	return FrameSubUVs[static_cast<uint32>(FrameIndex)];
 }
 
-FMaterialAsset::FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName, const FVector& InAmbientColor, const FVector& InDiffuseColor, const FVector& InSpecularColor, const FGuid& InDiffuseTexture, const FGuid& InSpecularTexture, const FGuid& InNormalTexture, const float InOpacity)
+FMaterialAsset::FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName, const FVector& InAmbientColor, const FVector& InDiffuseColor, const FVector& InSpecularColor, const FGuid& InDiffuseTexture, const FGuid& InSpecularTexture, const FGuid& InNormalTexture, const float InOpacity, float InShininess)
 	: FAsset(InAssetID, InAssetName, EAssetType::Material)
 	, AmbientColor(InAmbientColor)
 	, DiffuseColor(InDiffuseColor)
 	, SpecularColor(InSpecularColor)
 	, Opacity(InOpacity)
-	, Shininess(32.f)
 	, MaterialID(NextMaterialID++)
+	, Shininess(InShininess)
 {
 	DiffuseTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InDiffuseTexture, true);
 	SpecularTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InSpecularTexture, true);
@@ -424,7 +427,8 @@ TSharedPtr<FAsset> FMaterialAssetLoader::LoadAsset(const FGuid& AssetID, const F
 									  Payload.DiffuseTexture,
 									  Payload.SpecularTexture,
 									  Payload.NormalTexture,
-									  Payload.Opacity
+									  Payload.Opacity,
+									  Payload.Shininess
 									  );
 }
 

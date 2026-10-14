@@ -45,6 +45,7 @@ public:
 		bIsDirty |= FEditorUtils::DrawAssetCombo("Normal Texture", EAssetType::Texture2D, NewPayload.NormalTexture);
 		bIsDirty |= ImGui::InputFloat("Shininess", &NewPayload.Shininess);
 
+
 		if (bIsDirty && ImGui::Button("Save"))
 		{
 			Save();

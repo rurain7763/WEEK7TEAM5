@@ -66,6 +66,7 @@ void FGraphicsManager::Initialize()
 	mHighlightMarkPipeline->SetRasterRizerState(D3D11_CULL_BACK);
 	mHighlightMarkPipeline->SetDepthStencilState(false, true, D3D11_COMPARISON_ALWAYS, D3D11_STENCIL_OP_REPLACE);
 	mHighlightMarkPipeline->SetBlendState(ERenderBlendMode::Opaque, false);
+	//TODO 이곳에서도 조명 모델 매크로가 붙는다. 셰이더에서 사용하지 않으니 문제는 없지만 리팩토링 할 것
 	mHighlightMarkPipeline->SetShader("Assets/Shaders/PreOutline.hlsl");
 	mHighlightMarkPipeline->AddConstantBuffer<FMeshContants>();
 	mHighlightMarkPipeline->AddConstantBuffer<FViewConstants>();
@@ -73,6 +74,7 @@ void FGraphicsManager::Initialize()
 	mHighlightDrawPipeline = mRenderer->CreateRenderPipeline();
 	mHighlightDrawPipeline->SetRasterRizerState(D3D11_CULL_BACK);
 	mHighlightDrawPipeline->SetDepthStencilState(false, false, D3D11_COMPARISON_NOT_EQUAL, D3D11_STENCIL_OP_KEEP);
+	//TODO 이곳에서도 조명 모델 매크로가 붙는다. 셰이더에서 사용하지 않으니 문제는 없지만 리팩토링 할 것
 	mHighlightDrawPipeline->SetShader("Assets/Shaders/PostOutline.hlsl");
 	mHighlightDrawPipeline->AddConstantBuffer<FOutlineConstants>();
 
@@ -293,7 +295,9 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 		{
 			const FRenderInfo& Info = RenderInfos[Index];
 
-			const auto& Pipeline = Info.Pipeline ? Info.Pipeline : mMeshPipeline.get();
+			//const auto& Pipeline = Info.Pipeline ? Info.Pipeline : mMeshPipeline.get();
+			auto Pipeline = Info.Material && Info.Material->GetPipeline() ? Info.Material->GetPipeline().get() : mMeshPipeline.get();
+
 
 			if (Pipeline != LastViewPipeline)
 			{
@@ -483,6 +487,7 @@ TSharedPtr<FTexture2DAsset> FGraphicsManager::GetDefaultNormalMap()
 
 	return DefaultNormalMap;
 }
+
 
 void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives)
 {

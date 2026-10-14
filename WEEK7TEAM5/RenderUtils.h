@@ -74,14 +74,28 @@ namespace RenderUtils
 		}
 	}
 
+
 	static void CompileShaderFromMemory(ID3D11Device* Device, const FString& Memory, const D3D_SHADER_MACRO* Macros, Microsoft::WRL::ComPtr<ID3D11VertexShader>& VertexShader, Microsoft::WRL::ComPtr<ID3D11PixelShader>& PixelShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& InputLayout, uint32& Stride)
 	{
 		ID3DBlob* VertexShaderCSO;
 		ID3DBlob* PixelShaderCSO;
 		HRESULT Result;
+				
+		UINT compileFlags = 0;
+
+#if defined(DEBUG) || defined(_DEBUG)
+		// 디버그 빌드(Debug)일 때만 실행되는 플래그 설정
+		compileFlags |= D3DCOMPILE_DEBUG;                  // 디버깅 정보 포함
+		compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;       // 컴파일러 최적화 해제 (디버깅 라인 매칭용)
+#else
+		// 릴리즈 빌드(Release)일 때 실행되는 플래그 설정
+		//compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;     // 최대 최적화 레벨 적용
+#endif
 
 		ID3DBlob* VSErrorBlob;
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, &VSErrorBlob);
+
+		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, nullptr, "mainVS", "vs_5_0", compileFlags, 0, &VertexShaderCSO, &VSErrorBlob);
+
 		if (SUCCEEDED(Result))
 		{
 			Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, VertexShader.GetAddressOf());
@@ -93,7 +107,9 @@ namespace RenderUtils
 		}
 
 		ID3DBlob* PSErrorBlob;
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, &PSErrorBlob);
+
+		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, nullptr, "mainPS", "ps_5_0", compileFlags, 0, &PixelShaderCSO, &PSErrorBlob);
+
 		if (SUCCEEDED(Result))
 		{
 			Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, PixelShader.GetAddressOf());
@@ -128,6 +144,7 @@ namespace RenderUtils
 		}
 	}
 
+
 	static void CompileShader(ID3D11Device* Device, const FString& ShaderPath, const D3D_SHADER_MACRO* Macros, Microsoft::WRL::ComPtr<ID3D11VertexShader>& VertexShader, Microsoft::WRL::ComPtr<ID3D11PixelShader>& PixelShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& InputLayout, uint32& Stride)
 	{
 		std::ifstream FileStream(ShaderPath.ToString(), std::ios::in | std::ios::binary);
@@ -140,6 +157,7 @@ namespace RenderUtils
 		Buffer << FileStream.rdbuf();
 
 		FString Memory(Buffer.str());
+
 		CompileShaderFromMemory(Device, Memory, Macros, VertexShader, PixelShader, InputLayout, Stride);
 	}
 

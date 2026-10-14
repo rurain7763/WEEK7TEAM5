@@ -173,6 +173,7 @@ class FMaterialFileIO
 public:
 	static bool Load(FArchive& Ar, FMaterialPayload& OutPayload)
 	{
+		//Version 1
 		Ar << OutPayload.AmbientColor;
 		Ar << OutPayload.DiffuseColor;
 		Ar << OutPayload.SpecularColor;
