@@ -345,6 +345,11 @@ TSharedPtr<FRenderPipeline> URenderer::CreateRenderPipeline()
 	return MakeShared<FRenderPipeline>(Device, DeviceContext, &SamplerStatePool, &DepthStencilStatePool, &BlendStatePool);
 }
 
+TSharedPtr<FComputePipeline> URenderer::CreateComputePipelilne()
+{
+	return MakeShared<FComputePipeline>(Device, DeviceContext, &SamplerStatePool);
+}
+
 TSharedPtr<FRenderTarget2D> URenderer::CreateRenderTarget2D(uint32 Width, uint32 Height, DXGI_FORMAT Format)
 {
 	TSharedPtr<FRenderTarget2D> RenderTarget = MakeShared<FRenderTarget2D>();
@@ -441,6 +446,15 @@ TSharedPtr<FShader> URenderer::CreateShaderFromMemory(const FString& ShaderMemor
 	return Shader;
 }
 
+TSharedPtr<FComputeShader> URenderer::CreateComputeShader(const FString& ShaderPath, const D3D_SHADER_MACRO* Macros)
+{
+	TSharedPtr<FComputeShader> Shader = MakeShared<FComputeShader>();
+	
+	RenderUtils::CompileComputeShader(Device, ShaderPath, Macros, Shader->ComputeShader);
+
+	return Shader;
+}
+
 void URenderer::BindPipeline(const FRenderPipeline* Pipeline, uint32 StencilRef)
 {
 	// SRV는 Pipeline 버전과 무관하게 기존 슬롯 캐시로 항상 비교합니다.
@@ -533,15 +547,14 @@ void URenderer::BindPipeline(const FRenderPipeline* Pipeline, uint32 StencilRef)
 
 	if (bShouldSetCBs)
 	{
-		const int32 BindCount = FPlatformMath::Max(NewCBCount, CurrentCBCount);
-		CurrentCBs.Reset(BindCount);
+		const int32 BindCount = FPlatformMath::Max(NewCBCount, NewCBCount);
 		for (int32 i = 0; i < BindCount; ++i)
 		{
-			CurrentCBs.Emplace(i < NewCBCount ? Pipeline->ConstantBuffers[i] : nullptr);
+			CurrentCBs[i] = i < NewCBCount ? Pipeline->ConstantBuffers[i] : nullptr;
 		}
 
-		DeviceContext->VSSetConstantBuffers(0, BindCount, CurrentCBs.Data());
-		DeviceContext->PSSetConstantBuffers(0, BindCount, CurrentCBs.Data());
+		DeviceContext->VSSetConstantBuffers(0, BindCount, CurrentCBs);
+		DeviceContext->PSSetConstantBuffers(0, BindCount, CurrentCBs);
 
 		CurrentCBCount = NewCBCount;
 	}
@@ -594,6 +607,119 @@ void URenderer::BindIndexBuffer(ID3D11Buffer* IndexBuffer)
 
 	DeviceContext->IASetIndexBuffer(IndexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	CurrentIndexBuffer = IndexBuffer;
+}
+
+void URenderer::BindComputePipeline(const FComputePipeline* Pipeline)
+{
+	if (LastComputePipeline == Pipeline && LastComputePipelineVersion == Pipeline->GetVersion())
+	{
+		return;
+	}
+
+	// NOTE: Constant 버퍼 바인드 체크
+	const int32 NewCBCount = Pipeline->ConstantBuffers.Num();
+
+	bool bShouldSetCBs = NewCBCount > CurrentComputeCBCount;
+	for (int32 i = 0; !bShouldSetCBs && i < CurrentComputeCBCount; i++)
+	{
+		if (i >= NewCBCount || CurrentComputeCBs[i] != Pipeline->ConstantBuffers[i])
+		{
+			bShouldSetCBs = true;
+		}
+	}
+
+	if (bShouldSetCBs)
+	{
+		const int32 BindCount = FPlatformMath::Max(NewCBCount, CurrentComputeCBCount);
+		for (int32 i = 0; i < BindCount; ++i)
+		{
+			CurrentComputeCBs[i] = i < NewCBCount ? Pipeline->ConstantBuffers[i] : nullptr;
+		}
+
+		DeviceContext->CSSetConstantBuffers(0, BindCount, CurrentComputeCBs);
+
+		CurrentComputeCBCount = NewCBCount;
+	}
+
+	const int32 NewSRVCount = Pipeline->ShaderResourceViews.Num();
+
+	bool bShouldSetSRVs = NewSRVCount > CurrentComputeSRVCount;
+	for (int32 i = 0; !bShouldSetSRVs && i < CurrentComputeSRVCount; i++)
+	{
+		if (i >= NewSRVCount || CurrentComputeSRVs[i] != Pipeline->ShaderResourceViews[i])
+		{
+			bShouldSetSRVs = true;
+		}
+	}
+
+	if (bShouldSetSRVs)
+	{
+		const int32 BindCount = FPlatformMath::Max(NewSRVCount, CurrentComputeSRVCount);
+		for (int32 i = 0; i < BindCount; ++i)
+		{
+			CurrentComputeSRVs[i] = i < NewSRVCount ? Pipeline->ShaderResourceViews[i] : nullptr;
+		}
+
+		DeviceContext->CSSetShaderResources(0, BindCount, CurrentComputeSRVs);
+
+		CurrentComputeSRVCount = NewSRVCount;
+	}
+
+	const int32 NewUAVCount = Pipeline->UnorderedAccessViews.Num();
+
+	bool bShouldSetUAVs = NewUAVCount > CurrentComputeUAVCount;
+	for (int32 i = 0; !bShouldSetUAVs && i < CurrentComputeUAVCount; i++)
+	{
+		if (i >= NewUAVCount || CurrentComputeUAVs[i] != Pipeline->UnorderedAccessViews[i])
+		{
+			bShouldSetUAVs = true;
+		}
+	}
+
+	if (bShouldSetUAVs)
+	{
+		const int32 BindCount = FPlatformMath::Max(NewUAVCount, CurrentComputeUAVCount);
+		for (int32 i = 0; i < BindCount; ++i)
+		{
+			CurrentComputeUAVs[i] = i < NewUAVCount ? Pipeline->UnorderedAccessViews[i] : nullptr;
+		}
+
+		DeviceContext->CSSetUnorderedAccessViews(0, BindCount, CurrentComputeUAVs, nullptr);
+
+		CurrentComputeUAVCount = NewUAVCount;
+	}
+
+	const int32 NewSamplerCount = Pipeline->SamplerStates.Num();
+
+	bool bShouldSetSamplers = NewSamplerCount > CurrentComputeSamplerStateCount;
+	for (int32 i = 0; !bShouldSetSamplers && i < CurrentComputeSamplerStateCount; i++)
+	{
+		if (i >= NewSamplerCount || CurrentComputeStates[i] != Pipeline->SamplerStates[i])
+		{
+			bShouldSetSamplers = true;
+		}
+	}
+
+	if (bShouldSetSamplers)
+	{
+		const int32 BindCount = FPlatformMath::Max(NewSamplerCount, CurrentComputeSamplerStateCount);
+		for (int32 i = 0; i < BindCount; ++i)
+		{
+			CurrentComputeStates[i] = i < NewSamplerCount ? Pipeline->SamplerStates[i] : nullptr;
+		}
+
+		DeviceContext->CSSetSamplers(0, BindCount, CurrentComputeStates);
+
+		CurrentComputeSamplerStateCount = NewSamplerCount;
+	}
+
+	if (CurrentComputeShader != Pipeline->Shader->ComputeShader.Get())
+	{
+		DeviceContext->CSSetShader(Pipeline->Shader->ComputeShader.Get(), nullptr, 0);
+	}
+
+	LastComputePipeline = Pipeline;
+	LastComputePipelineVersion = Pipeline->GetVersion();
 }
 
 void URenderer::BindFrameBuffer()
@@ -693,6 +819,13 @@ void URenderer::BindRenderTargets(const FBindRenderTargetsDesc& Desc)
 	DeviceContext->RSSetViewports(1, &Viewport);
 
 	Projection2D = FMatrix::Ortho(0.f, Width, Height, 0.f, 0.0f, 1.0f);
+}
+
+void URenderer::ClearRenderTargets()
+{
+	DeviceContext->OMSetRenderTargets(0, nullptr, nullptr);
+	BindedRenderTargetCount = 0;
+	BindedDepthStencil = nullptr;
 }
 
 void URenderer::Render(const FRenderPipeline* Pipeline, UINT NumVertices)
@@ -832,13 +965,33 @@ void URenderer::RenderWorldGrid(const FMatrix& ViewProjection, const FVector& Ca
 	++DrawCallCount;
 }
 
+void URenderer::Dispatch(const FComputePipeline* Pipeline, UINT GroupX, UINT GroupY, UINT GroupZ)
+{
+	BindComputePipeline(Pipeline);
+	DeviceContext->Dispatch(GroupX, GroupY, GroupZ);
+}
+
 void URenderer::ClearAllShaderResources()
 {
-	ID3D11ShaderResourceView* nullSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
-	DeviceContext->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, nullSRVs);
-	DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, nullSRVs);
+	ID3D11ShaderResourceView* NullSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
+	DeviceContext->VSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, NullSRVs);
+	DeviceContext->PSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, NullSRVs);
+	DeviceContext->CSSetShaderResources(0, D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT, NullSRVs);
 
 	CurrentSRVCount = 0;
+	LastPipeline = nullptr;
+
+	CurrentComputeSRVCount = 0;
+	LastComputePipeline = nullptr;
+}
+
+void URenderer::ClearAllUnorderedAccesses()
+{
+	ID3D11UnorderedAccessView* NullUAVs[D3D11_PS_CS_UAV_REGISTER_COUNT] = {};
+	DeviceContext->CSSetUnorderedAccessViews(0, D3D11_PS_CS_UAV_REGISTER_COUNT, NullUAVs, nullptr);
+
+	CurrentComputeUAVCount = 0;
+	LastComputePipeline = nullptr;
 }
 
 //=============================================

@@ -7,6 +7,7 @@
 #include "Rotator.h"
 #include "FAABB.h"
 #include "TArray.h"
+#include "FFrustum.h"
 #include <functional>
 
 template <typename T>
@@ -439,4 +440,17 @@ inline FVector CalculateNormal(const FVector& P0, const FVector& P1, const FVect
 	Normal.SafeNormalize();
 
 	return Normal;
+}
+
+inline FVector3 ScreenToNDC(uint32 ScreenWidth, uint32 ScreenHeight, uint32 ScreenX, uint32 ScreenY, float Z)
+{
+	FVector3 NDC(ScreenX / (float)ScreenWidth, ScreenY / (float)ScreenHeight, Z);
+	NDC.x = NDC.x * 2.0f - 1.0f;
+	NDC.y = 1.0f - (NDC.y * 2.0f - 1.0f);
+	return NDC;
+}
+
+inline uint32 CalculateGroupCount(uint32 Total, uint32 GroupSize)
+{
+	return (Total + GroupSize - 1) / GroupSize;
 }

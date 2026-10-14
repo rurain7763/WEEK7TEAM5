@@ -44,6 +44,31 @@ void FGraphicsManager::Initialize()
 	mGlobalLightInfoBuffer = mRenderer->CreateConstantBuffer<FGlobalLightInfo>();
 	mLightInfoBuffer = mRenderer->CreateStructuredBuffer<FLightInfo>(1);
 
+	TSharedPtr<FShader> PreDepthShader = mRenderer->CreateShader("Assets/Shaders/PreDepth.hlsl");
+
+	mPreDepthPipeline = mRenderer->CreateRenderPipeline();
+	mPreDepthPipeline->SetShader(PreDepthShader);
+	mPreDepthPipeline->AddConstantBuffer<FPreDepthConstants>();
+	mPreDepthPipeline->AddConstantBuffer<FViewConstants>();
+
+	FString LightCullingThreadXStr = std::to_string(LightCullingThreadX);
+	FString LightCullingThreadYStr = std::to_string(LightCullingThreadY);
+	FString LightCullingTileMaxLightCountStr = std::to_string(LightCullingTileMaxLightCount);
+
+	D3D_SHADER_MACRO LightCullingMacros[] = {
+		{ "THREAD_X", LightCullingThreadXStr.c_str() },
+		{ "THREAD_Y", LightCullingThreadYStr.c_str() },
+		{ "MAX_LIGHT_INDICES_COUNT", LightCullingTileMaxLightCountStr.c_str() },
+		{ nullptr, nullptr }
+	};
+	TSharedPtr<FComputeShader> LightCullingShaer = mRenderer->CreateComputeShader("Assets/Shaders/LightCulling.hlsl", LightCullingMacros);
+
+	mLightCullingPipeline = mRenderer->CreateComputePipelilne();
+	mLightCullingPipeline->SetShader(LightCullingShaer);
+	mLightCullingPipeline->AddConstantBuffer<FLightCullingConstants>();
+
+	mLightCullingOutput = mRenderer->CreateStructuredBuffer<int32>(1, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS);
+
 	TSharedPtr<FShaderAsset> MeshLightShaderAsset = FAssetManager::Get().GetAssetAs<FShaderAsset>(BuiltInAssetID::LightShader, true);
 	if (!MeshLightShaderAsset)
 	{
@@ -104,6 +129,9 @@ void FGraphicsManager::Cleanup()
 	mGlobalLightInfoBuffer.reset();
 	mMeshLightShader.reset();
 	mMeshPipeline.reset();
+	mLightCullingOutput.reset();
+	mLightCullingPipeline.reset();
+	mPreDepthPipeline.reset();
 }
 
 void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, EViewModeIndex InViewMode, EShaderStage InLightingEvaluationStage, ELightingModel InLightingModel, EViewportType InViewportType)
@@ -122,6 +150,7 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 
 	mViewMatrix = view;
 	mProjectionMatrix = projection_u;
+	mInvProjectionMatrix = projection_u.Inverse();
 	mViewProjectionMatrix = ViewProjection;
 	mInvViewProjectionMatrix = InvViewProjection;
 	mViewport = &Viewport;
@@ -249,6 +278,10 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	GlobalLightConstants.DirectionalColor = DirectionalLight ? DirectionalLight->GetColor() : FLinearColor();
 	GlobalLightConstants.DirectionalIntensity = DirectionalLight ? DirectionalLight->GetIntensity() : 0.0f;
 	GlobalLightConstants.DirectionalDirection = DirectionalLight ? DirectionalLight->GetForwardVector() : FVector();
+	GlobalLightConstants.LightCullingThreadX = LightCullingThreadX;
+	GlobalLightConstants.LightCullingThreadY = LightCullingThreadY;
+	GlobalLightConstants.LightCullingTileX = CalculateGroupCount(Viewport.GetDepthStencil()->Width, LightCullingThreadX);
+	GlobalLightConstants.LightCullingTileMaxLightCount = LightCullingTileMaxLightCount;
 	mGlobalLightInfoBuffer->UpdateBuffer(&GlobalLightConstants, sizeof(FGlobalLightInfo));
 	
 	mRenderer->BindRenderTarget(Viewport.GetFrontRenderTarget(), Viewport.GetDepthStencil());
@@ -276,6 +309,38 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 		});
     }
 
+	// NOTE: PreDepth Pass
+	mRenderer->BindRenderTarget(nullptr, mViewport->GetDepthStencil(), true);
+
+	FViewConstants ViewConstants;
+	ViewConstants.ViewProjectionMatrix = mViewUnifiedProjectionMatrix;
+	ViewConstants.ViewPosition = mCameraLocation;
+	mPreDepthPipeline->UpdateConstantBuffer(1, ViewConstants);
+
+	for (const int32 Index : VisibleRenderInfoIndices)
+	{
+		const FRenderInfo& Info = RenderInfos[Index];
+
+		// 개별 Draw의 상수는 기존 동적 상수 버퍼에 Map/Unmap으로 갱신합니다.
+		FPreDepthConstants Constants;
+		Constants.Model = Info.Model;
+
+		mPreDepthPipeline->UpdateConstantBuffer(0, Constants);
+
+		if (Info.IndexBuffer)
+		{
+			mRenderer->RenderPrimitiveIndexed(mPreDepthPipeline, Info);
+		}
+		else
+		{
+			mRenderer->RenderPrimitive(mPreDepthPipeline.get(), Info.VertexBuffer, Info.VertexCount);
+		}
+	}
+
+	mRenderer->ClearRenderTargets();
+	ExecuteLightCulling(*mViewport->GetDepthStencil());
+
+	// NOTE: Render
 	FBindRenderTargetsDesc BindDesc;
 	BindDesc.AddRenderTarget(mViewport->GetFrontRenderTarget(), false);
 	BindDesc.AddRenderTarget(mViewport->GetGBuffer()->Normal.get(), true);
@@ -344,6 +409,7 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			}
 
 			Pipeline->SetShaderResource(3, mLightInfoBuffer->SRV);
+			Pipeline->SetShaderResource(4, mLightCullingOutput->SRV);
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);
 
@@ -473,7 +539,6 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 	}
 }
 
-
 TSharedPtr<FTexture2DAsset> FGraphicsManager::GetDefaultNormalMap()
 {
 	if (DefaultNormalMap == nullptr)
@@ -482,6 +547,36 @@ TSharedPtr<FTexture2DAsset> FGraphicsManager::GetDefaultNormalMap()
 	}
 
 	return DefaultNormalMap;
+}
+
+void FGraphicsManager::ExecuteLightCulling(const FDepthStencil& DepthStencil)
+{
+	float TileX = CalculateGroupCount(DepthStencil.Width, LightCullingThreadX);
+	float TileY = CalculateGroupCount(DepthStencil.Height, LightCullingThreadY);
+
+	if (mLightCullingOutput->GetBufferSize() < sizeof(int32) * TileX * TileY * LightCullingTileMaxLightCount)
+	{
+		mLightCullingOutput = mRenderer->CreateStructuredBuffer<int32>(TileX * TileY * LightCullingTileMaxLightCount, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS);
+	}
+
+	FLightCullingConstants Constants;
+	Constants.InvProjection = mInvProjectionMatrix;
+	Constants.ViewMatrix = mViewMatrix;
+	Constants.Width = DepthStencil.Width;
+	Constants.Height = DepthStencil.Height;
+	Constants.LightCount = mLightInfos.Num();
+	Constants.TileX = TileX;
+
+	mLightCullingPipeline->UpdateConstantBuffer(0, Constants);
+
+	mLightCullingPipeline->SetShaderResource(0, DepthStencil.DepthSRV);
+	mLightCullingPipeline->SetShaderResource(1, mLightInfoBuffer->SRV);
+	mLightCullingPipeline->SetUnorderedAccess(0, mLightCullingOutput->UAV);
+
+	mRenderer->Dispatch(mLightCullingPipeline.get(), CalculateGroupCount(DepthStencil.Width, LightCullingThreadX), CalculateGroupCount(DepthStencil.Height, LightCullingThreadY), 1);
+
+	mRenderer->ClearAllShaderResources();
+	mRenderer->ClearAllUnorderedAccesses();
 }
 
 void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives)

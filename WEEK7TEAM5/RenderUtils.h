@@ -4,7 +4,6 @@
 #include "Matrix.h"
 #include "Vector.h"
 #include "RenderInfo.h"
-#include "FRenderPipeline.h"
 #include "NvapiHelpers.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
@@ -81,7 +80,7 @@ namespace RenderUtils
 		HRESULT Result;
 
 		ID3DBlob* VSErrorBlob;
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, &VSErrorBlob);
+		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, &VSErrorBlob);
 		if (SUCCEEDED(Result))
 		{
 			Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, VertexShader.GetAddressOf());
@@ -93,7 +92,7 @@ namespace RenderUtils
 		}
 
 		ID3DBlob* PSErrorBlob;
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, &PSErrorBlob);
+		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, &PSErrorBlob);
 		if (SUCCEEDED(Result))
 		{
 			Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, PixelShader.GetAddressOf());
@@ -115,7 +114,7 @@ namespace RenderUtils
 				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FVertex, UV), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 				{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FVertex, Tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			};
-			
+
 			Device->CreateInputLayout(Layout, ARRAYSIZE(Layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), InputLayout.GetAddressOf());
 			Stride = sizeof(FVertex);
 
@@ -141,6 +140,43 @@ namespace RenderUtils
 
 		FString Memory(Buffer.str());
 		CompileShaderFromMemory(Device, Memory, Macros, VertexShader, PixelShader, InputLayout, Stride);
+	}
+
+	static void CompileComputeShaderFromMemory(ID3D11Device* Device, const FString& Memory, const D3D_SHADER_MACRO* Macros, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& ComputeShader)
+	{
+		ID3DBlob* Bytecode;
+		ID3DBlob* Errors;
+
+		HRESULT Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "mainCS", "cs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &Bytecode, &Errors);
+		if (SUCCEEDED(Result))
+		{
+			Device->CreateComputeShader(Bytecode->GetBufferPointer(), Bytecode->GetBufferSize(), nullptr, ComputeShader.GetAddressOf());
+		}
+		else if (Errors)
+		{
+			OutputDebugStringA((char*)Errors->GetBufferPointer());
+			Errors->Release();
+		}
+
+		if (Bytecode)
+		{
+			Bytecode->Release();
+		}
+	}
+
+	static void CompileComputeShader(ID3D11Device* Device, const FString& ShaderPath, const D3D_SHADER_MACRO* Macros, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& ComputeShader)
+	{
+		std::ifstream FileStream(ShaderPath.ToString(), std::ios::in | std::ios::binary);
+		if (!FileStream)
+		{
+			return;
+		}
+
+		std::stringstream Buffer;
+		Buffer << FileStream.rdbuf();
+
+		FString Memory(Buffer.str());
+		CompileComputeShaderFromMemory(Device, Memory, Macros, ComputeShader);
 	}
 
 	static ID3D11Buffer* CreateConstantBuffer(ID3D11Device* Device, UINT Size)

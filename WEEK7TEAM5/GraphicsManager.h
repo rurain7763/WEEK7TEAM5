@@ -92,6 +92,7 @@ public:
 	TSharedPtr<FTexture2DAsset> GetDefaultNormalMap();
 
 private:
+	void ExecuteLightCulling(const FDepthStencil& DepthStencil);
 	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
 
 private:
@@ -119,11 +120,19 @@ private:
 		float OuterConeAngle;
 	};
 
-	struct FDirectionalLightInfo
+	struct FPreDepthConstants
 	{
-		FVector DL_Direction = FVector(1.f, 0.f, 0.f);
-		float DL_Intensity = 0.f;
-		FLinearColor DL_Color = FLinearColor();
+		FMatrix Model;
+	};
+
+	struct FLightCullingConstants
+	{
+		FMatrix InvProjection;
+		FMatrix ViewMatrix;
+		uint32 Width;
+		uint32 Height;
+		uint32 LightCount;
+		uint32 TileX;
 	};
 
 	struct FGlobalLightInfo
@@ -133,7 +142,11 @@ private:
 		float AmbientIntensity;
 		FLinearColor DirectionalColor;
 		float DirectionalIntensity;
-		float GlobalLightConstantsPadding[3];
+		int32 LightCullingThreadX;
+		int32 LightCullingThreadY;
+		int32 LightCullingTileX;
+		int32 LightCullingTileMaxLightCount;
+		int32 Padding[3];
 	};
 
 	struct FMeshContants
@@ -158,9 +171,14 @@ private:
 		float Padding;
 	};
 
+	constexpr static uint32 LightCullingThreadX = 16;
+	constexpr static uint32 LightCullingThreadY = 16;
+	constexpr static uint32 LightCullingTileMaxLightCount = 1024;
+
 	URenderer* mRenderer;
 	FMatrix mViewMatrix;
 	FMatrix mProjectionMatrix;
+	FMatrix mInvProjectionMatrix;
 	FMatrix mViewProjectionMatrix;
 	FMatrix mInvViewProjectionMatrix;
 	FMatrix mViewOrthogonalProjectionMatrix;
@@ -191,6 +209,12 @@ private:
 
 	TArray<FLightInfo> mLightInfos;
 	TSharedPtr<FStructuredBuffer> mLightInfoBuffer;
+
+	TSharedPtr<FRenderPipeline> mPreDepthPipeline;
+
+	TSharedPtr<FComputePipeline> mLightCullingPipeline;
+	TSharedPtr<FStructuredBuffer> mLightCullingOutput;
+
 	TSharedPtr<FLightShader> mMeshLightShader;
 	TSharedPtr<FRenderPipeline> mMeshPipeline;
 
