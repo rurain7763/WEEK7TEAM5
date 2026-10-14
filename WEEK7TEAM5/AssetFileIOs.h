@@ -81,11 +81,48 @@ class FStaticMeshFileIO
 public:
 	static bool Load(FArchive& Ar, FStaticMeshPayload& OutPayload)
 	{
-		Ar << OutPayload.Vertices;
-		Ar << OutPayload.Indices;
-		Ar << OutPayload.Sections;
-		Ar << OutPayload.Materials;
+		//옛날 버전
+		if (Ar.GetVersion() < 1)
+		{
+			struct FVertex1
+			{
+				FVector Pos;
+				FVector Normal;
+				FVector4 Color;
+				FVector2 Tex;
+			};
 
+			static_assert(sizeof(FVertex1) == 48, "Version 1 정점은 48바이트여야 한다");
+
+			TArray<FVertex1> Vertices1;
+			Ar << Vertices1;
+
+			//FVertex1을 FVertex로 옮기기
+			OutPayload.Vertices.SetNum(Vertices1.Num());
+			for (int i = 0; i < Vertices1.Num(); i++)
+			{
+				OutPayload.Vertices[i].Position = Vertices1[i].Pos;
+				OutPayload.Vertices[i].Normal = Vertices1[i].Normal;
+				OutPayload.Vertices[i].Color = Vertices1[i].Color;
+				OutPayload.Vertices[i].UV = Vertices1[i].Tex;
+			}
+
+			//Tangent 계산
+			CalculateTangents(OutPayload.Vertices.Data(), OutPayload.Vertices.Num(), OutPayload.Indices.Data(), OutPayload.Indices.Num());
+			
+			Ar << OutPayload.Indices;
+			Ar << OutPayload.Sections;
+			Ar << OutPayload.Materials;
+		}
+		//최신버전
+		else
+		{
+			Ar << OutPayload.Vertices;
+			Ar << OutPayload.Indices;
+			Ar << OutPayload.Sections;
+			Ar << OutPayload.Materials;
+		}
+		
 		return true;
 	}
 

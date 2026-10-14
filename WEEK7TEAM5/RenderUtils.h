@@ -115,7 +115,7 @@ namespace RenderUtils
 				{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, offsetof(FVertex, UV), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 				{ "TANGENT", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, offsetof(FVertex, Tangent), D3D11_INPUT_PER_VERTEX_DATA, 0 },
 			};
-
+			
 			Device->CreateInputLayout(Layout, ARRAYSIZE(Layout), VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), InputLayout.GetAddressOf());
 			Stride = sizeof(FVertex);
 

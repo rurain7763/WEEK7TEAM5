@@ -21,6 +21,7 @@ struct FViewport;
 class UWorld;
 class UPrimitiveComponent;
 class FLightShader;
+class FTexture2DAsset;
 
 struct FBuffer
 {
@@ -87,6 +88,9 @@ public:
 	void UpdateGpuRenderTime();
 	float GetGpuRenderTime() { return GpuRenderTime; }
 
+	//Default Normal Map 가져오기
+	TSharedPtr<FTexture2DAsset> GetDefaultNormalMap();
+
 private:
 	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
 
@@ -104,9 +108,11 @@ private:
 	{
 		FVector Position;
 		ELightType Type;
+
 		FLinearColor Color;
 		FVector Direction;
 		float Range;
+
 		float Intensity;
 		float FallOf;
 		float InnerConeAngle;
@@ -135,11 +141,14 @@ private:
 		FMatrix Matrix;
 		FMatrix InvMatrix;
 		FVector4 Color;
+
 		FVector2 UVOffset;
 		int32 UseVertexColor;
 		uint32 BindedTextureMapFlags;
+
 		int32 LightCount;
-		int32 Padding[3];
+		float Shininess;
+		int32 Padding[2];
 	};
 
 	struct FViewConstants
@@ -199,4 +208,6 @@ private:
 
 	int32 GridGap = 1;
 	bool bGpuTimerActive = false;
+
+	TSharedPtr<FTexture2DAsset> DefaultNormalMap = nullptr;
 };

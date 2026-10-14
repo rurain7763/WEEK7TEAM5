@@ -42,7 +42,8 @@ namespace BuiltInAssetID
 	inline const FGuid SpotLightIcon(0xB17B0001, 0x00000000, 0x00000000, 0x00003000);
 	inline const FGuid HeightFogIcon(0xB17B0001, 0x00000000, 0x00000000, 0x00003001);
 	inline const FGuid PointLightIcon(0xB17B0001, 0x00000000, 0x00000000, 0x00003002);
-	inline const FGuid LightShader(0xB17B0001, 0x00000000, 0x00000000, 0x00004000);
+	inline const FGuid DefaultNoramlMap(0xB17B0001, 0x00000000, 0x00000000, 0x00004000);
+	inline const FGuid LightShader(0xB17B0001, 0x00000000, 0x00000000, 0x00004001);
 }
 
 class FFileAssetSource : public FAssetSource
@@ -287,6 +288,9 @@ public:
 	inline bool HasNormalTexture() const { return NormalTextureAsset != nullptr; }
 	inline const FTexture2DAsset* GetNormalTexture() const { return NormalTextureAsset.get(); }
 
+	inline float GetShininess() { return Shininess; }
+	inline void SetShininess(float Shininess) { this->Shininess = Shininess; }
+
 	inline uint32 GetMaterialID() const { return MaterialID; }
 
 	inline const TSharedPtr<FRenderPipeline>& GetPipeline() const { return Pipeline; }
@@ -306,6 +310,7 @@ private:
 	TSharedPtr<FTexture2DAsset> NormalTextureAsset;
 	
 	float Opacity;
+	float Shininess;
 	uint32 MaterialID = 0;
 };
 
