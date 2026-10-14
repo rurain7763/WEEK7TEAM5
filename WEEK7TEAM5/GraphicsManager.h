@@ -43,6 +43,8 @@ public:
 	float GetAspect() const { return mAspect; }
 	EViewModeIndex GetViewModeIndex() const { return mViewModeIndex; }
 	void SetViewModeIndex(EViewModeIndex viewModeIndex) { mViewModeIndex = viewModeIndex; }
+	bool IsLightCullingCountVisible() const { return mShowLightCullingCounts; }
+	void SetLightCullingCountVisible(bool bVisible) { mShowLightCullingCounts = bVisible; }
 
 	bool IsPerspectiveProjection() const;
 	void SetPerspectiveProjection(bool bPerspectiveProjection);
@@ -177,6 +179,14 @@ private:
 		FVector3 pad2;
 	};
 
+	struct FLightCullingCountConstants
+	{
+		FVector2 ViewportSize;
+		uint32 TotalLightCount;
+		uint32 Padding = 0;
+	};
+	static_assert(sizeof(FLightCullingCountConstants) == 16);
+
 	URenderer* mRenderer;
 	FMatrix mViewMatrix;
 	FMatrix mProjectionMatrix;
@@ -195,6 +205,7 @@ private:
 	float mCameraFar = 1000.0f;
 
 	EViewModeIndex mViewModeIndex = EViewModeIndex::VMI_Lit_Phong;
+	bool mShowLightCullingCounts = false;
 	EViewportType mViewportType = EViewportType::Perspective;
 	bool mbPerspectiveProjection;
 	float mAspect;
@@ -216,6 +227,7 @@ private:
 	TSharedPtr<FRenderPipeline> mMeshPipeline;
 
 	TSharedPtr<FComputePipeline> mComputePipeline;
+	TSharedPtr<FRenderPipeline> mLightCullingCountPipeline;
 
 	TSharedPtr<FRenderPipeline> mHighlightMarkPipeline;
 	TSharedPtr<FRenderPipeline> mHighlightDrawPipeline;

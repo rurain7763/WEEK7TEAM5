@@ -27,6 +27,7 @@ struct FTile
     float2 end_position;
     uint tileindex;
     FCellBounds AABB;
+    float4 SidePlanes[4];
 };
 
 cbuffer CullingConstants : register(b0)
@@ -68,6 +69,32 @@ float3 PixeltoView(float2 pixelposition,bool isDepthNear)
     return viewPoint;
 }
 
+float4 MakeInwardPlane(float3 a, float3 b, float3 c, float3 insidePoint)
+{
+    float3 normal = cross(b - a, c - a);
+    float lengthSquared = dot(normal, normal);
+    if (lengthSquared <= 1e-20f)
+        return float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+    normal *= rsqrt(lengthSquared);
+    if (dot(normal, insidePoint - a) < 0.0f)
+        normal = -normal;
+    return float4(normal, -dot(normal, a));
+}
+
+bool IntersectsTileSidePlanes(FTile tile, float3 lightCenter, float radius)
+{
+    float tolerance = 1e-4f * max(1.0f, radius);
+    [unroll]
+    for (int side = 0; side < 4; ++side)
+    {
+        float distance = dot(tile.SidePlanes[side].xyz, lightCenter) + tile.SidePlanes[side].w;
+        if (distance - radius - tolerance < 0)
+            return false;
+    }
+    return true;
+}
+
 void ComputeCellBounds(inout FTile tile)
 {
     float3 tilefront1 = PixeltoView(tile.start_position, true);
@@ -78,6 +105,14 @@ void ComputeCellBounds(inout FTile tile)
     float3 tileback2 = PixeltoView(float2(tile.end_position.x, tile.start_position.y), false);
     float3 tileback3 = PixeltoView(tile.end_position, false);
     float3 tileback4 = PixeltoView(float2(tile.start_position.x, tile.end_position.y), false);
+
+    float3 insidePoint = (tilefront1 + tilefront2 + tilefront3 + tilefront4
+        + tileback1 + tileback2 + tileback3 + tileback4) / 8.0f;
+    // Left, right, top and bottom; all normals point into the tile frustum.
+    tile.SidePlanes[0] = MakeInwardPlane(tilefront1, tilefront4, tileback1, insidePoint);
+    tile.SidePlanes[1] = MakeInwardPlane(tilefront2, tilefront3, tileback2, insidePoint);
+    tile.SidePlanes[2] = MakeInwardPlane(tilefront1, tilefront2, tileback1, insidePoint);
+    tile.SidePlanes[3] = MakeInwardPlane(tilefront4, tilefront3, tileback4, insidePoint);
 
     float3 currentMin = tilefront1;
     float3 currentMax = tilefront1;
@@ -112,16 +147,12 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     {
         LightInfo light = lights[i];
         float3 Lightposition = mul(float4(light.position,1.0f),view).xyz;
-        if (light.type == 0)
-        {
-            TileInfomation[tile.tileindex].TileLightindex[count] = i;
-            count++;
-        }
         if (light.type == 1)
         {
             if ((tile.AABB.ViewAabbMin.x - light.range < Lightposition.x && tile.AABB.ViewAabbMax.x + light.range > Lightposition.x)
                 && (tile.AABB.ViewAabbMin.y - light.range < Lightposition.y && tile.AABB.ViewAabbMax.y + light.range > Lightposition.y)
-                && (tile.AABB.ViewAabbMin.z - light.range < Lightposition.z && tile.AABB.ViewAabbMax.z + light.range > Lightposition.z))
+                && (tile.AABB.ViewAabbMin.z - light.range < Lightposition.z && tile.AABB.ViewAabbMax.z + light.range > Lightposition.z)
+                && IntersectsTileSidePlanes(tile, Lightposition, light.range))
             {
                 TileInfomation[tile.tileindex].TileLightindex[count] = i;
                 count++;
@@ -129,9 +160,10 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         }
         if (light.type == 2)
         {
-            if ((tile.AABB.ViewAabbMin.x - light.range < Lightposition.x && tile.AABB.ViewAabbMax.x + light.range > Lightposition.x)
-                && (tile.AABB.ViewAabbMin.y - light.range < Lightposition.y && tile.AABB.ViewAabbMax.y + light.range > Lightposition.y)
-                && (tile.AABB.ViewAabbMin.z - light.range < Lightposition.z && tile.AABB.ViewAabbMax.z + light.range > Lightposition.z))
+            if ((tile.AABB.ViewAabbMin.x - light.range/2 < Lightposition.x && tile.AABB.ViewAabbMax.x + light.range/2 > Lightposition.x)
+                && (tile.AABB.ViewAabbMin.y - light.range/2 < Lightposition.y && tile.AABB.ViewAabbMax.y + light.range/2 > Lightposition.y)
+                && (tile.AABB.ViewAabbMin.z - light.range/2 < Lightposition.z && tile.AABB.ViewAabbMax.z + light.range/2 > Lightposition.z)
+                && IntersectsTileSidePlanes(tile, Lightposition, light.range))
             {
                 TileInfomation[tile.tileindex].TileLightindex[count] = i;
                 count++;

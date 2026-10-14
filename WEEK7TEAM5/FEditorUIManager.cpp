@@ -339,6 +339,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 			const float ViewportTypeWidth = 95.0f;
 			const float CameraButtonWidth = ImGui::CalcTextSize("Camera").x + ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
 			const float ViewModeWidth = 130.0f;
+			const float LightCountsButtonWidth = ImGui::CalcTextSize("Light Counts").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 			const float MaximizeButtonWidth = 28.0f;
 			const float SplitButtonWidth = 28.0f;
 
@@ -347,7 +348,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 			const float MarginY = 4.0f;
 			const float ToolBarHeight = 28.0f;
 
-			const float ToolBarWidth = CameraButtonWidth + ViewportTypeWidth + ViewModeWidth + MaximizeButtonWidth + SplitButtonWidth + (Spacing * 4.0f) + MarginX;
+			const float ToolBarWidth = CameraButtonWidth + ViewportTypeWidth + ViewModeWidth + LightCountsButtonWidth + MaximizeButtonWidth + SplitButtonWidth + (Spacing * 5.0f) + MarginX;
 			const float StartCursorPos = DrawRect.X + DrawRect.Width - ToolBarWidth;
 			const float ItemHeight = 22.0f;
 
@@ -514,6 +515,29 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 				EditorViewport->Client->SetViewMode(ViewModes[CurrentModeIndex]);
 			}
 
+			ImGui::SameLine();
+			bool bShowLightCounts = GuiReference.GraphicsManager->IsLightCullingCountVisible();
+			ImGui::PushStyleColor(ImGuiCol_Button, bShowLightCounts ? IM_COL32(35, 110, 65, 255) : IM_COL32(35, 35, 35, 255));
+			if (ImGui::Button("Light Counts", ImVec2(LightCountsButtonWidth, ItemHeight)))
+			{
+				bShowLightCounts = !bShowLightCounts;
+				GuiReference.GraphicsManager->SetLightCullingCountVisible(bShowLightCounts);
+			}
+			ImGui::PopStyleColor();
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Lambert / Phong: lights assigned to each tile / total lights. The grid covers the whole viewport, including the background.");
+			}
+			if (bShowLightCounts)
+			{
+				const char* Legend = "Tile lights / total  |  Green = culled";
+				const EViewModeIndex Mode = EditorViewport->Client->GetViewMode();
+				if (Mode != EViewModeIndex::VMI_Lit_Lambert && Mode != EViewModeIndex::VMI_Lit_Phong)
+				{
+					Legend = "Light Counts: select Lit_Lambert or Lit_Phong";
+				}
+				DrawList->AddText(ImVec2(DrawRect.X + 8.0f, DrawRect.Y + ToolBarHeight + 4.0f), IM_COL32(180, 255, 200, 255), Legend);
+			}
 			ImGui::SameLine();
 
 			if (ImGui::Button("##Maximize", ImVec2(MaximizeButtonWidth, ItemHeight)))

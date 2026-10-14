@@ -40,6 +40,13 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mComputePipeline->SetShader("Assets/Shaders/CullingComputeShader.hlsl");
 	mComputePipeline->SetUnorderedAccess(0,mTileinfoBuffer->UAV);
 
+	mLightCullingCountPipeline = mRenderer->CreateRenderPipeline();
+	mLightCullingCountPipeline->SetRasterRizerState(D3D11_CULL_NONE);
+	mLightCullingCountPipeline->SetDepthStencilState(false, false);
+	mLightCullingCountPipeline->SetBlendState(ERenderBlendMode::Transparent);
+	mLightCullingCountPipeline->SetShader("Assets/Shaders/LightCullingCounts.hlsl");
+	mLightCullingCountPipeline->AddConstantBuffer<FLightCullingCountConstants>();
+
 	mMeshPipeline = mRenderer->CreateRenderPipeline();
 	mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit_Phong, EViewModeIndex::VMI_Lit_Gouraud, EViewModeIndex::VMI_Lit_Lambert, EViewModeIndex::VMI_Wireframe });
 	mMeshPipeline->SetDepthStencilState(true, true);
@@ -81,6 +88,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 FGraphicsManager::~FGraphicsManager()
 {
+	mLightCullingCountPipeline.reset();
 	mHighlightVertexBuffer.reset();
 	mHighlightIndexBuffer.reset();
 	mHighlightMarkPipeline.reset();
@@ -459,6 +467,21 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 	for (const FRenderQuad2DInfo& Quad2DInfo : mRenderCollector.GetQuad2DInfos())
 	{
 		mRenderer->RenderQuad2D(Quad2DInfo);
+	}
+
+	if (mShowLightCullingCounts &&
+		(mViewModeIndex == EViewModeIndex::VMI_Lit_Lambert || mViewModeIndex == EViewModeIndex::VMI_Lit_Phong))
+	{
+		FRenderTarget2D* Target = mViewport->GetFrontRenderTarget();
+		FLightCullingCountConstants Constants{};
+		Constants.ViewportSize = FVector2(static_cast<float>(Target->Width), static_cast<float>(Target->Height));
+		Constants.TotalLightCount = static_cast<uint32>(mLightInfos.Num());
+		mLightCullingCountPipeline->UpdateConstantBuffer(0, Constants);
+		mLightCullingCountPipeline->SetShaderResource(0, mTileinfoBuffer->SRV);
+		mRenderer->BindRenderTarget(Target, nullptr, false);
+		mRenderer->Render(mLightCullingCountPipeline.get(), 3);
+		mRenderer->ClearAllShaderResources();
+		mRenderer->BindRenderTarget(Target, mViewport->GetDepthStencil(), false);
 	}
 }
 
