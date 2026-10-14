@@ -1,5 +1,7 @@
 #include "Renderer.h"
+#include "FAssetManager.h"
 #include "FInstrumentor.h"
+#include "Assets.h"
 
 constexpr uint32 MaxLineInstances = 1024;
 
@@ -735,8 +737,46 @@ void URenderer::RenderQuad(const FRenderQuadInfo& Info)
 	++DrawCallCount;
 }
 
-void URenderer::RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices)
+void URenderer::RenderPrimitive(FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices)
 {
+	TSharedPtr<FShaderAsset> Asset = FAssetManager::Get().GetAssetAs<FShaderAsset>(FName("LightShader"));
+	TSharedPtr<FLightShader> LightShader = std::static_pointer_cast<FLightShader>(Asset->GetShader());
+
+	if (Pipeline->Shader == LightShader)
+	{
+		EViewModeIndex LightViewMode = ViewModeIndex;
+		if (LightViewMode != EViewModeIndex::VMI_Lit_Gouraud &&
+			LightViewMode != EViewModeIndex::VMI_Lit_Lambert &&
+			LightViewMode != EViewModeIndex::VMI_Unlit)
+		{
+			LightViewMode = EViewModeIndex::VMI_Lit_Phong;
+		}
+
+		if (LightViewMode != LastLightShaderViewMode)
+		{
+			LightShader->ShaderMacrosArray.Empty();
+			switch (LightViewMode)
+			{
+			case EViewModeIndex::VMI_Lit_Gouraud:
+				LightShader->SetGouraudShading();
+				break;
+			case EViewModeIndex::VMI_Lit_Lambert:
+				LightShader->SetLambertShading();
+				break;
+			case EViewModeIndex::VMI_Unlit:
+				LightShader->SetUnlitShading();
+				break;
+			default:
+				LightShader->SetBlinnPhongShading();
+				break;
+			}
+			LightShader->SetMacroEnd();
+			LightShader->CompileShader(Pipeline->Device, "Assets/Shaders/StaticMeshShader.hlsl");
+			LastLightShaderViewMode = LightViewMode;
+		}
+		Pipeline->SetShader(LightShader);
+	}
+
 	BindPipeline(Pipeline);
 	BindVertexBuffer(Buffer, Pipeline->Shader->Stride);
 
@@ -744,8 +784,46 @@ void URenderer::RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* B
 	++DrawCallCount;
 }
 
-void URenderer::RenderPrimitiveIndexed(const FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef)
+void URenderer::RenderPrimitiveIndexed(FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef)
 {
+	TSharedPtr<FShaderAsset> Asset = FAssetManager::Get().GetAssetAs<FShaderAsset>(FName("LightShader"));
+	TSharedPtr<FLightShader> LightShader = std::static_pointer_cast<FLightShader>(Asset->GetShader());
+
+	if (Pipeline->Shader == LightShader)
+	{
+		EViewModeIndex LightViewMode = ViewModeIndex;
+		if (LightViewMode != EViewModeIndex::VMI_Lit_Gouraud &&
+			LightViewMode != EViewModeIndex::VMI_Lit_Lambert &&
+			LightViewMode != EViewModeIndex::VMI_Unlit)
+		{
+			LightViewMode = EViewModeIndex::VMI_Lit_Phong;
+		}
+
+		if (LightViewMode != LastLightShaderViewMode)
+		{
+			LightShader->ShaderMacrosArray.Empty();
+			switch (LightViewMode)
+			{
+			case EViewModeIndex::VMI_Lit_Gouraud:
+				LightShader->SetGouraudShading();
+				break;
+			case EViewModeIndex::VMI_Lit_Lambert:
+				LightShader->SetLambertShading();
+				break;
+			case EViewModeIndex::VMI_Unlit:
+				LightShader->SetUnlitShading();
+				break;
+			default:
+				LightShader->SetBlinnPhongShading();
+				break;
+			}
+			LightShader->SetMacroEnd();
+			LightShader->CompileShader(Pipeline->Device, "Assets/Shaders/StaticMeshShader.hlsl");
+			LastLightShaderViewMode = LightViewMode;
+		}
+		Pipeline->SetShader(LightShader);
+	}
+
 	BindPipeline(Pipeline, StencilRef);
 	BindVertexBuffer(RenderInfo.VertexBuffer, Pipeline->Shader->Stride);
 	BindIndexBuffer(RenderInfo.IndexBuffer);

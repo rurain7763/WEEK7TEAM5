@@ -4,10 +4,6 @@
 #define TEXTURE_MAP_SPECULAR 1 << 1
 #define TEXTURE_MAP_NORMAL 1 << 2
 
-#define ENABLE_LIGHTING 1
-#define LIGHTING_MODEL_GOURAUD 0
-#define LIGHTING_MODEL_BLINN_PHONG 1
-
 struct LightInfo
 {
     float3 position;
@@ -290,6 +286,7 @@ PS_OUTPUT mainPS(PS_INPUT input)
         N = SafeNormalize(mul(normal_map, TBN));
     }
     
+#if ENABLE_LIGHTING
     float3 V = SafeNormalize(view_position - input.world_position);
     
     float3 total_diffuse = float3(0.0, 0.0, 0.0);
@@ -324,7 +321,6 @@ PS_OUTPUT mainPS(PS_INPUT input)
         total_specular *= specular_texture.Sample(default_sampler, input.uv).rgb;
     }
     
-#if ENABLE_LIGHTING
     output_color.rgb = output_color.rgb * (ambient + total_diffuse) + total_specular;
 #endif
 #endif

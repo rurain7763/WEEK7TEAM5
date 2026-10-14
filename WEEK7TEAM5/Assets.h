@@ -25,6 +25,7 @@ class FAssetManager;
 class FMaterialAsset;
 struct FVertexBuffer;
 struct FIndexBuffer;
+struct FShader;
 
 namespace BuiltInAssetID
 {
@@ -321,4 +322,19 @@ public:
 	virtual TSharedPtr<FAsset> LoadAsset(const FGuid& AssetID, const FName& AssetName, FArchive& Ar) override;
 	virtual void UnloadAsset(TSharedPtr<FAsset> Asset) override;
 	virtual EAssetType GetAssetType() const override { return EAssetType::Material; }
+};
+
+class FShaderAsset : public FAsset
+{
+public:
+	FShaderAsset(const FGuid& InAssetID, const FName& InAssetName, const TSharedPtr<FShader>& InShader)
+		: FAsset(InAssetID, InAssetName, EAssetType::Shader)
+		, Shader(InShader)
+	{
+	}
+
+	TSharedPtr<FShader> GetShader() const { return Shader; }
+
+private:
+	TSharedPtr<FShader> Shader;
 };

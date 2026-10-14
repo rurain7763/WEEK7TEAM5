@@ -35,9 +35,9 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mLightInfoBuffer = mRenderer->CreateStructuredBuffer<FLightInfo>(1);
 	
 	mMeshPipeline = mRenderer->CreateRenderPipeline();
-	mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe });
+	mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit_Phong, EViewModeIndex::VMI_Lit_Gouraud, EViewModeIndex::VMI_Lit_Lambert, EViewModeIndex::VMI_Wireframe });
 	mMeshPipeline->SetDepthStencilState(true, true);
-	mMeshPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
+	mMeshPipeline->InitLightShader("Assets/Shaders/StaticMeshShader.hlsl");
 	mMeshPipeline->AddConstantBuffer<FMeshContants>();
 	mMeshPipeline->AddConstantBuffer<FViewConstants>();
 	mMeshPipeline->SetConstantBuffer(2, mGlobalLightInfoBuffer->Buffer.Get());

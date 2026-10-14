@@ -74,6 +74,7 @@ void FEngine::Initialize(HINSTANCE hInstance, WNDPROC WndProc)
 	rid.hwndTarget = mHWnd;
 	RegisterRawInputDevices(&rid, 1, sizeof(rid));
 
+	mAssetManager = new FAssetManager();
 	mGraphicsManager = new FGraphicsManager(mHWnd);
 	FNativeFileDialog::Initialize(mHWnd);
 
@@ -82,7 +83,6 @@ void FEngine::Initialize(HINSTANCE hInstance, WNDPROC WndProc)
 
 	mFileManager = new FFileManager();
 	mFontManager = new FFontManager();
-	mAssetManager = new FAssetManager();
 }
 
 void FEngine::Cleanup()

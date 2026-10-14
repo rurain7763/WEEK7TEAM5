@@ -338,7 +338,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 
 			const float ViewportTypeWidth = 95.0f;
 			const float CameraButtonWidth = ImGui::CalcTextSize("Camera").x + ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
-			const float ViewModeWidth = 85.0f;
+			const float ViewModeWidth = 130.0f;
 			const float MaximizeButtonWidth = 28.0f;
 			const float SplitButtonWidth = 28.0f;
 
@@ -486,14 +486,32 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 
 			ImGui::SameLine();
 
-			ImGui::SetNextItemWidth(80.0f);
+			ImGui::SetNextItemWidth(ViewModeWidth);
 
-			const char* ViewModeNames[] = { "Lit", "UnLit", "Wireframe", "SceneDepth", "WorldNormal"};
-			int32 CurrentModeIndex = static_cast<int32>(EditorViewport->Client->GetViewMode());
+			const char* ViewModeNames[] = { "Lit_Gouraud", "Lit_Lambert", "Lit_Phong", "Unlit", "Wireframe", "SceneDepth", "WorldNormal" };
+			const EViewModeIndex ViewModes[] = {
+				EViewModeIndex::VMI_Lit_Gouraud,
+				EViewModeIndex::VMI_Lit_Lambert,
+				EViewModeIndex::VMI_Lit_Phong,
+				EViewModeIndex::VMI_Unlit,
+				EViewModeIndex::VMI_Wireframe,
+				EViewModeIndex::VMI_SceneDepth,
+				EViewModeIndex::VMI_WorldNormal
+			};
+			static_assert(IM_ARRAYSIZE(ViewModeNames) == IM_ARRAYSIZE(ViewModes));
+			int32 CurrentModeIndex = 0;
+			for (int32 ModeIndex = 0; ModeIndex < IM_ARRAYSIZE(ViewModes); ++ModeIndex)
+			{
+				if (ViewModes[ModeIndex] == EditorViewport->Client->GetViewMode())
+				{
+					CurrentModeIndex = ModeIndex;
+					break;
+				}
+			}
 
 			if (ImGui::Combo("##ViewMode", &CurrentModeIndex, ViewModeNames, IM_ARRAYSIZE(ViewModeNames)))
 			{
-				EditorViewport->Client->SetViewMode(static_cast<EViewModeIndex>(CurrentModeIndex));
+				EditorViewport->Client->SetViewMode(ViewModes[CurrentModeIndex]);
 			}
 
 			ImGui::SameLine();

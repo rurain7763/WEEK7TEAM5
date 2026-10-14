@@ -25,7 +25,7 @@ public:
 	void Release();
 
 	// ViewModes에 나열한 뷰 모드마다 래스터라이저 상태를 하나씩 만든다.
-	void SetRasterRizerState(D3D11_CULL_MODE CullMode, int32 DepthBias = 0, std::initializer_list<EViewModeIndex> ViewModes = { EViewModeIndex::VMI_Lit });
+	void SetRasterRizerState(D3D11_CULL_MODE CullMode, int32 DepthBias = 0, std::initializer_list<EViewModeIndex> ViewModes = { EViewModeIndex::VMI_Lit_Phong });
 	ID3D11RasterizerState* GetRasterizerState(EViewModeIndex ViewMode) const;
 	void SetDepthStencilState(bool bEnableDepthTest, bool bEnableDepthWrite);
 	void SetDepthStencilState(bool bEnableDepthTest, bool bEnableDepthWrite, D3D11_COMPARISON_FUNC StencilFunc, D3D11_STENCIL_OP StencilPassOp);
@@ -34,6 +34,7 @@ public:
 
 	void SetShader(const FString& ShaderPath);
 	void SetShader(const TSharedPtr<FShader>& InShader);
+	void InitLightShader(const FString& ShaderPath);
 	
 	void SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV);
 	void ClearShaderResource();

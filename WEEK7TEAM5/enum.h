@@ -31,11 +31,14 @@ enum EGIZMO_TYPE {
 
 enum class EViewModeIndex
 {
-	VMI_Lit,
+	// 기존 뷰포트 설정의 숫자 값을 유지하고 새 모드는 뒤에 추가합니다.
+	VMI_Lit_Phong,
 	VMI_Unlit,
 	VMI_Wireframe,
 	VMI_SceneDepth,
 	VMI_WorldNormal,
+	VMI_Lit_Gouraud,
+	VMI_Lit_Lambert,
 
 	// 실제 뷰 모드가 아니다. 뷰 모드별 배열 크기를 잡는 데 쓴다.
 	// 모드를 추가하면 이 앞에 넣을 것.

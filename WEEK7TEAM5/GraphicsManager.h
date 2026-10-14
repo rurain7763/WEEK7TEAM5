@@ -174,7 +174,7 @@ private:
 	float mCameraNear = 0.1f;
 	float mCameraFar = 1000.0f;
 
-	EViewModeIndex mViewModeIndex = EViewModeIndex::VMI_Lit;
+	EViewModeIndex mViewModeIndex = EViewModeIndex::VMI_Lit_Phong;
 	EViewportType mViewportType = EViewportType::Perspective;
 	bool mbPerspectiveProjection;
 	float mAspect;

@@ -1,4 +1,6 @@
 #include "FRenderPipeline.h"
+#include "FAssetManager.h"
+#include "Assets.h"
 #include <windows.h>
 #include <d3dcompiler.h>
 #include "Renderer.h"
@@ -53,7 +55,9 @@ static D3D11_FILL_MODE GetFillModeForViewMode(EViewModeIndex ViewMode)
 	switch (ViewMode)
 	{
 	case EViewModeIndex::VMI_Wireframe:	return D3D11_FILL_WIREFRAME;
-	case EViewModeIndex::VMI_Lit:
+	case EViewModeIndex::VMI_Lit_Phong:
+	case EViewModeIndex::VMI_Lit_Gouraud:
+	case EViewModeIndex::VMI_Lit_Lambert:
 	case EViewModeIndex::VMI_Unlit:
 	default:							return D3D11_FILL_SOLID;
 	}
@@ -92,8 +96,8 @@ void FRenderPipeline::SetRasterRizerState(D3D11_CULL_MODE CullMode, int32 DepthB
 		Device->CreateRasterizerState(&RasterizerDesc, &RasterizerStates[Index]);
 	}
 
-	// Lit은 폴백 대상이라 항상 있어야 한다. 나열에 빠졌으면 솔리드로 채운다.
-	const int32 LitIndex = static_cast<int32>(EViewModeIndex::VMI_Lit);
+	// Lit_Phong은 폴백 대상이라 항상 있어야 한다. 나열에 빠졌으면 솔리드로 채운다.
+	const int32 LitIndex = static_cast<int32>(EViewModeIndex::VMI_Lit_Phong);
 	if (RasterizerStates[LitIndex] == nullptr)
 	{
 		RasterizerDesc.FillMode = D3D11_FILL_SOLID;
@@ -109,8 +113,8 @@ ID3D11RasterizerState* FRenderPipeline::GetRasterizerState(EViewModeIndex ViewMo
 		return RasterizerStates[Index];
 	}
 
-	// 이 파이프라인이 지원하지 않는 모드다. Lit(솔리드)로 그린다.
-	return RasterizerStates[static_cast<int32>(EViewModeIndex::VMI_Lit)];
+	// 이 파이프라인이 지원하지 않는 모드다. Lit_Phong(솔리드)으로 그린다.
+	return RasterizerStates[static_cast<int32>(EViewModeIndex::VMI_Lit_Phong)];
 }
 
 void FRenderPipeline::SetDepthStencilState(bool bEnableDepthTest, bool bEnableDepthWrite)
@@ -156,6 +160,21 @@ void FRenderPipeline::SetShader(const TSharedPtr<FShader>& InShader)
 	++BindingVersion;
 
 	Shader = InShader;
+}
+
+void FRenderPipeline::InitLightShader(const FString& ShaderPath)
+{
+	TSharedPtr<FLightShader> Shader = MakeShared<FLightShader>();
+
+	Shader->CompileShader(this->Device, ShaderPath);
+
+	TSharedPtr<FShaderAsset> Asset = MakeShared<FShaderAsset>(FGuid::NewGuid(), FName("LightShader"), Shader);
+
+	FAssetManager::Get().RegisterAsset(Asset);
+
+	Asset = FAssetManager::Get().GetAssetAs<FShaderAsset>(FName("LightShader"));
+
+	this->SetShader(Asset->GetShader());
 }
 
 void FRenderPipeline::SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV)

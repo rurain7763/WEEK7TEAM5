@@ -130,7 +130,7 @@ private:
 
 	FTransform PrevCameraTransform = mCamera.Transform;
 
-	EViewModeIndex mViewModeIndex = EViewModeIndex::VMI_Lit;
+	EViewModeIndex mViewModeIndex = EViewModeIndex::VMI_Lit_Phong;
 	EViewportType mViewportType = EViewportType::Perspective;
 
 	UWorld* mWorld = nullptr;

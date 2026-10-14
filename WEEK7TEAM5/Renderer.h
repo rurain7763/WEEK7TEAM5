@@ -441,6 +441,18 @@ struct FShader
 	uint32 Stride;
 };
 
+struct FLightShader : public FShader
+{
+	void SetGouraudShading();
+	void SetLambertShading();
+	void SetBlinnPhongShading();
+	void SetUnlitShading();
+	void SetMacroEnd();
+	void CompileShader(ID3D11Device* Device, const FString& ShaderPath);
+
+	TArray<D3D_SHADER_MACRO> ShaderMacrosArray;
+};
+
 struct FBindRenderTargetsDesc
 {
 	FRenderTarget2D* RenderTargets[D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT];
@@ -587,8 +599,8 @@ public:
 
 	void RenderQuad(const FRenderQuadInfo& Info);
 
-	void RenderPrimitive(const FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices);
-	void RenderPrimitiveIndexed(const FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0);
+	void RenderPrimitive(FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices);
+	void RenderPrimitiveIndexed(FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0);
 	void RenderPrimitiveIndexed(const TSharedPtr<FRenderPipeline>& Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0)
 	{
 		RenderPrimitiveIndexed(Pipeline.get(), RenderInfo, StencilRef);
@@ -676,11 +688,12 @@ private:
 
 	// 와이어프레임 여부. Prepare에서 갱신하고 BindPipeline이 읽는다.
 	// RSSetState는 드로우 직전마다 덮어써지므로 플래그로 들고 있어야 한다.
-	EViewModeIndex ViewModeIndex = EViewModeIndex::VMI_Lit;
+	EViewModeIndex ViewModeIndex = EViewModeIndex::VMI_Lit_Phong;
+	EViewModeIndex LastLightShaderViewMode = EViewModeIndex::VMI_Max;
 	// 프레임 경계와 관계없이 실제 마지막으로 적용한 파이프라인을 기억합니다.
 	const FRenderPipeline* LastPipeline = nullptr;
 	uint32 LastPipelineVersion = 0;
-	EViewModeIndex LastPipelineViewMode = EViewModeIndex::VMI_Lit;
+	EViewModeIndex LastPipelineViewMode = EViewModeIndex::VMI_Lit_Phong;
 
 	// NOTE: 최적화를 위한 RenderState 캐싱.
 	ID3D11RasterizerState* CurrentRasterizerState = nullptr;

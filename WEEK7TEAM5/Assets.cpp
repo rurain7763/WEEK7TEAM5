@@ -11,6 +11,52 @@
 #include "FTexture2DImporter.h"
 #include "AssetFileIOs.h"
 
+void FLightShader::SetGouraudShading()
+{
+	ShaderMacrosArray.Empty();
+	ShaderMacrosArray.Add({ "ENABLE_LIGHTING", "1" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_GOURAUD", "1" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_LAMBERT", "0" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_BLINN_PHONG", "0" });
+}
+
+void FLightShader::SetLambertShading()
+{
+	ShaderMacrosArray.Empty();
+	ShaderMacrosArray.Add({ "ENABLE_LIGHTING", "1" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_GOURAUD", "0" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_LAMBERT", "1" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_BLINN_PHONG", "0" });
+}
+
+void FLightShader::SetBlinnPhongShading()
+{
+	ShaderMacrosArray.Empty();
+	ShaderMacrosArray.Add({ "ENABLE_LIGHTING", "1" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_GOURAUD", "0" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_LAMBERT", "0" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_BLINN_PHONG", "1" });
+}
+
+void FLightShader::SetUnlitShading()
+{
+	ShaderMacrosArray.Empty();
+	ShaderMacrosArray.Add({ "ENABLE_LIGHTING", "0" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_GOURAUD", "0" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_LAMBERT", "0" });
+	ShaderMacrosArray.Add({ "LIGHTING_MODEL_BLINN_PHONG", "0" });
+}
+
+void FLightShader::SetMacroEnd()
+{
+	ShaderMacrosArray.Add({ nullptr, nullptr });
+}
+
+void FLightShader::CompileShader(ID3D11Device* Device, const FString& ShaderPath)
+{
+	RenderUtils::CompileShader(Device, ShaderPath, this->VertexShader, this->PixelShader, this->InputLayout, this->Stride, ShaderMacrosArray.Data());
+}
+
 TSharedPtr<FArchive> FFileAssetSource::CreateArchive()
 {
 	return MakeShared<FWindowsBinReader>(FilePath);
