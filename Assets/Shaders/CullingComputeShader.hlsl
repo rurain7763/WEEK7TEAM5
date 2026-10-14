@@ -25,7 +25,7 @@ struct FTile
     float2 pixel_position;
     float2 start_position;
     float2 end_position;
-    float tileindex;
+    uint tileindex;
     FCellBounds AABB;
 };
 
@@ -98,7 +98,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     tile.start_position = float2(id.x * tile_pixel_size.x, id.y * tile_pixel_size.y);
     tile.end_position = float2(tile.start_position.x + tile_pixel_size.x, tile.start_position.y + tile_pixel_size.y);
     if (tile.position.x >= tile_size.x || tile.position.y >= tile_size.y) return;
-    tile.tileindex = tile.position.y * tile_size.x + tile.position.x; 
+    tile.tileindex = uint(tile.position.y * tile_size.x) + uint(tile.position.x);
     ComputeCellBounds(tile);
 
     for (int i = 0; i < light_count; ++i)
