@@ -5,6 +5,7 @@
 #include "Vector.h"
 #include "RenderInfo.h"
 #include "FRenderPipeline.h"
+#include "FComputePipeline.h"
 #include "NvapiHelpers.h"
 #include "RenderUtils.h"
 #include <d3d11.h>
@@ -383,6 +384,7 @@ struct FStructuredBuffer
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV;
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> UAV;
 	UINT ElementSize = 0;
 	UINT ElementCount = 0;
 
@@ -404,8 +406,6 @@ struct FStructuredBuffer
 		return ElementSize * ElementCount;
 	}
 };
-
-
 
 struct FLightBuffer
 {
@@ -435,10 +435,14 @@ struct FLightBuffer
 
 struct FShader
 {
+	ID3D11Device* Device;
+
 	Microsoft::WRL::ComPtr<ID3D11VertexShader> VertexShader;
 	Microsoft::WRL::ComPtr<ID3D11PixelShader> PixelShader;
 	Microsoft::WRL::ComPtr<ID3D11InputLayout> InputLayout;
 	uint32 Stride;
+
+	virtual ~FShader() = default;
 };
 
 struct FLightShader : public FShader
@@ -451,6 +455,11 @@ struct FLightShader : public FShader
 	void CompileShader(ID3D11Device* Device, const FString& ShaderPath);
 
 	TArray<D3D_SHADER_MACRO> ShaderMacrosArray;
+};
+
+struct FComputeShader
+{
+	Microsoft::WRL::ComPtr<ID3D11ComputeShader> ComputeShader;
 };
 
 struct FBindRenderTargetsDesc
@@ -549,7 +558,7 @@ public:
 	}
 
 	template <typename T>
-	TSharedPtr<FStructuredBuffer> CreateStructuredBuffer(uint32 ElementCount)
+	TSharedPtr<FStructuredBuffer> CreateStructuredBuffer(uint32 ElementCount, UINT BindFlags = D3D11_BIND_SHADER_RESOURCE)
 	{
 		TSharedPtr<FStructuredBuffer> StructuredBuffer = MakeShared<FStructuredBuffer>();
 		StructuredBuffer->DeviceContext = DeviceContext;
@@ -557,19 +566,33 @@ public:
 		D3D11_BUFFER_DESC StructuredBufferDesc = {};
 		StructuredBufferDesc.ByteWidth = sizeof(T) * ElementCount;
 		StructuredBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		StructuredBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		StructuredBufferDesc.BindFlags = BindFlags;
 		StructuredBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 		StructuredBufferDesc.StructureByteStride = sizeof(T);
 
 		Device->CreateBuffer(&StructuredBufferDesc, nullptr, StructuredBuffer->Buffer.GetAddressOf());
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-		SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
-		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-		SRVDesc.Buffer.FirstElement = 0;
-		SRVDesc.Buffer.NumElements = ElementCount;
+		if (BindFlags & D3D11_BIND_SHADER_RESOURCE)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+			SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+			SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+			SRVDesc.Buffer.FirstElement = 0;
+			SRVDesc.Buffer.NumElements = ElementCount;
 
-		Device->CreateShaderResourceView(StructuredBuffer->Buffer.Get(), &SRVDesc, StructuredBuffer->SRV.GetAddressOf());
+			Device->CreateShaderResourceView(StructuredBuffer->Buffer.Get(), &SRVDesc, StructuredBuffer->SRV.GetAddressOf());
+		}
+
+		if (BindFlags & D3D11_BIND_UNORDERED_ACCESS)
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
+			UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
+			UAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+			UAVDesc.Buffer.FirstElement = 0;
+			UAVDesc.Buffer.NumElements = ElementCount;
+
+			Device->CreateUnorderedAccessView(StructuredBuffer->Buffer.Get(), &UAVDesc, StructuredBuffer->UAV.GetAddressOf());
+		}
 
 		StructuredBuffer->ElementSize = sizeof(T);
 		StructuredBuffer->ElementCount = ElementCount;
@@ -580,13 +603,31 @@ public:
 	TSharedPtr<FRenderTarget2D> CreateRenderTarget2D(uint32 Width, uint32 Height, DXGI_FORMAT Format);
 	TSharedPtr<FDepthStencil> CreateDepthStencil(uint32 Width, uint32 Height);
 
-	TSharedPtr<FShader> CreateShader(const FString& ShaderPath);
-	TSharedPtr<FShader> CreateShaderFromMemory(const FString& ShaderMemory);
+	TSharedPtr<FShader> CreateShader(const FString& ShaderPath, const D3D_SHADER_MACRO* Macros = nullptr);
+	TSharedPtr<FShader> CreateShaderFromMemory(const FString& ShaderMemory, const D3D_SHADER_MACRO* Macros = nullptr);
+
+	template <typename T, typename... TArgs>
+	requires std::is_base_of_v<FShader, T>
+	TSharedPtr<T> CreateShaderInstance(TArgs... Args)
+	{
+		TSharedPtr<T> Shader = MakeShared<T>(std::forward<TArgs>(Args)...);
+		if (!Shader)
+		{
+			return nullptr;
+		}
+
+		Shader->Device = Device;
+
+		return Shader;
+	}
+
+	TSharedPtr<FComputeShader> CreateComputeShader(const FString& ShaderPath, const D3D_SHADER_MACRO* Macros = nullptr);
 
 	//Rendering
 	void Prepare(const FMatrix& ViewProjectionMatrix);
 
 	TSharedPtr<FRenderPipeline> CreateRenderPipeline();
+	TSharedPtr<FComputePipeline> CreateComputePipelilne();
 
 	void BindFrameBuffer();
 	void BindRenderTarget(const TSharedPtr<FRenderTarget2D>& RenderTarget, const TSharedPtr<FDepthStencil>& DepthStencil, bool bClear = true);
@@ -600,7 +641,7 @@ public:
 	void RenderQuad(const FRenderQuadInfo& Info);
 
 	void RenderPrimitive(FRenderPipeline* Pipeline, ID3D11Buffer* Buffer, UINT NumVertices);
-	void RenderPrimitiveIndexed(FRenderPipeline* Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0);
+	void RenderPrimitiveIndexed(FRenderPipeline* Pipeline,  const FRenderInfo& RenderInfo, uint32 StencilRef = 0);
 	void RenderPrimitiveIndexed(const TSharedPtr<FRenderPipeline>& Pipeline, const FRenderInfo& RenderInfo, uint32 StencilRef = 0)
 	{
 		RenderPrimitiveIndexed(Pipeline.get(), RenderInfo, StencilRef);
@@ -616,7 +657,10 @@ public:
 	void RenderWorldAxis(const FMatrix& View, const FMatrix& Projection, const FVector4& Color, const FVector& Axis, float Thickness = 0.002f);
 	void RenderWorldGrid(const FMatrix& ViewProjection, const FVector& CameraLocation, float GridGap);
 
+	void Dispatch(const FComputePipeline* Pipeline, UINT GroupX, UINT GroupY, UINT GroupZ);
+
 	void ClearAllShaderResources();
+	void ClearAllUnorderedAccesses();
 
 	void SwapBuffer();
 
@@ -636,7 +680,6 @@ public:
 	uint64 GetDrawCallCount() const { return DrawCallCount; }
 	void ResetDrawCallCount() { DrawCallCount = 0; }
 
-
 private:
 	void CreateDeviceAndSwapChain(HWND hWindow);
 	void ReleaseDeviceAndSwapChain();
@@ -649,6 +692,8 @@ private:
 	void BindPipeline(const FRenderPipeline* Pipeline, uint32 StencilRef = 0);
 	void BindVertexBuffer(ID3D11Buffer* VertexBuffer, UINT Stride);
 	void BindIndexBuffer(ID3D11Buffer* IndexBuffer);
+
+	void BindComputePipeline(const FComputePipeline* Pipeline);
 
 private:
 	ID3D11Device* Device = nullptr;
@@ -690,6 +735,7 @@ private:
 	// RSSetState는 드로우 직전마다 덮어써지므로 플래그로 들고 있어야 한다.
 	EViewModeIndex ViewModeIndex = EViewModeIndex::VMI_Lit_Phong;
 	EViewModeIndex LastLightShaderViewMode = EViewModeIndex::VMI_Max;
+
 	// 프레임 경계와 관계없이 실제 마지막으로 적용한 파이프라인을 기억합니다.
 	const FRenderPipeline* LastPipeline = nullptr;
 	uint32 LastPipelineVersion = 0;
@@ -705,7 +751,6 @@ private:
 	ID3D11VertexShader* CurrentVertexShader = nullptr;
 	ID3D11PixelShader* CurrentPixelShader = nullptr;
 
-	//ID3D11Buffer* CurrentCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
 	TArray<ID3D11Buffer*> CurrentCBs;
 	ID3D11ShaderResourceView* CurrentSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
 	ID3D11SamplerState* CurrentSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = {};
@@ -717,4 +762,17 @@ private:
 	UINT CurrentVertexStride = 0;
 
 	ID3D11Buffer* CurrentIndexBuffer = nullptr;
+
+	// NOTE: 컴퓨트 셰이딩을 위한 캐싱
+	const FComputePipeline* LastComputePipeline = nullptr;
+	uint32 LastComputePipelineVersion = UINT32_MAX;
+
+	ID3D11Buffer* CurrentComputeCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
+	ID3D11ShaderResourceView* CurrentComputeSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
+	ID3D11UnorderedAccessView* CurrentComputeUAVs[D3D11_1_UAV_SLOT_COUNT] = {};
+	ID3D11SamplerState* CurrentComputeStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = {};
+	int32 CurrentComputeCBCount = 0;
+	int32 CurrentComputeSRVCount = 0;
+	int32 CurrentComputeUAVCount = 0;
+	int32 CurrentComputeSamplerStateCount = 0;
 };

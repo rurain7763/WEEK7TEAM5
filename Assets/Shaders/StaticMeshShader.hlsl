@@ -17,6 +17,12 @@ struct LightInfo
     float outer_cone_angle;
 };
 
+struct TileInfo
+{
+    float TileLightnum;
+    float TileLightindex[200];
+};
+
 cbuffer ModelConstants : register(b0) // FConstants
 {
     row_major matrix Model;
@@ -34,7 +40,9 @@ cbuffer ViewConstants : register(b1) // FConstants
 {
     row_major matrix view_projection;
     float3 view_position;
-    float view_constants_padding;
+    float viewport_width;
+    float viewport_height;
+    float3 pad;
 }
 
 cbuffer GlobalLightConstants : register(b2)
@@ -88,6 +96,7 @@ Texture2D base_color_texture : register(t0);
 Texture2D specular_texture : register(t1);
 Texture2D normal_texture : register(t2);
 StructuredBuffer<LightInfo> lights : register(t3);
+StructuredBuffer<TileInfo> TileInfomation : register(t4);
 
 SamplerState default_sampler : register(s0);
 
@@ -299,10 +308,18 @@ PS_OUTPUT mainPS(PS_INPUT input)
     total_diffuse += diffuse;
     total_specular += specular;
     
-    for (int i = 0; i < light_count; ++i)
+    uint pixelX = uint(floor(input.position.x));
+    uint pixelY = uint(floor(input.position.y));
+    uint tileX = ((pixelX + 1) * 32 -1) / uint(floor(viewport_width));
+    uint tileY = ((pixelY + 1) * 32 -1) / uint(floor(viewport_height));
+    uint tileIndex = tileY * 32  + tileX;
+    
+    TileInfo Tileinf = TileInfomation[tileIndex];
+    uint light_num = Tileinf.TileLightnum;
+    for (int i = 0; i < light_num; ++i)
     {
-        LightInfo light = lights[i];        
-
+        uint lightindex = (uint)Tileinf.TileLightindex[i];        
+        LightInfo light = lights[lightindex];
         if (light.type == 1)
         {
             calculate_point(N, V, light, input.world_position, shininess, diffuse, specular);

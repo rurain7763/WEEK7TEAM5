@@ -4,7 +4,6 @@
 #include "Matrix.h"
 #include "Vector.h"
 #include "RenderInfo.h"
-#include "FRenderPipeline.h"
 #include "NvapiHelpers.h"
 #include <d3d11.h>
 #include <d3dcompiler.h>
@@ -141,6 +140,47 @@ namespace RenderUtils
 
 		FString Memory(Buffer.str());
 		CompileShaderFromMemory(Device, Memory, VertexShader, PixelShader, InputLayout, Stride, ShaderMacros);
+	}
+
+	static void CompileComputeShaderFromMemory(ID3D11Device* Device, const FString& Memory, const D3D_SHADER_MACRO* Macros, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& ComputeShader)
+	{
+		ID3DBlob* Bytecode = nullptr;
+		ID3DBlob* Errors = nullptr;
+
+		HRESULT Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, Macros, D3D_COMPILE_STANDARD_FILE_INCLUDE, "CSMain", "cs_5_0", D3DCOMPILE_ENABLE_STRICTNESS, 0, &Bytecode, &Errors);
+		if (SUCCEEDED(Result))
+		{
+			Device->CreateComputeShader(Bytecode->GetBufferPointer(), Bytecode->GetBufferSize(), nullptr, ComputeShader.GetAddressOf());
+		}
+		else if (Errors)
+		{
+			OutputDebugStringA((char*)Errors->GetBufferPointer());
+		}
+
+		if (Errors)
+		{
+			Errors->Release();
+		}
+
+		if (Bytecode)
+		{
+			Bytecode->Release();
+		}
+	}
+
+	static void CompileComputeShader(ID3D11Device* Device, const FString& ShaderPath, const D3D_SHADER_MACRO* Macros, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& ComputeShader)
+	{
+		std::ifstream FileStream(ShaderPath.ToString(), std::ios::in | std::ios::binary);
+		if (!FileStream)
+		{
+			return;
+		}
+
+		std::stringstream Buffer;
+		Buffer << FileStream.rdbuf();
+
+		FString Memory(Buffer.str());
+		CompileComputeShaderFromMemory(Device, Memory, Macros, ComputeShader);
 	}
 
 	static ID3D11Buffer* CreateConstantBuffer(ID3D11Device* Device, UINT Size)

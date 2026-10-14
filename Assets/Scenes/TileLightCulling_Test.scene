@@ -1,0 +1,3562 @@
+{
+  "Version": 0,
+  "NextUUID": 810123,
+  "PerspectiveCamera": {
+    "Location": [
+      -14,
+      0,
+      7
+    ],
+    "Rotation": [
+      0,
+      0,
+      0
+    ],
+    "FOV": 60.0,
+    "Near": 0.1,
+    "Far": 80.0
+  },
+  "World": {
+    "ClassName": "UWorld",
+    "Properties": {
+      "UUID": 809999,
+      "Name": "TileLightCulling_Test",
+      "Guid": {
+        "A": 810014,
+        "B": 7,
+        "C": 5,
+        "D": 809999
+      },
+      "mActors": [
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810001,
+            "Name": "Test_BackWall",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810001
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810002
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810002,
+                  "Name": "Test_BackWall_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810002
+                  },
+                  "mRelativeLocation": [
+                    8.0,
+                    0.0,
+                    7.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    0.5,
+                    30.0,
+                    14.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810003,
+            "Name": "Test_Floor",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810003
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810004
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810004,
+                  "Name": "Test_Floor_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810004
+                  },
+                  "mRelativeLocation": [
+                    0.0,
+                    0.0,
+                    -0.2
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    25.0,
+                    30.0,
+                    0.4
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810005,
+            "Name": "Test_FrontCube_Y-10",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810005
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810006
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810006,
+                  "Name": "Test_FrontCube_Y-10_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810006
+                  },
+                  "mRelativeLocation": [
+                    0.0,
+                    -10.0,
+                    1.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    2.0,
+                    2.0,
+                    3.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810007,
+            "Name": "Test_BackCube_Y-10",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810007
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810008
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810008,
+                  "Name": "Test_BackCube_Y-10_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810008
+                  },
+                  "mRelativeLocation": [
+                    5.0,
+                    -10.0,
+                    1.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.5,
+                    1.5,
+                    2.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810009,
+            "Name": "Test_FrontCube_Y-5",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810009
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810010
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810010,
+                  "Name": "Test_FrontCube_Y-5_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810010
+                  },
+                  "mRelativeLocation": [
+                    0.0,
+                    -5.0,
+                    1.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    2.0,
+                    2.0,
+                    3.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810011,
+            "Name": "Test_BackCube_Y-5",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810011
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810012
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810012,
+                  "Name": "Test_BackCube_Y-5_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810012
+                  },
+                  "mRelativeLocation": [
+                    5.0,
+                    -5.0,
+                    1.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.5,
+                    1.5,
+                    2.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810013,
+            "Name": "Test_FrontCube_Y0",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810013
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810014
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810014,
+                  "Name": "Test_FrontCube_Y0_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810014
+                  },
+                  "mRelativeLocation": [
+                    0.0,
+                    0.0,
+                    1.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    2.0,
+                    2.0,
+                    3.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810015,
+            "Name": "Test_BackCube_Y0",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810015
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810016
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810016,
+                  "Name": "Test_BackCube_Y0_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810016
+                  },
+                  "mRelativeLocation": [
+                    5.0,
+                    0.0,
+                    1.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.5,
+                    1.5,
+                    2.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810017,
+            "Name": "Test_FrontCube_Y5",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810017
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810018
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810018,
+                  "Name": "Test_FrontCube_Y5_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810018
+                  },
+                  "mRelativeLocation": [
+                    0.0,
+                    5.0,
+                    1.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    2.0,
+                    2.0,
+                    3.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810019,
+            "Name": "Test_BackCube_Y5",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810019
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810020
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810020,
+                  "Name": "Test_BackCube_Y5_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810020
+                  },
+                  "mRelativeLocation": [
+                    5.0,
+                    5.0,
+                    1.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.5,
+                    1.5,
+                    2.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810021,
+            "Name": "Test_FrontCube_Y10",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810021
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810022
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810022,
+                  "Name": "Test_FrontCube_Y10_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810022
+                  },
+                  "mRelativeLocation": [
+                    0.0,
+                    10.0,
+                    1.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    2.0,
+                    2.0,
+                    3.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810023,
+            "Name": "Test_BackCube_Y10",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810023
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810024
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810024,
+                  "Name": "Test_BackCube_Y10_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810024
+                  },
+                  "mRelativeLocation": [
+                    5.0,
+                    10.0,
+                    1.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.5,
+                    1.5,
+                    2.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810025,
+            "Name": "Test_CenterTallCube",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810025
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810026
+            },
+            "mComponents": [
+              {
+                "ClassName": "UStaticMeshComponent",
+                "Properties": {
+                  "UUID": 810026,
+                  "Name": "Test_CenterTallCube_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810026
+                  },
+                  "mRelativeLocation": [
+                    2.0,
+                    0.0,
+                    3.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.5,
+                    1.5,
+                    7.0
+                  ],
+                  "ObjStaticMeshAsset": {
+                    "A": -1317339135,
+                    "B": 0,
+                    "C": 0,
+                    "D": 1
+                  },
+                  "ObjMaterialAssets": [],
+                  "UVOffsets": []
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810027,
+            "Name": "Test_LowAmbient",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810027
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810028
+            },
+            "mComponents": [
+              {
+                "ClassName": "UAmbientLightComponent",
+                "Properties": {
+                  "UUID": 810028,
+                  "Name": "Test_LowAmbient_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810028
+                  },
+                  "mRelativeLocation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 0.04,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ]
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810029,
+            "Name": "Test_LocalPoint_C0_Z2",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810029
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810030
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810030,
+                  "Name": "Test_LocalPoint_C0_Z2_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810030
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    -10.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1.0,
+                    0.08,
+                    0.04,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810031,
+            "Name": "Test_LocalPoint_C0_Z6.5",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810031
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810032
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810032,
+                  "Name": "Test_LocalPoint_C0_Z6.5_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810032
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    -10.0,
+                    6.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1.0,
+                    0.08,
+                    0.04,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810033,
+            "Name": "Test_LocalPoint_C0_Z11",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810033
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810034
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810034,
+                  "Name": "Test_LocalPoint_C0_Z11_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810034
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    -10.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1.0,
+                    0.08,
+                    0.04,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810035,
+            "Name": "Test_LocalPoint_C1_Z2",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810035
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810036
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810036,
+                  "Name": "Test_LocalPoint_C1_Z2_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810036
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    -3.3,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    0.08,
+                    1.0,
+                    0.12,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810037,
+            "Name": "Test_LocalPoint_C1_Z6.5",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810037
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810038
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810038,
+                  "Name": "Test_LocalPoint_C1_Z6.5_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810038
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    -3.3,
+                    6.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    0.08,
+                    1.0,
+                    0.12,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810039,
+            "Name": "Test_LocalPoint_C1_Z11",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810039
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810040
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810040,
+                  "Name": "Test_LocalPoint_C1_Z11_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810040
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    -3.3,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    0.08,
+                    1.0,
+                    0.12,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810041,
+            "Name": "Test_LocalPoint_C2_Z2",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810041
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810042
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810042,
+                  "Name": "Test_LocalPoint_C2_Z2_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810042
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    3.3,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    0.08,
+                    0.18,
+                    1.0,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810043,
+            "Name": "Test_LocalPoint_C2_Z6.5",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810043
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810044
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810044,
+                  "Name": "Test_LocalPoint_C2_Z6.5_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810044
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    3.3,
+                    6.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    0.08,
+                    0.18,
+                    1.0,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810045,
+            "Name": "Test_LocalPoint_C2_Z11",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810045
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810046
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810046,
+                  "Name": "Test_LocalPoint_C2_Z11_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810046
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    3.3,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    0.08,
+                    0.18,
+                    1.0,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810047,
+            "Name": "Test_LocalPoint_C3_Z2",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810047
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810048
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810048,
+                  "Name": "Test_LocalPoint_C3_Z2_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810048
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    10.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1.0,
+                    0.48,
+                    0.05,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810049,
+            "Name": "Test_LocalPoint_C3_Z6.5",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810049
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810050
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810050,
+                  "Name": "Test_LocalPoint_C3_Z6.5_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810050
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    10.0,
+                    6.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1.0,
+                    0.48,
+                    0.05,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810051,
+            "Name": "Test_LocalPoint_C3_Z11",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810051
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810052
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810052,
+                  "Name": "Test_LocalPoint_C3_Z11_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810052
+                  },
+                  "mRelativeLocation": [
+                    4.5,
+                    10.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1.0,
+                    0.48,
+                    0.05,
+                    1.0
+                  ],
+                  "Radius": 5.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810053,
+            "Name": "Test_BoundaryPoint_MoveThis",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810053
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810054
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810054,
+                  "Name": "Test_BoundaryPoint_MoveThis_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810054
+                  },
+                  "mRelativeLocation": [
+                    3.0,
+                    0.0,
+                    8.5
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 1.8,
+                  "Color": [
+                    0.15,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 8.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810055,
+            "Name": "Test_Spot_Left_ForwardX",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810055
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810056
+            },
+            "mComponents": [
+              {
+                "ClassName": "USpotLightComponent",
+                "Properties": {
+                  "UUID": 810056,
+                  "Name": "Test_Spot_Left_ForwardX_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810056
+                  },
+                  "mRelativeLocation": [
+                    -2.0,
+                    -7.0,
+                    9.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 5.0,
+                  "Color": [
+                    1,
+                    0.9,
+                    0.1,
+                    1
+                  ],
+                  "Radius": 16.0,
+                  "RadiusFallOff": 1.0,
+                  "InnerConeAngle": 0.28,
+                  "OuterConeAngle": 0.52
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810057,
+            "Name": "Test_Spot_Right_ForwardX",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810057
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810058
+            },
+            "mComponents": [
+              {
+                "ClassName": "USpotLightComponent",
+                "Properties": {
+                  "UUID": 810058,
+                  "Name": "Test_Spot_Right_ForwardX_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810058
+                  },
+                  "mRelativeLocation": [
+                    -2.0,
+                    7.0,
+                    9.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 5.0,
+                  "Color": [
+                    1,
+                    0.12,
+                    1,
+                    1
+                  ],
+                  "Radius": 16.0,
+                  "RadiusFallOff": 1.0,
+                  "InnerConeAngle": 0.28,
+                  "OuterConeAngle": 0.52
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810059,
+            "Name": "Test_OffscreenPoint_00",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810059
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810060
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810060,
+                  "Name": "Test_OffscreenPoint_00_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810060
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -140.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810061,
+            "Name": "Test_OffscreenPoint_01",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810061
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810062
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810062,
+                  "Name": "Test_OffscreenPoint_01_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810062
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    140.0,
+                    5.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810063,
+            "Name": "Test_OffscreenPoint_02",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810063
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810064
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810064,
+                  "Name": "Test_OffscreenPoint_02_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810064
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -142.0,
+                    8.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810065,
+            "Name": "Test_OffscreenPoint_03",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810065
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810066
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810066,
+                  "Name": "Test_OffscreenPoint_03_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810066
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    142.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810067,
+            "Name": "Test_OffscreenPoint_04",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810067
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810068
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810068,
+                  "Name": "Test_OffscreenPoint_04_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810068
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -144.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810069,
+            "Name": "Test_OffscreenPoint_05",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810069
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810070
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810070,
+                  "Name": "Test_OffscreenPoint_05_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810070
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    144.0,
+                    5.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810071,
+            "Name": "Test_OffscreenPoint_06",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810071
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810072
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810072,
+                  "Name": "Test_OffscreenPoint_06_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810072
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -146.0,
+                    8.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810073,
+            "Name": "Test_OffscreenPoint_07",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810073
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810074
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810074,
+                  "Name": "Test_OffscreenPoint_07_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810074
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    146.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810075,
+            "Name": "Test_OffscreenPoint_08",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810075
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810076
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810076,
+                  "Name": "Test_OffscreenPoint_08_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810076
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -148.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810077,
+            "Name": "Test_OffscreenPoint_09",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810077
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810078
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810078,
+                  "Name": "Test_OffscreenPoint_09_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810078
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    148.0,
+                    5.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810079,
+            "Name": "Test_OffscreenPoint_10",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810079
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810080
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810080,
+                  "Name": "Test_OffscreenPoint_10_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810080
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -150.0,
+                    8.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810081,
+            "Name": "Test_OffscreenPoint_11",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810081
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810082
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810082,
+                  "Name": "Test_OffscreenPoint_11_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810082
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    150.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810083,
+            "Name": "Test_OffscreenPoint_12",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810083
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810084
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810084,
+                  "Name": "Test_OffscreenPoint_12_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810084
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -152.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810085,
+            "Name": "Test_OffscreenPoint_13",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810085
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810086
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810086,
+                  "Name": "Test_OffscreenPoint_13_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810086
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    152.0,
+                    5.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810087,
+            "Name": "Test_OffscreenPoint_14",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810087
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810088
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810088,
+                  "Name": "Test_OffscreenPoint_14_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810088
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -154.0,
+                    8.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810089,
+            "Name": "Test_OffscreenPoint_15",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810089
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810090
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810090,
+                  "Name": "Test_OffscreenPoint_15_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810090
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    154.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810091,
+            "Name": "Test_OffscreenPoint_16",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810091
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810092
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810092,
+                  "Name": "Test_OffscreenPoint_16_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810092
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -156.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810093,
+            "Name": "Test_OffscreenPoint_17",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810093
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810094
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810094,
+                  "Name": "Test_OffscreenPoint_17_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810094
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    156.0,
+                    5.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810095,
+            "Name": "Test_OffscreenPoint_18",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810095
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810096
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810096,
+                  "Name": "Test_OffscreenPoint_18_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810096
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -158.0,
+                    8.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810097,
+            "Name": "Test_OffscreenPoint_19",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810097
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810098
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810098,
+                  "Name": "Test_OffscreenPoint_19_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810098
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    158.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810099,
+            "Name": "Test_OffscreenPoint_20",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810099
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810100
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810100,
+                  "Name": "Test_OffscreenPoint_20_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810100
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -160.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810101,
+            "Name": "Test_OffscreenPoint_21",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810101
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810102
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810102,
+                  "Name": "Test_OffscreenPoint_21_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810102
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    160.0,
+                    5.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810103,
+            "Name": "Test_OffscreenPoint_22",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810103
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810104
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810104,
+                  "Name": "Test_OffscreenPoint_22_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810104
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -162.0,
+                    8.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810105,
+            "Name": "Test_OffscreenPoint_23",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810105
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810106
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810106,
+                  "Name": "Test_OffscreenPoint_23_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810106
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    162.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810107,
+            "Name": "Test_OffscreenPoint_24",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810107
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810108
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810108,
+                  "Name": "Test_OffscreenPoint_24_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810108
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -164.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810109,
+            "Name": "Test_OffscreenPoint_25",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810109
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810110
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810110,
+                  "Name": "Test_OffscreenPoint_25_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810110
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    164.0,
+                    5.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810111,
+            "Name": "Test_OffscreenPoint_26",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810111
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810112
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810112,
+                  "Name": "Test_OffscreenPoint_26_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810112
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -166.0,
+                    8.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810113,
+            "Name": "Test_OffscreenPoint_27",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810113
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810114
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810114,
+                  "Name": "Test_OffscreenPoint_27_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810114
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    166.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810115,
+            "Name": "Test_OffscreenPoint_28",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810115
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810116
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810116,
+                  "Name": "Test_OffscreenPoint_28_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810116
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -168.0,
+                    2.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810117,
+            "Name": "Test_OffscreenPoint_29",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810117
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810118
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810118,
+                  "Name": "Test_OffscreenPoint_29_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810118
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    168.0,
+                    5.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810119,
+            "Name": "Test_OffscreenPoint_30",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810119
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810120
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810120,
+                  "Name": "Test_OffscreenPoint_30_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810120
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    -170.0,
+                    8.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        },
+        {
+          "ClassName": "AActor",
+          "Properties": {
+            "UUID": 810121,
+            "Name": "Test_OffscreenPoint_31",
+            "Guid": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810121
+            },
+            "mRootComponent": {
+              "A": 810014,
+              "B": 7,
+              "C": 5,
+              "D": 810122
+            },
+            "mComponents": [
+              {
+                "ClassName": "UPointLightComponent",
+                "Properties": {
+                  "UUID": 810122,
+                  "Name": "Test_OffscreenPoint_31_Component",
+                  "Guid": {
+                    "A": 810014,
+                    "B": 7,
+                    "C": 5,
+                    "D": 810122
+                  },
+                  "mRelativeLocation": [
+                    4.0,
+                    170.0,
+                    11.0
+                  ],
+                  "mRelativeRotation": [
+                    0.0,
+                    0.0,
+                    0.0
+                  ],
+                  "mRelativeScale3D": [
+                    1.0,
+                    1.0,
+                    1.0
+                  ],
+                  "Intensity": 4.0,
+                  "Color": [
+                    1,
+                    1,
+                    1,
+                    1
+                  ],
+                  "Radius": 3.0,
+                  "RadiusFallOff": 1.0
+                }
+              }
+            ]
+          }
+        }
+      ],
+      "mHierarchyMap": []
+    }
+  }
+}

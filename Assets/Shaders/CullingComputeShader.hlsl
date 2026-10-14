@@ -35,9 +35,11 @@ cbuffer CullingConstants : register(b0)
     float viewport_height;
     float2 tile_size;
     float tile_amount;
+    float3 pad1;
     row_major matrix view;
     row_major matrix inv_projection;
     int light_count;
+    float3 pad2;
 }
 
 struct TileInfo
@@ -96,7 +98,7 @@ void ComputeCellBounds(inout FTile tile)
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 { 
-    FTile tile;
+    FTile tile = (FTile) 0;
     
     tile.position = id.xy;
     tile.start_position = float2(floor(id.x * viewport_width / tile_size.x),floor(id.y * viewport_height / tile_size.y));

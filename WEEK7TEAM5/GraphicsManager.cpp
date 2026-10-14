@@ -33,7 +33,13 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 	mGlobalLightInfoBuffer = mRenderer->CreateConstantBuffer<FGlobalLightInfo>();
 	mLightInfoBuffer = mRenderer->CreateStructuredBuffer<FLightInfo>(1);
-	
+	mTileinfoBuffer = mRenderer->CreateStructuredBuffer<FTileInfo>(1024, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS);
+
+	mComputePipeline = mRenderer->CreateComputePipelilne();
+	mComputePipeline->AddConstantBuffer<FCullingConstants>();
+	mComputePipeline->SetShader("Assets/Shaders/CullingComputeShader.hlsl");
+	mComputePipeline->SetUnorderedAccess(0,mTileinfoBuffer->UAV);
+
 	mMeshPipeline = mRenderer->CreateRenderPipeline();
 	mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit_Phong, EViewModeIndex::VMI_Lit_Gouraud, EViewModeIndex::VMI_Lit_Lambert, EViewModeIndex::VMI_Wireframe });
 	mMeshPipeline->SetDepthStencilState(true, true);
@@ -248,23 +254,43 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 		// 카메라 상수 갱신은 Renderer의 영속 바인딩 캐시와 별도로 뷰마다 수행합니다.
 		FRenderPipeline* LastViewPipeline = nullptr;
 
+		FCullingConstants CullConstants;
+		CullConstants.viewport_width = mViewport->GetFrontRenderTarget()->Width;
+		CullConstants.viewport_height = mViewport->GetFrontRenderTarget()->Height;
+		CullConstants.tile_size = FVector2(32, 32);
+		CullConstants.tile_amount = 1024;
+		CullConstants.view = mViewMatrix;
+		CullConstants.inv_projection = mProjectionMatrix.Inverse();
+		CullConstants.light_count = mLightInfos.Num();
+
+		mComputePipeline->SetShaderResource(0, mLightInfoBuffer->SRV);
+		mComputePipeline->UpdateConstantBuffer(0, CullConstants);
+		mRenderer->ClearAllShaderResources();
+		mRenderer->Dispatch(mComputePipeline.get(), 4, 4, 1);
+		mRenderer->ClearAllUnorderedAccesses();
+	
 		for (const int32 Index : VisibleRenderInfoIndices)
 		{
 			const FRenderInfo& Info = RenderInfos[Index];
 
 			const auto& Pipeline = Info.Pipeline ? Info.Pipeline : mMeshPipeline.get();
 
+
 			if (Pipeline != LastViewPipeline)
 			{
 				FViewConstants ViewConstants;
 				ViewConstants.ViewProjectionMatrix = mViewUnifiedProjectionMatrix;
 				ViewConstants.ViewPosition = mCameraLocation;
+				ViewConstants.ViewportWidth = mViewport->GetFrontRenderTarget()->Width;
+				ViewConstants.ViewportHeight = mViewport->GetFrontRenderTarget()->Height;
 
 				Pipeline->UpdateConstantBuffer(1, ViewConstants);
 				Pipeline->SetSamplerState(0, D3D11_FILTER_MIN_MAG_MIP_LINEAR, D3D11_TEXTURE_ADDRESS_WRAP, D3D11_TEXTURE_ADDRESS_WRAP);
 			}
 
 			// 개별 Draw의 상수는 기존 동적 상수 버퍼에 Map/Unmap으로 갱신합니다.
+			
+
 			FMeshContants Constants;
 			Constants.Matrix = Info.Model;
 			Constants.InvMatrix = Info.Model.AffineInverse();
@@ -301,14 +327,18 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 
 				Constants.Shininess = Info.Material->GetShininess();
 			}
-
+			
 			Pipeline->SetShaderResource(3, mLightInfoBuffer->SRV);
+
+			Pipeline->SetShaderResource(4, mTileinfoBuffer->SRV);
 			
 			Pipeline->UpdateConstantBuffer(0, Constants);
 
+
+
 			if (Info.IndexBuffer)
 			{
-				mRenderer->RenderPrimitiveIndexed(Pipeline, Info);
+				mRenderer->RenderPrimitiveIndexed(Pipeline,Info);
 			}
 			else
 			{

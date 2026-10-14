@@ -112,7 +112,7 @@ ID3D11RasterizerState* FRenderPipeline::GetRasterizerState(EViewModeIndex ViewMo
 	{
 		return RasterizerStates[Index];
 	}
-
+	
 	// 이 파이프라인이 지원하지 않는 모드다. Lit_Phong(솔리드)으로 그린다.
 	return RasterizerStates[static_cast<int32>(EViewModeIndex::VMI_Lit_Phong)];
 }
@@ -177,6 +177,38 @@ void FRenderPipeline::InitLightShader(const FString& ShaderPath)
 	this->SetShader(Asset->GetShader());
 }
 
+void FRenderPipeline::CompileCullingShaders()
+{
+	auto CompileCS = [this](const wchar_t* FilePath, const char* EntryPoint, Microsoft::WRL::ComPtr<ID3D11ComputeShader>& OutCS)
+	{
+		ID3DBlob* ShaderBlob = nullptr;
+		ID3DBlob* ErrorBlob = nullptr;
+		UINT Flags = D3DCOMPILE_ENABLE_STRICTNESS;
+		#if defined(DEBUG) || defined(_DEBUG)
+		Flags |= D3DCOMPILE_DEBUG;
+		#else
+		Flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+		#endif
+
+		HRESULT hr = D3DCompileFromFile(FilePath, nullptr, D3D_COMPILE_STANDARD_FILE_INCLUDE, EntryPoint, "cs_5_0", Flags, 0, &ShaderBlob, &ErrorBlob);
+		if (FAILED(hr))
+		{
+			if (ErrorBlob)
+			{
+				UE_DEBUG_LOG_ERROR("Failed to compile Compute Shader %ls: %s", FilePath, (const char*)ErrorBlob->GetBufferPointer());
+				ErrorBlob->Release();
+			}
+			return false;
+		}
+
+		hr = Device->CreateComputeShader(ShaderBlob->GetBufferPointer(), ShaderBlob->GetBufferSize(), nullptr, OutCS.GetAddressOf());
+		ShaderBlob->Release();
+		return SUCCEEDED(hr);
+	};
+
+	CompileCS(L"Assets/Shaders/CullingComputeShader.hlsl", "CSMain", CullingComputeShader);
+}
+
 void FRenderPipeline::SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV)
 {
 	if (Slot >= static_cast<uint32>(ShaderResourceViews.Num()))
@@ -213,3 +245,4 @@ void FRenderPipeline::ClearSamplerState()
 	SamplerStates.Empty();
 	++BindingVersion;
 }
+

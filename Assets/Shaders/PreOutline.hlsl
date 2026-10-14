@@ -14,7 +14,8 @@ cbuffer ModelConstants : register(b0) // FConstants
     int2 padding;
 }
 
-cbuffer ViewConstants : register(b1) // FConstants
+cbuffer 
+    s : register(b1) // FConstants
 {
 	row_major matrix view_projection;
     float3 view_position;

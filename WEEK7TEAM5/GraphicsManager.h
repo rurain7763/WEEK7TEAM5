@@ -102,6 +102,11 @@ private:
 		int32 Padding;
 	};
 
+	struct FTileInfo
+	{
+		float TileLightnum;
+		float TileLightindex[200];
+	};
 
 	struct FLightInfo
 	{
@@ -154,7 +159,22 @@ private:
 	{
 		FMatrix ViewProjectionMatrix;
 		FVector ViewPosition;
-		float Padding;
+		float ViewportWidth;
+		float ViewportHeight;
+		float Padding[3];
+	};
+
+	struct FCullingConstants
+	{
+		float viewport_width;
+		float viewport_height;
+		FVector2 tile_size;
+		float tile_amount;
+		FVector3 pad1;
+		FMatrix view;
+		FMatrix inv_projection;
+		int light_count;
+		FVector3 pad2;
 	};
 
 	URenderer* mRenderer;
@@ -188,10 +208,14 @@ private:
 	bool mbProjectionTransitioning = false;
 
 	TSharedPtr<FConstantBuffer> mGlobalLightInfoBuffer;
+	TSharedPtr<FConstantBuffer> mCullingConstantBuffer;
 
 	TArray<FLightInfo> mLightInfos;
 	TSharedPtr<FStructuredBuffer> mLightInfoBuffer;
+	TSharedPtr<FStructuredBuffer> mTileinfoBuffer;
 	TSharedPtr<FRenderPipeline> mMeshPipeline;
+
+	TSharedPtr<FComputePipeline> mComputePipeline;
 
 	TSharedPtr<FRenderPipeline> mHighlightMarkPipeline;
 	TSharedPtr<FRenderPipeline> mHighlightDrawPipeline;

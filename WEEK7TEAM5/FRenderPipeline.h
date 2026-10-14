@@ -35,7 +35,8 @@ public:
 	void SetShader(const FString& ShaderPath);
 	void SetShader(const TSharedPtr<FShader>& InShader);
 	void InitLightShader(const FString& ShaderPath);
-	
+	void CompileCullingShaders();
+
 	void SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV);
 	void ClearShaderResource();
 
@@ -112,6 +113,7 @@ private:
 	TArray<int8> ExternalConstantBuffers; // 외부에서 생성한 상수 버퍼인지 여부를 나타냅니다.
 	TArray<ID3D11ShaderResourceView*> ShaderResourceViews;
 	TArray<ID3D11SamplerState*> SamplerStates;
+	Microsoft::WRL::ComPtr<ID3D11ComputeShader> CullingComputeShader;
 
 	uint16 PipelineID = 0;
 	// 바인딩 상태 설정 시 증가합니다. 상수 버퍼 내용 갱신은 바인딩을 바꾸지 않습니다.
