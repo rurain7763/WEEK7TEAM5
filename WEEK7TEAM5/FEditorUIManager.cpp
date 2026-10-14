@@ -340,6 +340,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 			const float CameraButtonWidth = ImGui::CalcTextSize("Camera").x + ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
 			const float ViewModeWidth = 80.0f;
 			const float LightingButtonWidth = ImGui::CalcTextSize("Lighting").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+			const float LightCountsButtonWidth = ImGui::CalcTextSize("Light Counts").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 			const float MaximizeButtonWidth = 28.0f;
 			const float SplitButtonWidth = 28.0f;
 
@@ -348,7 +349,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 			const float MarginY = 4.0f;
 			const float ToolBarHeight = 28.0f;
 
-			const float ToolBarWidth = CameraButtonWidth + ViewportTypeWidth + ViewModeWidth + LightingButtonWidth + MaximizeButtonWidth + SplitButtonWidth + (Spacing * 5.0f) + MarginX;
+			const float ToolBarWidth = CameraButtonWidth + ViewportTypeWidth + ViewModeWidth + LightingButtonWidth + LightCountsButtonWidth + MaximizeButtonWidth + SplitButtonWidth + (Spacing * 6.0f) + MarginX;
 			const float StartCursorPos = DrawRect.X + DrawRect.Width - ToolBarWidth;
 			const float ItemHeight = 22.0f;
 
@@ -549,6 +550,34 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 				ImGui::EndPopup();
 			}
 			ImGui::PopStyleVar();
+
+			ImGui::SameLine();
+
+			bool bShowLightCounts = GuiReference.GraphicsManager->IsLightCullingCountVisible();
+			if (bShowLightCounts)
+			{
+				ImGui::PushStyleColor(ImGuiCol_Button, IM_COL32(35, 100, 65, 230));
+			}
+			if (ImGui::Button("Light Counts", ImVec2(LightCountsButtonWidth, ItemHeight)))
+			{
+				GuiReference.GraphicsManager->SetLightCullingCountVisible(!bShowLightCounts);
+			}
+			if (bShowLightCounts)
+			{
+				ImGui::PopStyleColor();
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Lit / Pixel: tile light count heatmap. 0 = clear, 1 = blue, 6 = green, 11 = yellow, 16 or more = red.");
+			}
+			if (GuiReference.GraphicsManager->IsLightCullingCountVisible())
+			{
+				const bool bPixelLighting = bLitMode && EditorViewport->Client->GetLightingEvaluationStage() == EShaderStage::Pixel;
+				const char* Legend = bPixelLighting ? "Tile lights | Clear = 0 | Blue > Green > Yellow > Red (16+)"
+					: "Light Counts: select Lit and Lighting > Pixel";
+				DrawList->AddText(ImVec2(DrawRect.X + MarginX, DrawRect.Y + ToolBarHeight + 4.0f),
+					IM_COL32(230, 255, 235, 255), Legend);
+			}
 
 			ImGui::SameLine();
 

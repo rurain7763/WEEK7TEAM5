@@ -56,6 +56,8 @@ public:
 	void Display();
 
 	float GetAspect() const { return mAspect; }
+	bool IsLightCullingCountVisible() const { return mShowLightCullingCounts; }
+	void SetLightCullingCountVisible(bool bVisible) { mShowLightCullingCounts = bVisible; }
 
 	bool IsPerspectiveProjection() const;
 	void SetPerspectiveProjection(bool bPerspectiveProjection);
@@ -104,6 +106,7 @@ public:
 
 private:
 	void ExecuteLightCulling(const FDepthStencil& DepthStencil);
+	void RenderLightCullingCounts();
 	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
 
 private:
@@ -160,6 +163,19 @@ private:
 		int32 Padding[3];
 	};
 
+	struct FLightCullingCountConstants
+	{
+		uint32 Width;
+		uint32 Height;
+		uint32 TotalLightCount;
+		uint32 TileX;
+		uint32 TileWidth;
+		uint32 TileHeight;
+		uint32 MaxLightCount;
+		uint32 Padding = 0;
+	};
+	static_assert(sizeof(FLightCullingCountConstants) == 32);
+
 	struct FMeshContants
 	{
 		FMatrix Matrix;
@@ -205,6 +221,8 @@ private:
 	float mCameraFar = 1000.0f;
 
 	EViewportType mViewportType = EViewportType::Perspective;
+	bool mShowLightCullingCounts = false;
+	bool mLightCullingCountsForPixelLighting = false;
 	bool mbPerspectiveProjection;
 	float mAspect;
 	float mProjectionRatio; // 0.0f ~ 1.0f, 0이면 직교, 1이면 원근, 그 사이면 혼합
@@ -225,6 +243,9 @@ private:
 
 	TSharedPtr<FComputePipeline> mLightCullingPipeline;
 	TSharedPtr<FStructuredBuffer> mLightCullingOutput;
+	TSharedPtr<FComputePipeline> mLightCullingCountCopyPipeline;
+	TSharedPtr<FStructuredBuffer> mLightCullingCounts;
+	TSharedPtr<FRenderPipeline> mLightCullingCountPipeline;
 
 	TSharedPtr<FLightShader> mMeshLightShader;
 	TSharedPtr<FRenderPipeline> mMeshPipeline;

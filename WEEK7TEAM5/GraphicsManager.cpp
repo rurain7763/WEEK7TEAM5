@@ -69,6 +69,18 @@ void FGraphicsManager::Initialize()
 
 	mLightCullingOutput = mRenderer->CreateStructuredBuffer<int32>(1, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS);
 
+	mLightCullingCountCopyPipeline = mRenderer->CreateComputePipelilne();
+	mLightCullingCountCopyPipeline->SetShader("Assets/Shaders/LightCullingCountCopy.hlsl");
+	mLightCullingCountCopyPipeline->AddConstantBuffer<FLightCullingCountConstants>();
+	mLightCullingCounts = mRenderer->CreateStructuredBuffer<uint32>(1, D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS);
+
+	mLightCullingCountPipeline = mRenderer->CreateRenderPipeline();
+	mLightCullingCountPipeline->SetRasterRizerState(D3D11_CULL_NONE);
+	mLightCullingCountPipeline->SetDepthStencilState(false, false);
+	mLightCullingCountPipeline->SetBlendState(ERenderBlendMode::Transparent);
+	mLightCullingCountPipeline->SetShader("Assets/Shaders/LightCullingCounts.hlsl");
+	mLightCullingCountPipeline->AddConstantBuffer<FLightCullingCountConstants>();
+
 	TSharedPtr<FShaderAsset> MeshLightShaderAsset = FAssetManager::Get().GetAssetAs<FShaderAsset>(BuiltInAssetID::LightShader, true);
 	if (!MeshLightShaderAsset)
 	{
@@ -131,6 +143,9 @@ void FGraphicsManager::Cleanup()
 	mGlobalLightInfoBuffer.reset();
 	mMeshLightShader.reset();
 	mMeshPipeline.reset();
+	mLightCullingCountPipeline.reset();
+	mLightCullingCountCopyPipeline.reset();
+	mLightCullingCounts.reset();
 	mLightCullingOutput.reset();
 	mLightCullingPipeline.reset();
 	mPreDepthPipeline.reset();
@@ -160,6 +175,8 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 	// 뷰 모드를 렌더러에 전달한다. BindPipeline이 드로우마다 이 값을 보고
 	// 솔리드/와이어프레임 래스터라이저를 고른다.
 	mRenderer->SetViewModeIndex(InViewMode);
+	mLightCullingCountsForPixelLighting = InViewMode == EViewModeIndex::VMI_Lit
+		&& InLightingEvaluationStage == EShaderStage::Pixel;
 
 	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent() && InViewMode != EViewModeIndex::VMI_WorldNormal);
 	mFXAAProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::FXAA));
@@ -541,6 +558,11 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 	{
 		mRenderer->RenderQuad2D(Quad2DInfo);
 	}
+
+	if (mShowLightCullingCounts && mLightCullingCountsForPixelLighting)
+	{
+		RenderLightCullingCounts();
+	}
 }
 
 TSharedPtr<FTexture2DAsset> FGraphicsManager::GetDefaultNormalMap()
@@ -581,6 +603,52 @@ void FGraphicsManager::ExecuteLightCulling(const FDepthStencil& DepthStencil)
 
 	mRenderer->ClearAllShaderResources();
 	mRenderer->ClearAllUnorderedAccesses();
+}
+
+void FGraphicsManager::RenderLightCullingCounts()
+{
+	FRenderTarget2D* Target = mViewport->GetFrontRenderTarget();
+	const FDepthStencil* DepthStencil = mViewport->GetDepthStencil();
+	if (Target->Width == 0 || Target->Height == 0)
+	{
+		return;
+	}
+
+	FLightCullingCountConstants Constants{};
+	Constants.Width = DepthStencil->Width;
+	Constants.Height = DepthStencil->Height;
+	Constants.TotalLightCount = static_cast<uint32>(mLightInfos.Num());
+	Constants.TileX = CalculateGroupCount(Constants.Width, LightCullingThreadX);
+	Constants.TileWidth = LightCullingThreadX;
+	Constants.TileHeight = LightCullingThreadY;
+	Constants.MaxLightCount = LightCullingTileMaxLightCount;
+	const uint32 TileY = CalculateGroupCount(Constants.Height, LightCullingThreadY);
+	const uint32 TileCount = Constants.TileX * TileY;
+	if (TileCount == 0)
+	{
+		return;
+	}
+	if (mLightCullingCounts->GetBufferSize() < sizeof(uint32) * TileCount)
+	{
+		mLightCullingCounts = mRenderer->CreateStructuredBuffer<uint32>(TileCount,
+			D3D11_BIND_SHADER_RESOURCE | D3D11_BIND_UNORDERED_ACCESS);
+	}
+
+	mRenderer->ClearAllShaderResources();
+	mLightCullingCountCopyPipeline->UpdateConstantBuffer(0, Constants);
+	mLightCullingCountCopyPipeline->SetShaderResource(0, mLightCullingOutput->SRV);
+	mLightCullingCountCopyPipeline->SetUnorderedAccess(0, mLightCullingCounts->UAV);
+	mRenderer->Dispatch(mLightCullingCountCopyPipeline.get(),
+		CalculateGroupCount(Constants.TileX, 8), CalculateGroupCount(TileY, 8), 1);
+	mRenderer->ClearAllShaderResources();
+	mRenderer->ClearAllUnorderedAccesses();
+
+	mLightCullingCountPipeline->UpdateConstantBuffer(0, Constants);
+	mLightCullingCountPipeline->SetShaderResource(0, mLightCullingCounts->SRV);
+	mRenderer->BindRenderTarget(Target, nullptr, false);
+	mRenderer->Render(mLightCullingCountPipeline.get(), 3);
+	mRenderer->ClearAllShaderResources();
+	mRenderer->BindRenderTarget(Target, mViewport->GetDepthStencil(), false);
 }
 
 void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives)
