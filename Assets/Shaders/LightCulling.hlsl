@@ -1,6 +1,8 @@
 #define FLT_MAX 3.402823466e+38f
 #define FLT_MIN -3.402823466e+38f
 
+#define PI 3.14159265359
+
 #define LEFT_PLANE 0
 #define RIGHT_PLANE 1
 #define TOP_PLANE 2
@@ -19,9 +21,12 @@ struct LightInfo
     float outer_cone_angle;
 };
 
+// NOTE: 원점을 지나지 않는 평면도 표현할 수 있도록 d를 둔다. (직교 투영의 타일 측면은 원점을 지나지 않는다)
+// 점 p까지의 부호 있는 거리 = dot(normal, p) + d, 양수가 타일 안쪽.
 struct Plane
 {
     float3 normal;
+    float d;
 };
 
 cbuffer Constants : register(b0)
@@ -44,30 +49,87 @@ groupshared float min_depths[THREAD_X * THREAD_Y];
 
 groupshared Plane planes[4];
 
+// NOTE: 타일의 최소~최대 깊이 구간을 감싸는 뷰 공간 AABB
+groupshared float3 tile_aabb_min;
+groupshared float3 tile_aabb_max;
+
 groupshared uint light_indices[MAX_LIGHT_INDICES_COUNT];
 groupshared uint light_index_count;
+
+// NOTE: NDC 좌표를 뷰 공간 위치로 되돌린다.
+float3 UnprojectToView(float2 ndc_xy, float ndc_z)
+{
+    float4 view_position = mul(float4(ndc_xy, ndc_z, 1.0), inv_projection);
+    return view_position.xyz / view_position.w;
+}
+
+// NOTE: 세 점을 지나는 평면을 만들고, inside_point가 양수 쪽이 되도록 방향을 맞춘다.
+Plane MakePlane(float3 a, float3 b, float3 c, float3 inside_point)
+{
+    Plane plane;
+    plane.normal = normalize(cross(b - a, c - a));
+    plane.d = -dot(plane.normal, a);
+
+    if (dot(plane.normal, inside_point) + plane.d < 0.0)
+    {
+        plane.normal = -plane.normal;
+        plane.d = -plane.d;
+    }
+
+    return plane;
+}
+
+// NOTE: 구가 타일의 측면 평면 4개 안쪽에 걸쳐 있고, 타일의 깊이 구간 AABB와도 닿는지 검사한다.
+// 평면 검사만으로는 타일 대각선 방향의 구와 타일 깊이 구간 밖의 구를 걸러내지 못하므로 AABB 검사를 함께 한다.
+bool SphereIntersectsTile(float3 center, float radius)
+{
+    [unroll]
+    for (int i = 0; i < 4; i++)
+    {
+        if (dot(planes[i].normal, center) + planes[i].d < -radius)
+        {
+            return false;
+        }
+    }
+
+    float3 closest = clamp(center, tile_aabb_min, tile_aabb_max);
+    float3 offset = center - closest;
+    return dot(offset, offset) <= radius * radius;
+}
+
+// NOTE: 스폿 라이트(원뿔 + 거리 범위)를 감싸는 가장 작은 구 (Bart Wronski, "Cull that cone")
+// outer 각이 90도에 가까워져도 반지름이 range를 넘지 않는다.
+void GetSpotBoundingSphere(LightInfo light, out float3 center, out float radius)
+{
+    float3 direction = normalize(light.direction);
+    float angle = light.outer_cone_angle;
+
+    if (angle > PI * 0.25)
+    {
+        radius = sin(angle) * light.range;
+        center = light.position + direction * (cos(angle) * light.range);
+    }
+    else
+    {
+        radius = light.range / (2.0 * cos(angle));
+        center = light.position + direction * radius;
+    }
+}
 
 [numthreads(THREAD_X, THREAD_Y, 1)]
 void mainCS(uint3 id : SV_DispatchThreadID, uint3 group_id : SV_GroupID, uint group_index : SV_GroupIndex)
 {
-    // NOTE: depth를 기록한 위치는 픽셀의 0.5, 0.5 지점이므로 0.5를 더해준다.
-    float screen_x = (((float) id.x + 0.5) / (float) width);
-    float screen_y = (((float) id.y + 0.5) / (float) height);
-    
     // NOTE: Depth 기록하기
+    // 타일 꼭짓점을 이 깊이로 역투영해 AABB를 만들기 때문에, 뷰 공간 z가 아니라 NDC 깊이 그대로 기록한다.
+    // (원근/직교/혼합 투영 모두 NDC 깊이는 앞뒤 순서를 유지한다)
     float max_depth = FLT_MIN;
     float min_depth = FLT_MAX;
     if (id.x < width && id.y < height)
     {
-        float ndc_x = screen_x * 2.0 - 1.0;
-        float ndc_y = (1.0 - screen_y) * 2.0 - 1.0;
         float ndc_z = depth_texture.Load(id);
-        
-        float4 view_position = mul(float4(ndc_x, ndc_y, ndc_z, 1.0), inv_projection);
-        view_position.xyz /= view_position.w;
-        
-        max_depth = view_position.z;
-        min_depth = view_position.z;
+
+        max_depth = ndc_z;
+        min_depth = ndc_z;
     }
     
     max_depths[group_index] = max_depth;
@@ -90,105 +152,92 @@ void mainCS(uint3 id : SV_DispatchThreadID, uint3 group_id : SV_GroupID, uint gr
         stride /= 2;
     }
     
-    // NOTE: 4개의 사이드 평면을 구한다. (0번째 스레드만)
+    // NOTE: 타일의 측면 평면 4개와 깊이 구간 AABB를 구한다. (0번째 스레드만)
     if (group_index == 0)
     {
-        // NOTE: 자기가 속한 타일의 꼭짓점 계산
-        float2 screen_lt = float2(THREAD_X * group_id.x, THREAD_Y * group_id.y);
-        float2 screen_rt = float2(screen_lt.x + THREAD_X, screen_lt.y);
-        float2 screen_lb = float2(screen_lt.x, screen_lt.y + THREAD_Y);
-        float2 screen_rb = float2(screen_lt.x + THREAD_X, screen_lt.y + THREAD_Y);
-        screen_lt /= float2(width, height);
-        screen_rt /= float2(width, height);
-        screen_lb /= float2(width, height);
-        screen_rb /= float2(width, height);
+        // NOTE: 자기가 속한 타일의 픽셀 범위. 화면 오른쪽/아래 끝 타일은 화면 밖 부분을 잘라낸다.
+        float2 screen_min = float2(THREAD_X * group_id.x, THREAD_Y * group_id.y);
+        float2 screen_max = min(screen_min + float2(THREAD_X, THREAD_Y), float2(width, height));
+        screen_min /= float2(width, height);
+        screen_max /= float2(width, height);
 
-        float4 ndc_lt = float4(screen_lt.x * 2.0 - 1.0, (1.0 - screen_lt.y) * 2.0 - 1.0, 0.5, 1.0);
-        float4 ndc_rt = float4(screen_rt.x * 2.0 - 1.0, (1.0 - screen_rt.y) * 2.0 - 1.0, 0.5, 1.0);
-        float4 ndc_lb = float4(screen_lb.x * 2.0 - 1.0, (1.0 - screen_lb.y) * 2.0 - 1.0, 0.5, 1.0);
-        float4 ndc_rb = float4(screen_rb.x * 2.0 - 1.0, (1.0 - screen_rb.y) * 2.0 - 1.0, 0.5, 1.0);
+        float ndc_left = screen_min.x * 2.0 - 1.0;
+        float ndc_right = screen_max.x * 2.0 - 1.0;
+        float ndc_top = 1.0 - screen_min.y * 2.0;
+        float ndc_bottom = 1.0 - screen_max.y * 2.0;
 
-        float4 view_lt = mul(ndc_lt, inv_projection);
-        view_lt.xyz /= view_lt.w;
-    
-        float4 view_rt = mul(ndc_rt, inv_projection);
-        view_rt.xyz /= view_rt.w;
-    
-        float4 view_lb = mul(ndc_lb, inv_projection);
-        view_lb.xyz /= view_lb.w;
-    
-        float4 view_rb = mul(ndc_rb, inv_projection);
-        view_rb.xyz /= view_rb.w;
-    
-        planes[LEFT_PLANE].normal = normalize(cross(view_lt.xyz, view_lb.xyz));
-        planes[RIGHT_PLANE].normal = normalize(cross(view_rb.xyz, view_rt.xyz));
-        planes[TOP_PLANE].normal = normalize(cross(view_rt.xyz, view_lt.xyz));
-        planes[BOT_PLANE].normal = normalize(cross(view_lb.xyz, view_rb.xyz));
-        
+        float2 corners[4] =
+        {
+            float2(ndc_left, ndc_top),      // lt
+            float2(ndc_right, ndc_top),     // rt
+            float2(ndc_left, ndc_bottom),   // lb
+            float2(ndc_right, ndc_bottom),  // rb
+        };
+
+        // NOTE: 측면 평면은 near(0) ~ far(1) 전체 구간의 꼭짓점 3개로 만든다.
+        // 원점을 지나는 평면으로 만들면 원근 투영에서만 맞고 직교 투영에서는 틀린다.
+        float3 near_points[4];
+        float3 far_points[4];
+        for (int c = 0; c < 4; c++)
+        {
+            near_points[c] = UnprojectToView(corners[c], 0.0);
+            far_points[c] = UnprojectToView(corners[c], 1.0);
+        }
+
+        float3 inside_point = UnprojectToView(float2((ndc_left + ndc_right) * 0.5, (ndc_top + ndc_bottom) * 0.5), 0.5);
+
+        planes[LEFT_PLANE] = MakePlane(near_points[0], near_points[2], far_points[0], inside_point);
+        planes[RIGHT_PLANE] = MakePlane(near_points[1], near_points[3], far_points[1], inside_point);
+        planes[TOP_PLANE] = MakePlane(near_points[0], near_points[1], far_points[0], inside_point);
+        planes[BOT_PLANE] = MakePlane(near_points[2], near_points[3], far_points[2], inside_point);
+
+        // NOTE: 실제 픽셀이 있는 깊이 구간(min ~ max)만 감싸는 AABB.
+        // 배경만 있는 타일은 min == max == 1(far)이라 far 평면에 붙은 얇은 상자가 된다.
+        float tile_min_depth = min_depths[0];
+        float tile_max_depth = max_depths[0];
+
+        float3 aabb_min = float3(FLT_MAX, FLT_MAX, FLT_MAX);
+        float3 aabb_max = float3(FLT_MIN, FLT_MIN, FLT_MIN);
+        for (int k = 0; k < 4; k++)
+        {
+            float3 p0 = UnprojectToView(corners[k], tile_min_depth);
+            float3 p1 = UnprojectToView(corners[k], tile_max_depth);
+            aabb_min = min(aabb_min, min(p0, p1));
+            aabb_max = max(aabb_max, max(p0, p1));
+        }
+
+        tile_aabb_min = aabb_min;
+        tile_aabb_max = aabb_max;
+
         light_index_count = 0;
     }
 
     GroupMemoryBarrierWithGroupSync();
-    
+
     // NOTE: 조명 검사를 수행한다.
     uint thread_count = THREAD_X * THREAD_Y;
-    
-    max_depth = max_depths[0];
-    min_depth = min_depths[0];
+
     for (int i = group_index; i < light_count; i += thread_count)
     {
         LightInfo light = lights[i];
-        
+
         if (light.type == 1)
         {
-            float4 view_position = mul(float4(light.position, 1.0), view_matrix);
-            float depth = view_position.z;
-            
-            if (depth - light.range > max_depth || depth + light.range < min_depth)
-            {
-                continue;
-            }
-            
-            bool skip = false;
-            for (int j = 0; j < 4; j++)
-            {
-                if (dot(planes[j].normal, view_position.xyz) < -light.range)
-                {
-                    skip = true;
-                    break;
-                }
-            }
-            
-            if (skip)
+            float3 view_center = mul(float4(light.position, 1.0), view_matrix).xyz;
+            if (!SphereIntersectsTile(view_center, light.range))
             {
                 continue;
             }
         }
         else if (light.type == 2)
         {
-            // NOTE: 일단 원뿔을 감싸는 원뿔 형태로 구현.
-            float radius = light.range * tan(light.outer_cone_angle);
-            float half_height = light.range * 0.5;
-            float4 volume_sphere_view_position = mul(float4(light.position + half_height * light.direction, 1.0), view_matrix);
-            float volume_sphere_radius = sqrt(half_height * half_height + radius * radius);
-            float depth = volume_sphere_view_position.z;
+            // NOTE: 원뿔을 감싸는 구로 근사한다.
+            float3 world_center;
+            float sphere_radius;
+            GetSpotBoundingSphere(light, world_center, sphere_radius);
 
-            if (depth - volume_sphere_radius > max_depth || depth + volume_sphere_radius < min_depth)
-            {
-                continue;
-            }
-            
-            bool skip = false;
-            for (int j = 0; j < 4; j++)
-            {
-                if (dot(planes[j].normal, volume_sphere_view_position.xyz) < -volume_sphere_radius)
-                {
-                    skip = true;
-                    break;
-                }
-            }
-            
-            if (skip)
+            float3 view_center = mul(float4(world_center, 1.0), view_matrix).xyz;
+            if (!SphereIntersectsTile(view_center, sphere_radius))
             {
                 continue;
             }
