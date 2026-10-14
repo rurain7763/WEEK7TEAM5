@@ -85,8 +85,14 @@ public:
 
 	void Reset();
 
-	const EViewModeIndex GetViewMode() const { return mViewModeIndex; }
 	void SetViewMode(EViewModeIndex InViewMode) { mViewModeIndex = InViewMode; }
+	const EViewModeIndex GetViewMode() const { return mViewModeIndex; }
+
+	inline void SetLightingEvaluationStage(EShaderStage ShaderStage) { mLightingEvaluationStage = ShaderStage; }
+	inline EShaderStage GetLightingEvaluationStage() { return mLightingEvaluationStage; }
+
+	inline void SetLightingModle(ELightingModel LightingModel) { mLightingModel = LightingModel; }
+	inline ELightingModel GetLightingModel() { return mLightingModel; }
 
 	const EViewportType GetViewportType() const { return mViewportType; }
 	void SetViewportType(EViewportType InViewportType);
@@ -131,6 +137,8 @@ private:
 	FTransform PrevCameraTransform = mCamera.Transform;
 
 	EViewModeIndex mViewModeIndex = EViewModeIndex::VMI_Lit;
+	EShaderStage mLightingEvaluationStage = EShaderStage::Pixel;
+	ELightingModel mLightingModel = ELightingModel::BlinnPhong;
 	EViewportType mViewportType = EViewportType::Perspective;
 
 	UWorld* mWorld = nullptr;

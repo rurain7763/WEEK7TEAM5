@@ -32,8 +32,7 @@ public:
 	void SetBlendState(ERenderBlendMode BlendMode, bool bColorWriteEnable = true);
 	void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY Topology);
 
-	void SetShader(const FString& ShaderPath);
-	void SetShader(const FString& ShaderPath, ELightingModel LightingModel);
+	void SetShader(const FString& ShaderPath, const D3D_SHADER_MACRO* Macros = nullptr);
 	void SetShader(const TSharedPtr<FShader>& InShader);
 	
 	void SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV);

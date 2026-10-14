@@ -336,9 +336,10 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 			// NOTE: Viewport 툴바 배경 그리기
 			ImGui::PushID(CurrentViewportIndex);
 
-			const float ViewportTypeWidth = 95.0f;
+			const float ViewportTypeWidth = 100.0f;
 			const float CameraButtonWidth = ImGui::CalcTextSize("Camera").x + ImGui::GetFrameHeight() + ImGui::GetStyle().FramePadding.x * 2.0f;
-			const float ViewModeWidth = 85.0f;
+			const float ViewModeWidth = 80.0f;
+			const float LightingButtonWidth = ImGui::CalcTextSize("Lighting").x + ImGui::GetStyle().FramePadding.x * 2.0f;
 			const float MaximizeButtonWidth = 28.0f;
 			const float SplitButtonWidth = 28.0f;
 
@@ -347,7 +348,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 			const float MarginY = 4.0f;
 			const float ToolBarHeight = 28.0f;
 
-			const float ToolBarWidth = CameraButtonWidth + ViewportTypeWidth + ViewModeWidth + MaximizeButtonWidth + SplitButtonWidth + (Spacing * 4.0f) + MarginX;
+			const float ToolBarWidth = CameraButtonWidth + ViewportTypeWidth + ViewModeWidth + LightingButtonWidth + MaximizeButtonWidth + SplitButtonWidth + (Spacing * 5.0f) + MarginX;
 			const float StartCursorPos = DrawRect.X + DrawRect.Width - ToolBarWidth;
 			const float ItemHeight = 22.0f;
 
@@ -473,7 +474,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 
 			ImGui::PopStyleVar();
 			ImGui::SameLine();
-			ImGui::SetNextItemWidth(100.0f);
+			ImGui::SetNextItemWidth(ViewportTypeWidth);
 
 			// NOTE: Viewport Type & View Mode Combo Box
 			const char* ViewportTypeNames[] = { "Perspective", "Top", "Front", "Side" };
@@ -486,7 +487,7 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 
 			ImGui::SameLine();
 
-			ImGui::SetNextItemWidth(80.0f);
+			ImGui::SetNextItemWidth(ViewModeWidth);
 
 			const char* ViewModeNames[] = { "Lit", "UnLit", "Wireframe", "SceneDepth", "WorldNormal", "Lit_Gouraud", "Lit_Lambert", "Lit_Phong"};
 			int32 CurrentModeIndex = static_cast<int32>(EditorViewport->Client->GetViewMode());
@@ -495,6 +496,59 @@ void FEditorUIManager::RenderViewport(FGuiReference& GuiReference, ImGuiID Docks
 			{
 				EditorViewport->Client->SetViewMode(static_cast<EViewModeIndex>(CurrentModeIndex));
 			}
+
+			ImGui::SameLine();
+
+			// NOTE: Lighting Stage 세팅, Lighting Model 세팅
+			const bool bLitMode = static_cast<EViewModeIndex>(CurrentModeIndex) == EViewModeIndex::VMI_Lit;
+
+			ImGui::BeginDisabled(!bLitMode);
+			if (ImGui::Button("Lighting##ViewportLighting", ImVec2(LightingButtonWidth, ItemHeight)))
+			{
+				ImGui::OpenPopup("##ViewportLightingSettings");
+			}
+			ImGui::EndDisabled();
+
+			if (bLitMode && ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("%s / %s", EditorViewport->Client->GetLightingEvaluationStage() == EShaderStage::Vertex ? "Vertex" : "Pixel", EditorViewport->Client->GetLightingModel() == ELightingModel::Lambert ? "Lambert" : "Blinn-Phong");
+			}
+
+			ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(12.0f, 12.0f));
+			if (ImGui::BeginPopup("##ViewportLightingSettings"))
+			{
+				if (!bLitMode)
+				{
+					ImGui::CloseCurrentPopup();
+				}
+				else
+				{
+					ImGui::TextDisabled("Evaluation Stage");
+					if (ImGui::RadioButton("Vertex", EditorViewport->Client->GetLightingEvaluationStage() == EShaderStage::Vertex))
+					{
+						EditorViewport->Client->SetLightingEvaluationStage(EShaderStage::Vertex);
+					}
+					ImGui::SameLine();
+					if (ImGui::RadioButton("Pixel", EditorViewport->Client->GetLightingEvaluationStage() == EShaderStage::Pixel))
+					{
+						EditorViewport->Client->SetLightingEvaluationStage(EShaderStage::Pixel);
+					}
+
+					ImGui::Separator();
+					ImGui::TextDisabled("Lighting Model");
+					if (ImGui::RadioButton("Lambert", EditorViewport->Client->GetLightingModel() == ELightingModel::Lambert))
+					{
+						EditorViewport->Client->SetLightingModle(ELightingModel::Lambert);
+					}
+					ImGui::SameLine();
+					if (ImGui::RadioButton("Blinn-Phong", EditorViewport->Client->GetLightingModel() == ELightingModel::BlinnPhong))
+					{
+						EditorViewport->Client->SetLightingModle(ELightingModel::BlinnPhong);
+					}
+				}
+				ImGui::EndPopup();
+			}
+			ImGui::PopStyleVar();
 
 			ImGui::SameLine();
 

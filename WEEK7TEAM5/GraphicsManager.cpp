@@ -16,6 +16,7 @@
 #include "UAmbientLightComponent.h"
 #include "UPointLightComponent.h"
 #include "USpotLightComponent.h"
+#include "FLightShader.h"
 
 // 선분 하나당 정점 2개. 축 6개 + 앞으로 붙을 그리드까지 감당할 만큼 잡아둔다
 static constexpr uint32 LINE_VERTEX_CAPACITY = 8192;
@@ -30,20 +31,36 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	mRenderGraph.Initialize(*mRenderer);
 
 	mAspect = mRenderer->GetWidth() / static_cast<float>(mRenderer->GetHeight());
+}
 
+FGraphicsManager::~FGraphicsManager()
+{
+	mRenderer->Release();
+	delete mRenderer;
+}
+
+void FGraphicsManager::Initialize()
+{
 	mGlobalLightInfoBuffer = mRenderer->CreateConstantBuffer<FGlobalLightInfo>();
 	mLightInfoBuffer = mRenderer->CreateStructuredBuffer<FLightInfo>(1);
-	
-	//mMeshPipeline = mRenderer->CreateRenderPipeline();
-	//mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe });
-	//mMeshPipeline->SetDepthStencilState(true, true);
-	////mMeshPipeline->SetShader("Assets/Shaders/StaticMeshShader.hlsl");
-	//mMeshPipeline->SetShader("Assets/Shaders/US_StaticMesh.hlsl", ELightingModel::BlinnPhong);
-	//mMeshPipeline->AddConstantBuffer<FMeshContants>();
-	//mMeshPipeline->AddConstantBuffer<FViewConstants>();
-	//mMeshPipeline->SetConstantBuffer(2, mGlobalLightInfoBuffer->Buffer.Get());
 
-	mMeshPipeline = GetMaterialPipeline(FMaterialPipelineKey{ ELightingModel::BlinnPhong });
+	TSharedPtr<FShaderAsset> MeshLightShaderAsset = FAssetManager::Get().GetAssetAs<FShaderAsset>(BuiltInAssetID::LightShader, true);
+	if (!MeshLightShaderAsset)
+	{
+		throw std::runtime_error("Failed to load built-in light shader asset.");
+	}
+	else
+	{
+		mMeshLightShader = MeshLightShaderAsset->GetShaderAs<FLightShader>();
+	}
+
+	mMeshPipeline = mRenderer->CreateRenderPipeline();
+	mMeshPipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe });
+	mMeshPipeline->SetDepthStencilState(true, true);
+	mMeshPipeline->SetShader(mMeshLightShader);
+	mMeshPipeline->AddConstantBuffer<FMeshContants>();
+	mMeshPipeline->AddConstantBuffer<FViewConstants>();
+	mMeshPipeline->SetConstantBuffer(2, mGlobalLightInfoBuffer->Buffer.Get());
 
 	mHighlightMarkPipeline = mRenderer->CreateRenderPipeline();
 	mHighlightMarkPipeline->SetRasterRizerState(D3D11_CULL_BACK);
@@ -63,7 +80,7 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 
 	mHighlightVertexBuffer = mRenderer->CreateVertexBuffer<FVertex>(nullptr, 1024, D3D11_USAGE_DYNAMIC); // 초기 용량 1024개, 필요하면 늘어난다
 	mHighlightIndexBuffer = mRenderer->CreateIndexBuffer(nullptr, 1024, D3D11_USAGE_DYNAMIC); // 초기 용량 1024개, 필요하면 늘어난다
-	
+
 	GpuQueries.SetNum(3);
 
 	for (FGpuTimerQuerySet& QuerySet : GpuQueries)
@@ -78,20 +95,20 @@ FGraphicsManager::FGraphicsManager(HWND hWindow)
 	}
 }
 
-FGraphicsManager::~FGraphicsManager()
+void FGraphicsManager::Cleanup()
 {
+	mRenderCollector.Clear();
+
 	mHighlightVertexBuffer.reset();
 	mHighlightIndexBuffer.reset();
 	mHighlightMarkPipeline.reset();
 	mHighlightDrawPipeline.reset();
 	mGlobalLightInfoBuffer.reset();
+	mMeshLightShader.reset();
 	mMeshPipeline.reset();
-	mRenderCollector.Clear();
-	mRenderer->Release();
-	delete mRenderer;
 }
 
-void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, const EViewModeIndex InViewMode, const EViewportType InViewportType)
+void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, EViewModeIndex InViewMode, EShaderStage InLightingEvaluationStage, ELightingModel InLightingModel, EViewportType InViewportType)
 {
 	//PROFILE_SCOPE("Viewport/Prepare");
 
@@ -113,8 +130,33 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 
 	// 뷰 모드를 렌더러에 전달한다. BindPipeline이 드로우마다 이 값을 보고
 	// 솔리드/와이어프레임 래스터라이저를 고른다.
-	mViewModeIndex = InViewMode;
-	mRenderer->SetViewModeIndex(mViewModeIndex);
+	mRenderer->SetViewModeIndex(InViewMode);
+
+	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent() && InViewMode != EViewModeIndex::VMI_WorldNormal);
+	mFXAAProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::FXAA));
+	mDepthPreviewProcess.SetEnabled(InViewMode == EViewModeIndex::VMI_SceneDepth);
+	mNormalPreviewProcess.SetEnabled(InViewMode == EViewModeIndex::VMI_WorldNormal);
+
+	// NOTE: 조명 모델 우버 셰이더를  LitMode에 따라 세팅.
+	if (InViewMode == EViewModeIndex::VMI_Lit)
+	{
+		mMeshLightShader->SetLightingEnabled(true);
+
+		mMeshLightShader->SetGouraudModeEnabled(InLightingEvaluationStage == EShaderStage::Vertex);
+		if (InLightingModel == ELightingModel::Lambert)
+		{
+			mMeshLightShader->UseLambertModel();
+		}
+		else if (InLightingModel == ELightingModel::BlinnPhong)
+		{
+			mMeshLightShader->UseBlinnPhongModel();
+		}
+	}
+	else
+	{
+		mMeshLightShader->SetLightingEnabled(false);
+	}
+	mMeshLightShader->Compile();
 
 	mRenderer->Prepare(view * projection_u);
 
@@ -216,18 +258,14 @@ void FGraphicsManager::Prepare(const FCamera* mCamera, float Aspect, const FMatr
 
 void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 {
+	PROFILE_SCOPE("Viewport/GraphicsRender");
+
 	mRenderGraph.Clear();
 
 	FRGTextureRef FrontRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetFrontRenderTarget());
 	FRGTextureRef BackRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetBackRenderTarget());
 	FRGTextureRef NormalRenderTargetHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetGBuffer()->Normal.get());
 	FRGTextureRef DepthStencilHandle = mRenderGraph.RegisterExternalTexture(mViewport->GetDepthStencil());
-
-    PROFILE_SCOPE("Viewport/GraphicsRender");
-    {
-        PROFILE_SCOPE("Viewport/GraphicsRender/RenderLines");
-        mRenderer->RenderLines(mRenderCollector.LineInfos);
-    }
 
 	const auto& RenderInfoPool = mRenderCollector.GetRenderInfoPool();
 	const auto& RenderInfos = RenderInfoPool.GetPool();
@@ -260,23 +298,6 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 			//const auto& Pipeline = Info.Pipeline ? Info.Pipeline : mMeshPipeline.get();
 			auto Pipeline = Info.Material && Info.Material->GetPipeline() ? Info.Material->GetPipeline().get() : mMeshPipeline.get();
 
-			//뷰모드 강제
-			if (mViewModeIndex == EViewModeIndex::VMI_Unlit)
-			{
-				Pipeline = GetMaterialPipeline(FMaterialPipelineKey{ ELightingModel::Unlit }).get();
-			}
-			else if (mViewModeIndex == EViewModeIndex::VMI_Gouraud)
-			{
-				Pipeline = GetMaterialPipeline(FMaterialPipelineKey{ ELightingModel::Gouraud }).get();
-			}
-			else if (mViewModeIndex == EViewModeIndex::VMI_Lambert)
-			{
-				Pipeline = GetMaterialPipeline(FMaterialPipelineKey{ ELightingModel::Lambert }).get();
-			}
-			else if (mViewModeIndex == EViewModeIndex::VMI_Phong)
-			{
-				Pipeline = GetMaterialPipeline(FMaterialPipelineKey{ ELightingModel::BlinnPhong }).get();
-			}
 
 			if (Pipeline != LastViewPipeline)
 			{
@@ -378,10 +399,10 @@ void FGraphicsManager::Render(const TArray<UPrimitiveComponent*>& Primitives)
 		}
 	}
 
-	mFogProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::Fog) && mFogProcess.HasFogComponent() && mViewModeIndex != EViewModeIndex::VMI_WorldNormal);
-	mFXAAProcess.SetEnabled(FShowFlags::Get().IsEnabled(EShowFlag::FXAA));
-	mDepthPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_SceneDepth);
-	mNormalPreviewProcess.SetEnabled(mViewModeIndex == EViewModeIndex::VMI_WorldNormal);
+	{
+		PROFILE_SCOPE("Viewport/GraphicsRender/RenderLines");
+		mRenderer->RenderLines(mRenderCollector.LineInfos);
+	}
 
 	FPostProcess* PostProcesses[] = {
 		&mFogProcess,

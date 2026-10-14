@@ -421,22 +421,24 @@ TSharedPtr<FDepthStencil> URenderer::CreateDepthStencil(uint32 Width, uint32 Hei
 	return DepthStencil;
 }
 
-TSharedPtr<FShader> URenderer::CreateShader(const FString& ShaderPath)
-{
-	return CreateShader(ShaderPath, ELightingModel::BlinnPhong);
-}
-
-TSharedPtr<FShader> URenderer::CreateShader(const FString& ShaderPath, ELightingModel LightingModel)
+TSharedPtr<FShader> URenderer::CreateShader(const FString& ShaderPath, const D3D_SHADER_MACRO* Macros)
 {
 	TSharedPtr<FShader> Shader = MakeShared<FShader>();
-	RenderUtils::CompileShader(Device, ShaderPath, LightingModel, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
+	Shader->Device = Device;
+	RenderUtils::CompileShader(Device, ShaderPath, Macros, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
 	return Shader;
 }
 
-TSharedPtr<FShader> URenderer::CreateShaderFromMemory(const FString& ShaderMemory)
+
+TSharedPtr<FShader> URenderer::CreateShaderFromMemory(const FString& ShaderMemory, const D3D_SHADER_MACRO* Macros)
 {
 	TSharedPtr<FShader> Shader = MakeShared<FShader>();
-	RenderUtils::CompileShaderFromMemory(Device, nullptr, ShaderMemory, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
+
+	Shader->Device = Device;
+
+	RenderUtils::CompileShaderFromMemory(Device, ShaderMemory, Macros, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
+	
+
 	return Shader;
 }
 
@@ -840,7 +842,6 @@ void URenderer::ClearAllShaderResources()
 	CurrentSRVCount = 0;
 }
 
-//=============================================
 void URenderer::CreateDepthStencilBuffer()
 {
 	D3D11_TEXTURE2D_DESC DepthTextureDesc = {};

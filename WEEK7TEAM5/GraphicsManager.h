@@ -20,6 +20,7 @@ class FAssetManager;
 struct FViewport;
 class UWorld;
 class UPrimitiveComponent;
+class FLightShader;
 class FTexture2DAsset;
 
 struct FBuffer
@@ -45,15 +46,16 @@ public:
 	FGraphicsManager(HWND hWindow);
 	~FGraphicsManager();
 
-	void Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, const EViewModeIndex InViewMode, const EViewportType InViewportType);
+	void Initialize();
+	void Cleanup();
+
+	void Prepare(const FCamera* mCamera, float Aspect, const FMatrix& ViewProjection, const FMatrix& InvViewProjection, FViewport& Viewport, UWorld* World, EViewModeIndex InViewMode, EShaderStage InLightingEvaluationStage, ELightingModel InLightingModel, EViewportType InViewportType);
 
 	void Render(const TArray<UPrimitiveComponent*>& Primitives);
 
 	void Display();
 
 	float GetAspect() const { return mAspect; }
-	EViewModeIndex GetViewModeIndex() const { return mViewModeIndex; }
-	void SetViewModeIndex(EViewModeIndex viewModeIndex) { mViewModeIndex = viewModeIndex; }
 
 	bool IsPerspectiveProjection() const;
 	void SetPerspectiveProjection(bool bPerspectiveProjection);
@@ -117,7 +119,6 @@ private:
 		int32 OutlineRadius;
 		int32 Padding;
 	};
-
 
 	struct FLightInfo
 	{
@@ -193,7 +194,6 @@ private:
 	float mCameraNear = 0.1f;
 	float mCameraFar = 1000.0f;
 
-	EViewModeIndex mViewModeIndex = EViewModeIndex::VMI_Lit;
 	EViewportType mViewportType = EViewportType::Perspective;
 	bool mbPerspectiveProjection;
 	float mAspect;
@@ -210,6 +210,7 @@ private:
 
 	TArray<FLightInfo> mLightInfos;
 	TSharedPtr<FStructuredBuffer> mLightInfoBuffer;
+	TSharedPtr<FLightShader> mMeshLightShader;
 	TSharedPtr<FRenderPipeline> mMeshPipeline;
 
 	TSharedPtr<FRenderPipeline> mHighlightMarkPipeline;

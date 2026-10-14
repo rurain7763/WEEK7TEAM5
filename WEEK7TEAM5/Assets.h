@@ -25,6 +25,7 @@ class FAssetManager;
 class FMaterialAsset;
 struct FVertexBuffer;
 struct FIndexBuffer;
+struct FShader;
 
 namespace BuiltInAssetID
 {
@@ -42,6 +43,7 @@ namespace BuiltInAssetID
 	inline const FGuid HeightFogIcon(0xB17B0001, 0x00000000, 0x00000000, 0x00003001);
 	inline const FGuid PointLightIcon(0xB17B0001, 0x00000000, 0x00000000, 0x00003002);
 	inline const FGuid DefaultNoramlMap(0xB17B0001, 0x00000000, 0x00000000, 0x00004000);
+	inline const FGuid LightShader(0xB17B0001, 0x00000000, 0x00000000, 0x00004001);
 }
 
 class FFileAssetSource : public FAssetSource
@@ -328,4 +330,21 @@ public:
 	virtual TSharedPtr<FAsset> LoadAsset(const FGuid& AssetID, const FName& AssetName, FArchive& Ar) override;
 	virtual void UnloadAsset(TSharedPtr<FAsset> Asset) override;
 	virtual EAssetType GetAssetType() const override { return EAssetType::Material; }
+};
+
+class FShaderAsset : public FAsset
+{
+public:
+	FShaderAsset(const FGuid& InAssetID, const FName& InAssetName, const TSharedPtr<FShader>& InShader);
+
+	inline const TSharedPtr<FShader>& GetShader() const { return Shader; }
+
+	template <typename T>
+	inline TSharedPtr<T> GetShaderAs()
+	{
+		return std::static_pointer_cast<T>(Shader);
+	}
+
+private:
+	TSharedPtr<FShader> Shader;
 };

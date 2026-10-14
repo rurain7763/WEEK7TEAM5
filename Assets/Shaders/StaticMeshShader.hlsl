@@ -4,10 +4,6 @@
 #define TEXTURE_MAP_SPECULAR 1 << 1
 #define TEXTURE_MAP_NORMAL 1 << 2
 
-#define ENABLE_LIGHTING 1
-#define LIGHTING_MODEL_GOURAUD 0
-#define LIGHTING_MODEL_BLINN_PHONG 1
-
 struct LightInfo
 {
     float3 position;

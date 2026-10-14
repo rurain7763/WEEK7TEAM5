@@ -143,28 +143,14 @@ void FRenderPipeline::SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY Topology)
 	++BindingVersion;
 }
 
-void FRenderPipeline::SetShader(const FString& ShaderPath)
+void FRenderPipeline::SetShader(const FString& ShaderPath, const D3D_SHADER_MACRO* Macros)
 {
 	++BindingVersion;
 
 	Shader = MakeShared<FShader>();
-	RenderUtils::CompileShader(Device, ShaderPath, ELightingModel::BlinnPhong, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
+	RenderUtils::CompileShader(Device, ShaderPath, Macros, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
 }
 
-void FRenderPipeline::SetShader(const FString& ShaderPath, ELightingModel LightingModel)
-{
-	++BindingVersion;
-
-	Shader = MakeShared<FShader>();
-	RenderUtils::CompileShader(Device, ShaderPath, LightingModel, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
-}
-
-void FRenderPipeline::SetShader(const TSharedPtr<FShader>& InShader)
-{
-	++BindingVersion;
-
-	Shader = InShader;
-}
 
 void FRenderPipeline::SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV)
 {

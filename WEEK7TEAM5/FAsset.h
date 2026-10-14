@@ -13,6 +13,7 @@ enum class EAssetType
 	FontAtlas,
 	SpriteAtlas,
 	Material,
+	Shader,
 	None
 };
 
