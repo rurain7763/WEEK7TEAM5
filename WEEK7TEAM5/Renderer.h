@@ -5,6 +5,7 @@
 #include "Vector.h"
 #include "RenderInfo.h"
 #include "FRenderPipeline.h"
+#include "FComputePipeline.h"
 #include "NvapiHelpers.h"
 #include "RenderUtils.h"
 #include <d3d11.h>
@@ -383,6 +384,7 @@ struct FStructuredBuffer
 
 	Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
 	Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV;
+	Microsoft::WRL::ComPtr<ID3D11UnorderedAccessView> UAV;
 	UINT ElementSize = 0;
 	UINT ElementCount = 0;
 
@@ -405,33 +407,6 @@ struct FStructuredBuffer
 	}
 };
 
-
-
-struct FLightBuffer
-{
-	ID3D11DeviceContext* DeviceContext = nullptr;
-
-	Microsoft::WRL::ComPtr<ID3D11Buffer> Buffer;
-
-	void UpdateBuffer(const void* Data, uint32 DataSize)
-	{
-		if (DeviceContext == nullptr) return;
-
-		D3D11_MAPPED_SUBRESOURCE Mapped{};
-		DeviceContext->Map(Buffer.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &Mapped);
-		std::memcpy(Mapped.pData, Data, DataSize);
-		DeviceContext->Unmap(Buffer.Get(), 0);
-	}
-
-	void BindBuffer(uint32 SlotIndex)
-	{
-		if (DeviceContext == nullptr) return;
-
-		DeviceContext->VSSetConstantBuffers(SlotIndex, 1, Buffer.GetAddressOf());
-		DeviceContext->PSSetConstantBuffers(SlotIndex, 1, Buffer.GetAddressOf());
-	}
-};
-
 struct FShader
 {
 	ID3D11Device* Device;
@@ -442,6 +417,11 @@ struct FShader
 	uint32 Stride;
 
 	virtual ~FShader() = default;
+};
+
+struct FComputeShader
+{
+	Microsoft::WRL::ComPtr<ID3D11ComputeShader> ComputeShader;
 };
 
 struct FBindRenderTargetsDesc
@@ -540,7 +520,7 @@ public:
 	}
 
 	template <typename T>
-	TSharedPtr<FStructuredBuffer> CreateStructuredBuffer(uint32 ElementCount)
+	TSharedPtr<FStructuredBuffer> CreateStructuredBuffer(uint32 ElementCount, UINT BindFlags = D3D11_BIND_SHADER_RESOURCE)
 	{
 		TSharedPtr<FStructuredBuffer> StructuredBuffer = MakeShared<FStructuredBuffer>();
 		StructuredBuffer->DeviceContext = DeviceContext;
@@ -548,19 +528,33 @@ public:
 		D3D11_BUFFER_DESC StructuredBufferDesc = {};
 		StructuredBufferDesc.ByteWidth = sizeof(T) * ElementCount;
 		StructuredBufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		StructuredBufferDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		StructuredBufferDesc.BindFlags = BindFlags;
 		StructuredBufferDesc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 		StructuredBufferDesc.StructureByteStride = sizeof(T);
 
 		Device->CreateBuffer(&StructuredBufferDesc, nullptr, StructuredBuffer->Buffer.GetAddressOf());
 
-		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
-		SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
-		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-		SRVDesc.Buffer.FirstElement = 0;
-		SRVDesc.Buffer.NumElements = ElementCount;
+		if (BindFlags & D3D11_BIND_SHADER_RESOURCE)
+		{
+			D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc = {};
+			SRVDesc.Format = DXGI_FORMAT_UNKNOWN;
+			SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+			SRVDesc.Buffer.FirstElement = 0;
+			SRVDesc.Buffer.NumElements = ElementCount;
 
-		Device->CreateShaderResourceView(StructuredBuffer->Buffer.Get(), &SRVDesc, StructuredBuffer->SRV.GetAddressOf());
+			Device->CreateShaderResourceView(StructuredBuffer->Buffer.Get(), &SRVDesc, StructuredBuffer->SRV.GetAddressOf());
+		}
+
+		if (BindFlags & D3D11_BIND_UNORDERED_ACCESS)
+		{
+			D3D11_UNORDERED_ACCESS_VIEW_DESC UAVDesc = {};
+			UAVDesc.Format = DXGI_FORMAT_UNKNOWN;
+			UAVDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+			UAVDesc.Buffer.FirstElement = 0;
+			UAVDesc.Buffer.NumElements = ElementCount;
+
+			Device->CreateUnorderedAccessView(StructuredBuffer->Buffer.Get(), &UAVDesc, StructuredBuffer->UAV.GetAddressOf());
+		}
 
 		StructuredBuffer->ElementSize = sizeof(T);
 		StructuredBuffer->ElementCount = ElementCount;
@@ -589,15 +583,19 @@ public:
 		return Shader;
 	}
 
+	TSharedPtr<FComputeShader> CreateComputeShader(const FString& ShaderPath, const D3D_SHADER_MACRO* Macros = nullptr);
+
 	//Rendering
 	void Prepare(const FMatrix& ViewProjectionMatrix);
 
 	TSharedPtr<FRenderPipeline> CreateRenderPipeline();
+	TSharedPtr<FComputePipeline> CreateComputePipelilne();
 
 	void BindFrameBuffer();
 	void BindRenderTarget(const TSharedPtr<FRenderTarget2D>& RenderTarget, const TSharedPtr<FDepthStencil>& DepthStencil, bool bClear = true);
 	void BindRenderTarget(FRenderTarget2D* RenderTarget, FDepthStencil* DepthStencil, bool bClear = true);
 	void BindRenderTargets(const FBindRenderTargetsDesc& Desc);
+	void ClearRenderTargets();
 
 	void Render(const FRenderPipeline* Pipeline, UINT NumVertices);
 
@@ -622,7 +620,10 @@ public:
 	void RenderWorldAxis(const FMatrix& View, const FMatrix& Projection, const FVector4& Color, const FVector& Axis, float Thickness = 0.002f);
 	void RenderWorldGrid(const FMatrix& ViewProjection, const FVector& CameraLocation, float GridGap);
 
+	void Dispatch(const FComputePipeline* Pipeline, UINT GroupX, UINT GroupY, UINT GroupZ);
+
 	void ClearAllShaderResources();
+	void ClearAllUnorderedAccesses();
 
 	void SwapBuffer();
 
@@ -641,7 +642,6 @@ public:
 	mutable uint64 DrawCallCount = 0;
 	uint64 GetDrawCallCount() const { return DrawCallCount; }
 	void ResetDrawCallCount() { DrawCallCount = 0; }
-	
 
 private:
 	void CreateDeviceAndSwapChain(HWND hWindow);
@@ -655,6 +655,8 @@ private:
 	void BindPipeline(const FRenderPipeline* Pipeline, uint32 StencilRef = 0);
 	void BindVertexBuffer(ID3D11Buffer* VertexBuffer, UINT Stride);
 	void BindIndexBuffer(ID3D11Buffer* IndexBuffer);
+
+	void BindComputePipeline(const FComputePipeline* Pipeline);
 
 private:
 	ID3D11Device* Device = nullptr;
@@ -695,6 +697,7 @@ private:
 	// 와이어프레임 여부. Prepare에서 갱신하고 BindPipeline이 읽는다.
 	// RSSetState는 드로우 직전마다 덮어써지므로 플래그로 들고 있어야 한다.
 	EViewModeIndex ViewModeIndex = EViewModeIndex::VMI_Lit;
+
 	// 프레임 경계와 관계없이 실제 마지막으로 적용한 파이프라인을 기억합니다.
 	const FRenderPipeline* LastPipeline = nullptr;
 	uint32 LastPipelineVersion = 0;
@@ -710,8 +713,7 @@ private:
 	ID3D11VertexShader* CurrentVertexShader = nullptr;
 	ID3D11PixelShader* CurrentPixelShader = nullptr;
 
-	//ID3D11Buffer* CurrentCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
-	TArray<ID3D11Buffer*> CurrentCBs;
+	ID3D11Buffer* CurrentCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
 	ID3D11ShaderResourceView* CurrentSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
 	ID3D11SamplerState* CurrentSamplerStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = {};
 	int32 CurrentCBCount = 0;
@@ -722,4 +724,19 @@ private:
 	UINT CurrentVertexStride = 0;
 
 	ID3D11Buffer* CurrentIndexBuffer = nullptr;
+
+	// NOTE: 컴퓨트 셰이딩을 위한 캐싱
+	const FComputePipeline* LastComputePipeline = nullptr;
+	uint32 LastComputePipelineVersion = UINT32_MAX;
+
+	ID3D11ComputeShader* CurrentComputeShader = nullptr;
+
+	ID3D11Buffer* CurrentComputeCBs[D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT] = {};
+	ID3D11ShaderResourceView* CurrentComputeSRVs[D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT] = {};
+	ID3D11UnorderedAccessView* CurrentComputeUAVs[D3D11_PS_CS_UAV_REGISTER_COUNT] = {};
+	ID3D11SamplerState* CurrentComputeStates[D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT] = {};
+	int32 CurrentComputeCBCount = 0;
+	int32 CurrentComputeSRVCount = 0;
+	int32 CurrentComputeUAVCount = 0;
+	int32 CurrentComputeSamplerStateCount = 0;
 };

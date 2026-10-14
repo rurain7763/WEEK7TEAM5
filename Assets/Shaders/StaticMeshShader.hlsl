@@ -44,7 +44,11 @@ cbuffer GlobalLightConstants : register(b2)
     float ambient_intensity;
     float4 dl_color;
     float dl_intensity;
-    float3 global_light_constants_padding;
+    int light_culling_thread_x;
+    int light_culling_thread_y;
+    int light_culling_tile_x;
+    int light_culling_tile_max_light_count;
+    int3 global_light_constants_padding;
 }
 
 struct VS_INPUT
@@ -88,6 +92,7 @@ Texture2D base_color_texture : register(t0);
 Texture2D specular_texture : register(t1);
 Texture2D normal_texture : register(t2);
 StructuredBuffer<LightInfo> lights : register(t3);
+StructuredBuffer<int> light_culling_indices : register(t4);
 
 SamplerState default_sampler : register(s0);
 
@@ -298,9 +303,20 @@ PS_OUTPUT mainPS(PS_INPUT input)
     total_diffuse += diffuse;
     total_specular += specular;
     
-    for (int i = 0; i < light_count; ++i)
+    int culling_index_x = input.position.x / (float) light_culling_thread_x;
+    int culling_index_y = input.position.y / (float) light_culling_thread_y;
+    int culling_light_tile_id = culling_index_y * light_culling_tile_x + culling_index_x;
+    int culling_light_start_index = culling_light_tile_id * light_culling_tile_max_light_count;
+    
+    for (int i = 0; i < light_culling_tile_max_light_count; ++i)
     {
-        LightInfo light = lights[i];        
+        int target_light_index = light_culling_indices[culling_light_start_index + i];
+        if (target_light_index == -1)
+        {
+            break;
+        }
+        
+        LightInfo light = lights[target_light_index];
 
         if (light.type == 1)
         {

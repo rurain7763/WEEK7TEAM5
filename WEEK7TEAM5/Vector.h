@@ -15,6 +15,7 @@ struct FVector2
 	};
 	
 	FVector2() : X(0), Y(0) {}
+	FVector2(float XY) : X(XY), Y(XY) {}
 	FVector2(float InX, float InY) : X(InX), Y(InY) {}
 
 	float LengthSquared() const { return X * X + Y * Y; }
