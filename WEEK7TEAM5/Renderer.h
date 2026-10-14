@@ -569,6 +569,7 @@ public:
 	TSharedPtr<FDepthStencil> CreateDepthStencil(uint32 Width, uint32 Height);
 
 	TSharedPtr<FShader> CreateShader(const FString& ShaderPath);
+	TSharedPtr<FShader> CreateShader(const FString& ShaderPath, ELightingModel LightingModel);
 	TSharedPtr<FShader> CreateShaderFromMemory(const FString& ShaderMemory);
 
 	//Rendering
@@ -623,7 +624,7 @@ public:
 	mutable uint64 DrawCallCount = 0;
 	uint64 GetDrawCallCount() const { return DrawCallCount; }
 	void ResetDrawCallCount() { DrawCallCount = 0; }
-
+	
 
 private:
 	void CreateDeviceAndSwapChain(HWND hWindow);

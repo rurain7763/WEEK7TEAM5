@@ -166,6 +166,7 @@ struct FMaterialPayload
 	FGuid NormalTexture;
 	float Shininess = 32.0f;
 	float Opacity = 1.0f;
+	ELightingModel LightingModel = ELightingModel::BlinnPhong;
 };
 
 class FMaterialFileIO
@@ -173,6 +174,7 @@ class FMaterialFileIO
 public:
 	static bool Load(FArchive& Ar, FMaterialPayload& OutPayload)
 	{
+		//Version 1
 		Ar << OutPayload.AmbientColor;
 		Ar << OutPayload.DiffuseColor;
 		Ar << OutPayload.SpecularColor;
@@ -181,6 +183,12 @@ public:
 		Ar << OutPayload.NormalTexture;
 		Ar << OutPayload.Shininess;
 		Ar << OutPayload.Opacity;
+
+		//Version 2 : LightingModel 추가
+		if (Ar.GetVersion() >= 2)
+		{
+			Ar << OutPayload.LightingModel;
+		}
 		
 		return true;
 	}
@@ -196,6 +204,7 @@ public:
 		Ar << InPayload.NormalTexture;
 		Ar << InPayload.Shininess;
 		Ar << InPayload.Opacity;
+		Ar << InPayload.LightingModel;
 		
 		return true;
 	}

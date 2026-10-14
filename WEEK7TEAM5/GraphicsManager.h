@@ -28,6 +28,17 @@ struct FBuffer
 	uint32 SourceNum;
 };
 
+// 나중에 블렌드 모드, 컬링 등을 추가
+struct FMaterialPipelineKey
+{
+	ELightingModel LightingModel = ELightingModel::BlinnPhong;
+
+	uint32 GetKey() const
+	{
+		return static_cast<uint32>(LightingModel);
+	}
+};
+
 class FGraphicsManager
 {
 public:
@@ -88,6 +99,11 @@ public:
 
 	//Default Normal Map 가져오기
 	TSharedPtr<FTexture2DAsset> GetDefaultNormalMap();
+
+	//셰이더 객체 반환
+	TSharedPtr<FShader> GetOrCreateShader(const FString& ShaderPath, ELightingModel LightingModel);
+
+	TSharedPtr<FRenderPipeline> GetMaterialPipeline(const FMaterialPipelineKey& Key);
 
 private:
 	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
@@ -157,6 +173,9 @@ private:
 		float Padding;
 	};
 
+	
+
+	
 	URenderer* mRenderer;
 	FMatrix mViewMatrix;
 	FMatrix mProjectionMatrix;
@@ -209,4 +228,10 @@ private:
 	bool bGpuTimerActive = false;
 
 	TSharedPtr<FTexture2DAsset> DefaultNormalMap = nullptr;
+
+	//셰이더 객체 캐시
+	TMap<FString, TSharedPtr<FShader>> ShaderCache;	
+
+	//파이프라인 캐시
+	TMap<uint32, TSharedPtr<FRenderPipeline>> mMaterialPipelines;
 };

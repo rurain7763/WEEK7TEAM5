@@ -16,6 +16,25 @@
 
 namespace RenderUtils
 {
+	struct FShaderConfiguration
+	{
+		ELightingModel LightingModel = ELightingModel::BlinnPhong;
+
+		// 필드가 늘면 비트로 묶음
+		uint32 GetKey() const { return static_cast<uint32>(LightingModel); }
+
+		// Out은 { 이름, 값 } ... { nullptr, nullptr } 형태로 채워진다
+		// { "LIGHTING_MODEL", "0" }  : 셰이더 맨 위에 "#define LIGHTING_MODEL 0"을 붙인 것과 같음
+		void BuildMacros(TArray<D3D_SHADER_MACRO>& Out) const
+		{
+			// 정적 문자열
+			static const char* LightingModelValues[] = { "0", "1", "2", "3"};
+			static_assert(std::size(LightingModelValues) == (size_t)ELightingModel::Count);
+			Out.Add({ "LIGHTING_MODEL", LightingModelValues[static_cast<int32>(LightingModel)] });
+			Out.Add({ nullptr, nullptr });
+		}
+	};
+
 	static Microsoft::WRL::ComPtr<IDXGIAdapter1> FindHighPerformanceAdapter()
 	{
 		Microsoft::WRL::ComPtr<IDXGIFactory1> Factory1;
@@ -74,14 +93,27 @@ namespace RenderUtils
 		}
 	}
 
-	static void CompileShaderFromMemory(ID3D11Device* Device, const FString& Memory, Microsoft::WRL::ComPtr<ID3D11VertexShader>& VertexShader, Microsoft::WRL::ComPtr<ID3D11PixelShader>& PixelShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& InputLayout, uint32& Stride)
+	
+	static void CompileShaderFromMemory(ID3D11Device* Device, const D3D_SHADER_MACRO* ShaderMacro, const FString& Memory, Microsoft::WRL::ComPtr<ID3D11VertexShader>& VertexShader, Microsoft::WRL::ComPtr<ID3D11PixelShader>& PixelShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& InputLayout, uint32& Stride)
 	{
 		ID3DBlob* VertexShaderCSO;
 		ID3DBlob* PixelShaderCSO;
 		HRESULT Result;
+				
+		UINT compileFlags = 0;
+
+#if defined(DEBUG) || defined(_DEBUG)
+		// 디버그 빌드(Debug)일 때만 실행되는 플래그 설정
+		compileFlags |= D3DCOMPILE_DEBUG;                  // 디버깅 정보 포함
+		compileFlags |= D3DCOMPILE_SKIP_OPTIMIZATION;       // 컴파일러 최적화 해제 (디버깅 라인 매칭용)
+#else
+		// 릴리즈 빌드(Release)일 때 실행되는 플래그 설정
+		//compileFlags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;     // 최대 최적화 레벨 적용
+#endif
 
 		ID3DBlob* VSErrorBlob;
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, &VSErrorBlob);
+		//Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainVS", "vs_5_0", 0, 0, &VertexShaderCSO, &VSErrorBlob);
+		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, ShaderMacro, nullptr, "mainVS", "vs_5_0", compileFlags, 0, &VertexShaderCSO, &VSErrorBlob);
 		if (SUCCEEDED(Result))
 		{
 			Device->CreateVertexShader(VertexShaderCSO->GetBufferPointer(), VertexShaderCSO->GetBufferSize(), nullptr, VertexShader.GetAddressOf());
@@ -93,7 +125,7 @@ namespace RenderUtils
 		}
 
 		ID3DBlob* PSErrorBlob;
-		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, nullptr, nullptr, "mainPS", "ps_5_0", 0, 0, &PixelShaderCSO, &PSErrorBlob);
+		Result = D3DCompile(Memory.c_str(), Memory.Len(), nullptr, ShaderMacro, nullptr, "mainPS", "ps_5_0", compileFlags, 0, &PixelShaderCSO, &PSErrorBlob);
 		if (SUCCEEDED(Result))
 		{
 			Device->CreatePixelShader(PixelShaderCSO->GetBufferPointer(), PixelShaderCSO->GetBufferSize(), nullptr, PixelShader.GetAddressOf());
@@ -128,7 +160,7 @@ namespace RenderUtils
 		}
 	}
 
-	static void CompileShader(ID3D11Device* Device, const FString& ShaderPath, Microsoft::WRL::ComPtr<ID3D11VertexShader>& VertexShader, Microsoft::WRL::ComPtr<ID3D11PixelShader>& PixelShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& InputLayout, uint32& Stride)
+	static void CompileShader(ID3D11Device* Device, const FString& ShaderPath, ELightingModel LightingModel, Microsoft::WRL::ComPtr<ID3D11VertexShader>& VertexShader, Microsoft::WRL::ComPtr<ID3D11PixelShader>& PixelShader, Microsoft::WRL::ComPtr<ID3D11InputLayout>& InputLayout, uint32& Stride)
 	{
 		std::ifstream FileStream(ShaderPath.ToString(), std::ios::in | std::ios::binary);
 		if (!FileStream)
@@ -140,7 +172,15 @@ namespace RenderUtils
 		Buffer << FileStream.rdbuf();
 
 		FString Memory(Buffer.str());
-		CompileShaderFromMemory(Device, Memory, VertexShader, PixelShader, InputLayout, Stride);
+
+		//Shading Lighting Model 매크로 설정
+		TArray<D3D_SHADER_MACRO> Macro;
+		FShaderConfiguration ShaderConfig;
+		ShaderConfig.LightingModel = LightingModel;
+		ShaderConfig.BuildMacros(Macro);
+
+
+		CompileShaderFromMemory(Device, Macro.Data(), Memory, VertexShader, PixelShader, InputLayout, Stride);
 	}
 
 	static ID3D11Buffer* CreateConstantBuffer(ID3D11Device* Device, UINT Size)

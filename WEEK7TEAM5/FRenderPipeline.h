@@ -33,6 +33,7 @@ public:
 	void SetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY Topology);
 
 	void SetShader(const FString& ShaderPath);
+	void SetShader(const FString& ShaderPath, ELightingModel LightingModel);
 	void SetShader(const TSharedPtr<FShader>& InShader);
 	
 	void SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV);
@@ -44,6 +45,9 @@ public:
 	inline uint16 GetPipelineID() const { return PipelineID; }
 	// SRV와 상수 내용은 제외하며, 파이프라인 바인딩 설정의 변경을 식별합니다.
 	inline uint32 GetBindingVersion() const { return BindingVersion; }
+
+	inline void SetLightingModel(ELightingModel pLightingModel) { LightingModel = pLightingModel; }
+	inline ELightingModel GetLightingModel() const { return LightingModel; }
 
 	void SetConstantBuffer(uint32 Index, ID3D11Buffer* Buffer)
 	{
@@ -116,4 +120,6 @@ private:
 	// 바인딩 상태 설정 시 증가합니다. 상수 버퍼 내용 갱신은 바인딩을 바꾸지 않습니다.
 	uint32 BindingVersion = 0;
 	inline static uint16 NextPipelineID = 1;
+
+	ELightingModel LightingModel = ELightingModel::BlinnPhong;
 };

@@ -11,7 +11,7 @@ bool FMaterialImporter::ImportDefault(const std::filesystem::path& InPath, const
 {
     try
     {
-	    OutHead.Version = 1;
+	    OutHead.Version = 2;
 	    OutHead.AssetType = EAssetType::Material;
 	    OutHead.AssetID = FGuid::NewGuid();
 
@@ -25,6 +25,7 @@ bool FMaterialImporter::ImportDefault(const std::filesystem::path& InPath, const
         Payload.SpecularTexture = FGuid();
         Payload.NormalTexture = FGuid();
         Payload.Opacity = 1.0f;
+		Payload.LightingModel = ELightingModel::BlinnPhong;
 
         FileWriter << OutHead;
 
@@ -75,7 +76,7 @@ bool FMaterialImporter::Import(const TArray<FMeshMaterial>& Materials, const std
 			MaterialOutputPath = OutParentPath / std::format("{}.uasset", Material.Name.CStr());
 			MaterialOutputPath = MakeUniquePath(MaterialOutputPath);
 
-			MaterialHeader.Version = 1;
+			MaterialHeader.Version = 2;
 			MaterialHeader.AssetType = EAssetType::Material;
 			MaterialHeader.AssetID = MaterialID;
 
@@ -91,6 +92,7 @@ bool FMaterialImporter::Import(const TArray<FMeshMaterial>& Materials, const std
 			Payload.SpecularTexture = GetOrImportTexture(Material.SpecularTexturePath, OutParentPath, TextureMap);
 			Payload.NormalTexture = GetOrImportTexture(Material.NormalTexturePath, OutParentPath, TextureMap);
 			Payload.Opacity = Material.Opacity;
+			Payload.LightingModel = ELightingModel::BlinnPhong;
 
 			FMaterialFileIO::Save(FileWriter, Payload);
 		}

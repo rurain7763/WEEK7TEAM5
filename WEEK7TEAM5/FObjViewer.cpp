@@ -314,7 +314,8 @@ bool FObjViewer::BuildRuntimeMaterials(const std::filesystem::path& ObjPath,
 				DiffuseTextureID,
 				FGuid(),
 				FGuid(),
-				Material.Opacity);
+				Material.Opacity,
+				ELightingModel::BlinnPhong);
 
 			FAssetManager::Get().RegisterAsset(MaterialAsset);
 		}

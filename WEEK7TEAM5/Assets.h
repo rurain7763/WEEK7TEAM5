@@ -267,7 +267,7 @@ private:
 class FMaterialAsset : public FAsset
 {
 public:
-	FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName, const FVector& InAmbientColor, const FVector& InDiffuseColor, const FVector& InSpecularColor, const FGuid& InDiffuseTexture, const FGuid& InSpecularTexture, const FGuid& InNormalTexture, const float InOpacity);
+	FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName, const FVector& InAmbientColor, const FVector& InDiffuseColor, const FVector& InSpecularColor, const FGuid& InDiffuseTexture, const FGuid& InSpecularTexture, const FGuid& InNormalTexture, const float InOpacity, ELightingModel InLightingModel, float InShininess);
 
 	const FVector& GetAmbientColor() const { return AmbientColor; }
 	const FVector& GetSpecularColor() const { return SpecularColor; }
@@ -295,6 +295,11 @@ public:
 	inline void SetPipeline(const TSharedPtr<FRenderPipeline>& InPipeline) { Pipeline = InPipeline; }
 	uint16 GetPipelineID() const;
 
+	void SetLightingModel(ELightingModel pLightingModel);	
+	inline ELightingModel GetLightingModel() const { return LightingModel; }
+
+	void RefreshPipeline();
+
 private:
 	inline static uint32 NextMaterialID = 1;
 
@@ -310,6 +315,8 @@ private:
 	float Opacity;
 	float Shininess;
 	uint32 MaterialID = 0;
+
+	ELightingModel LightingModel = ELightingModel::BlinnPhong;
 };
 
 class FMaterialAssetLoader : public FAssetLoader

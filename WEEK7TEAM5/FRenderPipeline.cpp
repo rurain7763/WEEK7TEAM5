@@ -148,7 +148,15 @@ void FRenderPipeline::SetShader(const FString& ShaderPath)
 	++BindingVersion;
 
 	Shader = MakeShared<FShader>();
-	RenderUtils::CompileShader(Device, ShaderPath, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
+	RenderUtils::CompileShader(Device, ShaderPath, ELightingModel::BlinnPhong, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
+}
+
+void FRenderPipeline::SetShader(const FString& ShaderPath, ELightingModel LightingModel)
+{
+	++BindingVersion;
+
+	Shader = MakeShared<FShader>();
+	RenderUtils::CompileShader(Device, ShaderPath, LightingModel, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
 }
 
 void FRenderPipeline::SetShader(const TSharedPtr<FShader>& InShader)
