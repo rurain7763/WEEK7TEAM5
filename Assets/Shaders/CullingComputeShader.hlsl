@@ -95,14 +95,12 @@ void ComputeCellBounds(inout FTile tile)
 
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
-{
-    uint2 tile_pixel_size = uint2(viewport_width / tile_size.x, viewport_height / tile_size.y);
-    
+{ 
     FTile tile;
     
     tile.position = id.xy;
-    tile.start_position = float2(id.x * tile_pixel_size.x, id.y * tile_pixel_size.y);
-    tile.end_position = float2(tile.start_position.x + tile_pixel_size.x, tile.start_position.y + tile_pixel_size.y);
+    tile.start_position = float2(floor(id.x * viewport_width / tile_size.x),floor(id.y * viewport_height / tile_size.y));
+    tile.end_position = float2(floor((id.x + 1) * viewport_width / tile_size.x),floor((id.y + 1) * viewport_height / tile_size.y));
     if (tile.position.x >= tile_size.x || tile.position.y >= tile_size.y)
         return;
     tile.tileindex = uint(tile.position.y * tile_size.x) + uint(tile.position.x);
@@ -112,7 +110,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
     {
         LightInfo light = lights[i];
         float3 Lightposition = mul(float4(light.position,1.0f),view).xyz;
-        if (light.type = 0)
+        if (light.type == 0)
         {
             TileInfomation[tile.tileindex].TileLightindex[count] = i;
             count++;
@@ -127,7 +125,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
                 count++;
             }          
         }
-        if (light.type = 2)
+        if (light.type == 2)
         {
             if ((tile.AABB.ViewAabbMin.x - light.range < Lightposition.x && tile.AABB.ViewAabbMax.x + light.range > Lightposition.x)
                 && (tile.AABB.ViewAabbMin.y - light.range < Lightposition.y && tile.AABB.ViewAabbMax.y + light.range > Lightposition.y)
@@ -137,7 +135,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
                 count++;
             }
         }
-        TileInfomation[tile.tileindex].TileLightnum = count;
     }
+    TileInfomation[tile.tileindex].TileLightnum = count;
 }
 
