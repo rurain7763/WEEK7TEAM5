@@ -1,0 +1,111 @@
+{
+  "NextUUID" : 84,
+  "PerspectiveCamera" : {
+    "FOV" : 60.000000,
+    "Far" : 2000.000000,
+    "Location" : [-5.056964, -4.088958, 5.810421],
+    "Near" : 0.100000,
+    "Rotation" : [-50.062782, 42.676830, -0.001091]
+  },
+  "Version" : 0,
+  "World" : {
+    "ClassName" : "UWorld",
+    "Properties" : {
+      "Guid" : {
+        "A" : -1309104602,
+        "B" : 1208912116,
+        "C" : -1560477552,
+        "D" : -1864151857
+      },
+      "Name" : "",
+      "UUID" : 40,
+      "mActors" : [{
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : -902630901,
+              "B" : 1309707331,
+              "C" : -2015660650,
+              "D" : 497490086
+            },
+            "Name" : "SphereActor",
+            "UUID" : 41,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "Properties" : {
+                  "Guid" : {
+                    "A" : -1080421243,
+                    "B" : 1320491944,
+                    "C" : -457376071,
+                    "D" : 446326941
+                  },
+                  "Name" : "StaticMeshComponent",
+                  "ObjMaterialAssets" : [{
+                      "A" : 0,
+                      "B" : 0,
+                      "C" : 0,
+                      "D" : 0
+                    }],
+                  "ObjStaticMeshAsset" : {
+                    "A" : -1317339135,
+                    "B" : 0,
+                    "C" : 0,
+                    "D" : 2
+                  },
+                  "UUID" : 42,
+                  "UVOffsets" : [[0.000000, 0.000000]],
+                  "mRelativeLocation" : [0.000000, 0.072404, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, -0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : -1080421243,
+              "B" : 1320491944,
+              "C" : -457376071,
+              "D" : 446326941
+            }
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : 386633451,
+              "B" : 1324054277,
+              "C" : 562476212,
+              "D" : -1117607800
+            },
+            "Name" : "PointLightActor",
+            "UUID" : 48,
+            "mComponents" : [{
+                "ClassName" : "UPointLightComponent",
+                "Properties" : {
+                  "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "Guid" : {
+                    "A" : 1568992475,
+                    "B" : 1206503938,
+                    "C" : 1586716597,
+                    "D" : -1378487881
+                  },
+                  "Intensity" : 1.000000,
+                  "Name" : "PointLightComponent",
+                  "Radius" : 5.000000,
+                  "RadiusFallOff" : 1.000000,
+                  "UUID" : 49,
+                  "mRelativeLocation" : [-2.919995, 0.000000, 2.137998],
+                  "mRelativeRotation" : [0.000000, 0.000000, -0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : 1568992475,
+              "B" : 1206503938,
+              "C" : 1586716597,
+              "D" : -1378487881
+            }
+          }
+        }],
+      "mHierarchyMap" : []
+    }
+  }
+}

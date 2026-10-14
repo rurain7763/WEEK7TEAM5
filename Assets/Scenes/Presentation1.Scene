@@ -1,0 +1,403 @@
+{
+  "NextUUID" : 39,
+  "PerspectiveCamera" : {
+    "FOV" : 60.000000,
+    "Far" : 2000.000000,
+    "Location" : [-5.650935, -11.865207, 12.986099],
+    "Near" : 0.100000,
+    "Rotation" : [-40.917751, 41.496502, -0.000923]
+  },
+  "Version" : 0,
+  "World" : {
+    "ClassName" : "UWorld",
+    "Properties" : {
+      "Guid" : {
+        "A" : 501600077,
+        "B" : 1097238538,
+        "C" : -909490783,
+        "D" : 479515310
+      },
+      "Name" : "",
+      "UUID" : 1,
+      "mActors" : [{
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : 1146539206,
+              "B" : 1136460126,
+              "C" : -806768765,
+              "D" : 922536333
+            },
+            "Name" : "SphereActor",
+            "UUID" : 2,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "Properties" : {
+                  "Guid" : {
+                    "A" : -67252766,
+                    "B" : 1239030356,
+                    "C" : 310316971,
+                    "D" : -1600497605
+                  },
+                  "Name" : "StaticMeshComponent",
+                  "ObjMaterialAssets" : [{
+                      "A" : -1817938881,
+                      "B" : 1245791989,
+                      "C" : 1843225529,
+                      "D" : -59545807
+                    }],
+                  "ObjStaticMeshAsset" : {
+                    "A" : -1317339135,
+                    "B" : 0,
+                    "C" : 0,
+                    "D" : 2
+                  },
+                  "UUID" : 3,
+                  "UVOffsets" : [[0.000000, 0.000000]],
+                  "mRelativeLocation" : [6.759469, -3.667354, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, -0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : -67252766,
+              "B" : 1239030356,
+              "C" : 310316971,
+              "D" : -1600497605
+            }
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : 1064177195,
+              "B" : 1319708008,
+              "C" : -784318027,
+              "D" : -1307282399
+            },
+            "Name" : "SphereActor",
+            "UUID" : 5,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "Properties" : {
+                  "Guid" : {
+                    "A" : 1620607837,
+                    "B" : 1133851708,
+                    "C" : -405765234,
+                    "D" : 1708397235
+                  },
+                  "Name" : "StaticMeshComponent",
+                  "ObjMaterialAssets" : [{
+                      "A" : 329485350,
+                      "B" : 1264319744,
+                      "C" : -808799852,
+                      "D" : 772624757
+                    }],
+                  "ObjStaticMeshAsset" : {
+                    "A" : -1317339135,
+                    "B" : 0,
+                    "C" : 0,
+                    "D" : 2
+                  },
+                  "UUID" : 6,
+                  "UVOffsets" : [[0.000000, 0.000000]],
+                  "mRelativeLocation" : [6.811667, 4.319066, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, -0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : 1620607837,
+              "B" : 1133851708,
+              "C" : -405765234,
+              "D" : 1708397235
+            }
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : -247643514,
+              "B" : 1098729693,
+              "C" : 1017002401,
+              "D" : 1804902639
+            },
+            "Name" : "DirectionalLightActor",
+            "UUID" : 15,
+            "mComponents" : [{
+                "ClassName" : "USceneComponent",
+                "Properties" : {
+                  "Guid" : {
+                    "A" : 1556760413,
+                    "B" : 1246537059,
+                    "C" : -769067371,
+                    "D" : 808425904
+                  },
+                  "Name" : "RootComponent",
+                  "UUID" : 16,
+                  "mRelativeLocation" : [0.000000, 0.000000, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, -0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000]
+                }
+              }, {
+                "ClassName" : "UDirectionalLightComponent",
+                "Properties" : {
+                  "Color" : [1.000000, 1.000000, 1.000000, 1.000000],
+                  "Guid" : {
+                    "A" : 2014433418,
+                    "B" : 1159494516,
+                    "C" : -1059913850,
+                    "D" : -1190866616
+                  },
+                  "Intensity" : 0.300000,
+                  "Name" : "DirectionalComponent",
+                  "UUID" : 18,
+                  "mRelativeLocation" : [0.053038, 0.000000, 5.330032],
+                  "mRelativeRotation" : [-25.257351, -7.910042, -7.121441],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : 1556760413,
+              "B" : 1246537059,
+              "C" : -769067371,
+              "D" : 808425904
+            }
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : -1905064582,
+              "B" : 1112781189,
+              "C" : -696520058,
+              "D" : 143183359
+            },
+            "Name" : "SphereActor",
+            "UUID" : 22,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "Properties" : {
+                  "Guid" : {
+                    "A" : -321179254,
+                    "B" : 1223375251,
+                    "C" : 795923339,
+                    "D" : 889977494
+                  },
+                  "Name" : "StaticMeshComponent",
+                  "ObjMaterialAssets" : [{
+                      "A" : 0,
+                      "B" : 0,
+                      "C" : 0,
+                      "D" : 0
+                    }],
+                  "ObjStaticMeshAsset" : {
+                    "A" : -1317339135,
+                    "B" : 0,
+                    "C" : 0,
+                    "D" : 2
+                  },
+                  "UUID" : 23,
+                  "UVOffsets" : [[0.000000, 0.000000]],
+                  "mRelativeLocation" : [6.742832, 0.358303, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, -0.000000],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : -321179254,
+              "B" : 1223375251,
+              "C" : 795923339,
+              "D" : 889977494
+            }
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : -786752501,
+              "B" : 1274260748,
+              "C" : 738273435,
+              "D" : -940952287
+            },
+            "Name" : "CubeActor",
+            "UUID" : 25,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "Properties" : {
+                  "Guid" : {
+                    "A" : 1210238297,
+                    "B" : 1177421614,
+                    "C" : -1380194678,
+                    "D" : -958579658
+                  },
+                  "Name" : "StaticMeshComponent",
+                  "ObjMaterialAssets" : [{
+                      "A" : 0,
+                      "B" : 0,
+                      "C" : 0,
+                      "D" : 0
+                    }],
+                  "ObjStaticMeshAsset" : {
+                    "A" : -1317339135,
+                    "B" : 0,
+                    "C" : 0,
+                    "D" : 1
+                  },
+                  "UUID" : 26,
+                  "UVOffsets" : [[0.000000, 0.000000]],
+                  "mRelativeLocation" : [11.548963, 0.000000, 4.801373],
+                  "mRelativeRotation" : [0.000000, 0.000000, -0.000000],
+                  "mRelativeScale3D" : [0.168115, 20.000000, 10.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : 1210238297,
+              "B" : 1177421614,
+              "C" : -1380194678,
+              "D" : -958579658
+            }
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : 1735191863,
+              "B" : 1140204641,
+              "C" : -1621898575,
+              "D" : 484388659
+            },
+            "Name" : "PointLightActor",
+            "UUID" : 28,
+            "mComponents" : [{
+                "ClassName" : "UPointLightComponent",
+                "Properties" : {
+                  "Color" : [1.000000, 0.000000, 0.000000, 1.000000],
+                  "Guid" : {
+                    "A" : -633051374,
+                    "B" : 1120210253,
+                    "C" : 2089897100,
+                    "D" : -690407385
+                  },
+                  "Intensity" : 10.000000,
+                  "Name" : "PointLightComponent",
+                  "Radius" : 2.700000,
+                  "RadiusFallOff" : 1.000000,
+                  "UUID" : 29,
+                  "mRelativeLocation" : [9.089032, -6.272027, 0.000000],
+                  "mRelativeRotation" : [0.000000, 0.000000, -0.000000],
+                  "mRelativeScale3D" : [0.646602, 1.000000, 1.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : -633051374,
+              "B" : 1120210253,
+              "C" : 2089897100,
+              "D" : -690407385
+            }
+          }
+        }, {
+          "ClassName" : "ASpotLight",
+          "Properties" : {
+            "Guid" : {
+              "A" : -1123058068,
+              "B" : 1333012811,
+              "C" : -259456065,
+              "D" : -608501805
+            },
+            "Name" : "SpotLightActor",
+            "UUID" : 33,
+            "mComponents" : [{
+                "ClassName" : "USpotLightComponent",
+                "Properties" : {
+                  "Color" : [0.068166, 0.428858, 0.461538, 1.000000],
+                  "Guid" : {
+                    "A" : -1329417196,
+                    "B" : 1265750820,
+                    "C" : 1417589892,
+                    "D" : 1919061529
+                  },
+                  "InnerConeAngle" : 0.523599,
+                  "Intensity" : 10.000000,
+                  "Name" : "SpotLightComponent",
+                  "OuterConeAngle" : 0.785398,
+                  "Radius" : 5.000000,
+                  "RadiusFallOff" : 1.000000,
+                  "UUID" : 32,
+                  "mRelativeLocation" : [5.682415, 7.461122, 2.791919],
+                  "mRelativeRotation" : [-34.667625, -81.433311, -4.897539],
+                  "mRelativeScale3D" : [1.000000, 1.000000, 1.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : -1329417196,
+              "B" : 1265750820,
+              "C" : 1417589892,
+              "D" : 1919061529
+            }
+          }
+        }, {
+          "ClassName" : "AActor",
+          "Properties" : {
+            "Guid" : {
+              "A" : 1245296591,
+              "B" : 1256271102,
+              "C" : 1633413256,
+              "D" : 2049961729
+            },
+            "Name" : "SphereActor",
+            "UUID" : 36,
+            "mComponents" : [{
+                "ClassName" : "UStaticMeshComponent",
+                "Properties" : {
+                  "Guid" : {
+                    "A" : -351068083,
+                    "B" : 1302276214,
+                    "C" : -2043675512,
+                    "D" : 1844508891
+                  },
+                  "Name" : "StaticMeshComponent",
+                  "ObjMaterialAssets" : [{
+                      "A" : 944836032,
+                      "B" : 1264464756,
+                      "C" : 894966970,
+                      "D" : -1094242787
+                    }],
+                  "ObjStaticMeshAsset" : {
+                    "A" : -283165510,
+                    "B" : 1103090210,
+                    "C" : 435875471,
+                    "D" : 1704829494
+                  },
+                  "UUID" : 37,
+                  "UVOffsets" : [[0.000000, 0.000000]],
+                  "mRelativeLocation" : [6.980717, -8.240752, 0.000000],
+                  "mRelativeRotation" : [0.000000, -18.410652, -0.000000],
+                  "mRelativeScale3D" : [5.000000, 5.000000, 5.000000]
+                }
+              }],
+            "mRootComponent" : {
+              "A" : -351068083,
+              "B" : 1302276214,
+              "C" : -2043675512,
+              "D" : 1844508891
+            }
+          }
+        }],
+      "mHierarchyMap" : [{
+          "Key" : {
+            "A" : 2014433418,
+            "B" : 1159494516,
+            "C" : -1059913850,
+            "D" : -1190866616
+          },
+          "Value" : {
+            "A" : 1556760413,
+            "B" : 1246537059,
+            "C" : -769067371,
+            "D" : 808425904
+          }
+        }]
+    }
+  }
+}
