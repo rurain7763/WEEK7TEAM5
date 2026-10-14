@@ -488,66 +488,6 @@ TSharedPtr<FTexture2DAsset> FGraphicsManager::GetDefaultNormalMap()
 	return DefaultNormalMap;
 }
 
-TSharedPtr<FShader> FGraphicsManager::GetOrCreateShader(const FString& ShaderPath, ELightingModel LightingModel)
-{
-	// 키: 경로 + 변형.예) "Assets/Shaders/US_StaticMesh.hlsl|3"
-	FString Key = ShaderPath;
-	Key = Key.c_str() + std::string("|") + std::to_string(static_cast<int32>(LightingModel));
-
-	//있으면 반환
-	if (TSharedPtr<FShader>* Found = ShaderCache.Find(Key))
-	{
-		return *Found;
-	}
-
-	TSharedPtr<FShader> Shader = mRenderer->CreateShader(ShaderPath, LightingModel);
-
-	if (!Shader || !Shader->VertexShader || !Shader->PixelShader)
-	{
-		UE_LOG_ERROR("Shader compile failed: %s", Key.c_str());
-		return nullptr;
-	}
-
-	ShaderCache.Add(Key, Shader);
-	return Shader;
-}
-
-TSharedPtr<FRenderPipeline> FGraphicsManager::GetMaterialPipeline(const FMaterialPipelineKey& Key)
-{
-	//아직 메시용으로만 작업되었다.
-	//다른 파이프라인도 생성할 수 있도록 만들어야한다.
-
-	const uint32 CacheKey = Key.GetKey();
-
-	//있으면 반환
-	if (TSharedPtr<FRenderPipeline>* Found = mMaterialPipelines.Find(CacheKey))
-	{
-		return *Found;
-	}
-
-	//나중에 조명 모델 분만 아니라 블렌드 모드 등이 처리되는 다른 우버 셰이더가 생긴다면 이쪽 경로를 하드코딩 하지 않도록 해야한다.
-	TSharedPtr<FShader> Shader = GetOrCreateShader("Assets/Shaders/US_StaticMesh.hlsl", Key.LightingModel);
-	if (!Shader)
-	{
-		//머티리얼이 들게 될 파이프라인이 nullptr이므로 기본 파이프라인인 mmeshpipeline을 쓰게된다.
-		assert(false);
-		return nullptr;
-	}
-
-
-	// 아래 설정은 기존 mMeshPipeline 설정과 같아야 한다
-	// 나중에 Blend Mode 등도 설정으로 받아와서 알맞게 채워야한다.
-	TSharedPtr<FRenderPipeline> Pipeline = mRenderer->CreateRenderPipeline();
-	Pipeline->SetRasterRizerState(D3D11_CULL_BACK, 0, { EViewModeIndex::VMI_Lit, EViewModeIndex::VMI_Wireframe });
-	Pipeline->SetDepthStencilState(true, true);
-	Pipeline->SetShader(Shader);                                     
-	Pipeline->AddConstantBuffer<FMeshContants>();                    
-	Pipeline->AddConstantBuffer<FViewConstants>();                   
-	Pipeline->SetConstantBuffer(2, mGlobalLightInfoBuffer->Buffer.Get());   
-
-	mMaterialPipelines.Add(CacheKey, Pipeline);
-	return Pipeline;
-}
 
 void FGraphicsManager::RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives)
 {

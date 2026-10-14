@@ -151,6 +151,12 @@ void FRenderPipeline::SetShader(const FString& ShaderPath, const D3D_SHADER_MACR
 	RenderUtils::CompileShader(Device, ShaderPath, Macros, Shader->VertexShader, Shader->PixelShader, Shader->InputLayout, Shader->Stride);
 }
 
+void FRenderPipeline::SetShader(const TSharedPtr<FShader>& InShader)
+{
+	++BindingVersion;
+
+	Shader = InShader;
+}
 
 void FRenderPipeline::SetShaderResource(uint32 Slot, Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> SRV)
 {

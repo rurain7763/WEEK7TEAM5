@@ -16,25 +16,6 @@
 
 namespace RenderUtils
 {
-	struct FShaderConfiguration
-	{
-		ELightingModel LightingModel = ELightingModel::BlinnPhong;
-
-		// 필드가 늘면 비트로 묶음
-		uint32 GetKey() const { return static_cast<uint32>(LightingModel); }
-
-		// Out은 { 이름, 값 } ... { nullptr, nullptr } 형태로 채워진다
-		// { "LIGHTING_MODEL", "0" }  : 셰이더 맨 위에 "#define LIGHTING_MODEL 0"을 붙인 것과 같음
-		void BuildMacros(TArray<D3D_SHADER_MACRO>& Out) const
-		{
-			// 정적 문자열
-			static const char* LightingModelValues[] = { "0", "1", "2", "3"};
-			static_assert(std::size(LightingModelValues) == (size_t)ELightingModel::Count);
-			Out.Add({ "LIGHTING_MODEL", LightingModelValues[static_cast<int32>(LightingModel)] });
-			Out.Add({ nullptr, nullptr });
-		}
-	};
-
 	static Microsoft::WRL::ComPtr<IDXGIAdapter1> FindHighPerformanceAdapter()
 	{
 		Microsoft::WRL::ComPtr<IDXGIFactory1> Factory1;

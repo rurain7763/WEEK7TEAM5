@@ -102,11 +102,6 @@ public:
 	//Default Normal Map 가져오기
 	TSharedPtr<FTexture2DAsset> GetDefaultNormalMap();
 
-	//셰이더 객체 반환
-	TSharedPtr<FShader> GetOrCreateShader(const FString& ShaderPath, ELightingModel LightingModel);
-
-	TSharedPtr<FRenderPipeline> GetMaterialPipeline(const FMaterialPipelineKey& Key);
-
 private:
 	void RenderHighLight(const TArray<UPrimitiveComponent*>& Primitives);
 
@@ -175,8 +170,6 @@ private:
 	};
 
 	
-
-	
 	URenderer* mRenderer;
 	FMatrix mViewMatrix;
 	FMatrix mProjectionMatrix;
@@ -229,10 +222,4 @@ private:
 	bool bGpuTimerActive = false;
 
 	TSharedPtr<FTexture2DAsset> DefaultNormalMap = nullptr;
-
-	//셰이더 객체 캐시
-	TMap<FString, TSharedPtr<FShader>> ShaderCache;	
-
-	//파이프라인 캐시
-	TMap<uint32, TSharedPtr<FRenderPipeline>> mMaterialPipelines;
 };

@@ -379,21 +379,18 @@ const FVector4& FSpriteAtlasAsset::GetFrameSubUV(int32 FrameIndex) const
 	return FrameSubUVs[static_cast<uint32>(FrameIndex)];
 }
 
-FMaterialAsset::FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName, const FVector& InAmbientColor, const FVector& InDiffuseColor, const FVector& InSpecularColor, const FGuid& InDiffuseTexture, const FGuid& InSpecularTexture, const FGuid& InNormalTexture, const float InOpacity, ELightingModel InLightingModel, float InShininess)
+FMaterialAsset::FMaterialAsset(const FGuid& InAssetID, const FName& InAssetName, const FVector& InAmbientColor, const FVector& InDiffuseColor, const FVector& InSpecularColor, const FGuid& InDiffuseTexture, const FGuid& InSpecularTexture, const FGuid& InNormalTexture, const float InOpacity, float InShininess)
 	: FAsset(InAssetID, InAssetName, EAssetType::Material)
 	, AmbientColor(InAmbientColor)
 	, DiffuseColor(InDiffuseColor)
 	, SpecularColor(InSpecularColor)
 	, Opacity(InOpacity)
 	, MaterialID(NextMaterialID++)
-	, LightingModel(InLightingModel)
 	, Shininess(InShininess)
 {
 	DiffuseTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InDiffuseTexture, true);
 	SpecularTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InSpecularTexture, true);
 	NormalTextureAsset = FAssetManager::Get().GetAssetAs<FTexture2DAsset>(InNormalTexture, true);
-
-	RefreshPipeline();
 }
 
 void FMaterialAsset::SetDiffuseTexture(const FGuid& InDiffuseTextureAsset)
@@ -416,28 +413,6 @@ uint16 FMaterialAsset::GetPipelineID() const
 	return Pipeline ? Pipeline->GetPipelineID() : 1;
 }
 
-void FMaterialAsset::SetLightingModel(ELightingModel pLightingModel)
-{
-	if (LightingModel == pLightingModel) return;
-	LightingModel = pLightingModel;
-
-	//라이팅 모델이 바끼면 파이프라인 교체
-	RefreshPipeline();
-}
-
-void FMaterialAsset::RefreshPipeline()
-{
-	if (GEngine == nullptr)
-	{
-		Pipeline = nullptr;
-		return;
-	}
-
-	FMaterialPipelineKey Key;
-	Key.LightingModel = LightingModel;
-	Pipeline = GEngine->GetGraphicsManager().GetMaterialPipeline(Key);
-}
-
 TSharedPtr<FAsset> FMaterialAssetLoader::LoadAsset(const FGuid& AssetID, const FName& AssetName, FArchive& Ar)
 {
 	
@@ -453,7 +428,6 @@ TSharedPtr<FAsset> FMaterialAssetLoader::LoadAsset(const FGuid& AssetID, const F
 									  Payload.SpecularTexture,
 									  Payload.NormalTexture,
 									  Payload.Opacity,
-									  Payload.LightingModel,
 									  Payload.Shininess
 									  );
 }

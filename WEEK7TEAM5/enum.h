@@ -36,9 +36,6 @@ enum class EViewModeIndex
 	VMI_Wireframe,
 	VMI_SceneDepth,
 	VMI_WorldNormal,
-	VMI_Gouraud,
-	VMI_Lambert,
-	VMI_Phong,
 
 	// 실제 뷰 모드가 아니다. 뷰 모드별 배열 크기를 잡는 데 쓴다.
 	// 모드를 추가하면 이 앞에 넣을 것.
@@ -109,15 +106,6 @@ enum ETextureMap : uint32
 	TM_BaseColor = 1 << 0,
 	TM_Specular = 1 << 1,
 	TM_Normal = 1 << 2,
-};
-
-enum class ELightingModel : uint8
-{
-	Unlit = 0,
-	Gouraud = 1,
-	Lambert = 2,
-	BlinnPhong = 3,
-	Count,
 };
 
 inline void EnumSetFlags(uint32& Flags, int32 FlagToSet, bool bEnable)

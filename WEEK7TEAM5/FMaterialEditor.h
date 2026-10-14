@@ -30,7 +30,6 @@ public:
 		NewPayload.NormalTexture = MaterialAsset->HasNormalTexture() ? MaterialAsset->GetNormalTexture()->GetAssetID() : FGuid();
 		NewPayload.Opacity = MaterialAsset->GetOpacity();
 		NewPayload.Shininess = MaterialAsset->GetShininess();
-		NewPayload.LightingModel = MaterialAsset->GetLightingModel();
 
 		bIsOpen = true;
 	}
@@ -45,15 +44,6 @@ public:
 		bIsDirty |= FEditorUtils::DrawAssetCombo("Specular Texture", EAssetType::Texture2D, NewPayload.SpecularTexture);
 		bIsDirty |= FEditorUtils::DrawAssetCombo("Normal Texture", EAssetType::Texture2D, NewPayload.NormalTexture);
 		bIsDirty |= ImGui::InputFloat("Shininess", &NewPayload.Shininess);
-
-		const char* LightingModelNames[] = { "Unlit", "Gouraud", "Lambert", "BlinnPhong" };
-		int32 CurrentTypeIndex = static_cast<int32>(NewPayload.LightingModel);
-
-		if (ImGui::Combo("Lighting Model", &CurrentTypeIndex, LightingModelNames, IM_ARRAYSIZE(LightingModelNames)))
-		{
-			NewPayload.LightingModel = static_cast<ELightingModel>(CurrentTypeIndex);
-			bIsDirty |= true;
-		}
 
 
 		if (bIsDirty && ImGui::Button("Save"))
@@ -75,12 +65,11 @@ public:
 		MaterialAsset->SetSpecularTexture(NewPayload.SpecularTexture);
 		MaterialAsset->SetNormalTexture(NewPayload.NormalTexture);
 		MaterialAsset->SetShininess(NewPayload.Shininess);
-		MaterialAsset->SetLightingModel(NewPayload.LightingModel);
 		
 		FWindowsBinWriter Writer(AssetFilePath);
 
 		FAssetFileHeader Header;
-		Header.Version = 2;
+		Header.Version = 1;
 		Header.AssetID = MaterialAsset->GetAssetID();
 		Header.AssetType = EAssetType::Material;
 
