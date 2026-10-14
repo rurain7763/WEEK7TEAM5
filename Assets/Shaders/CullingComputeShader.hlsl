@@ -25,7 +25,7 @@ struct FTile
     float2 pixel_position;
     float2 start_position;
     float2 end_position;
-    float2 tileindex;
+    float tileindex;
     FCellBounds AABB;
 };
 
@@ -37,25 +37,40 @@ cbuffer CullingConstants : register(b0)
     float tile_amount;
     row_major matrix view;
     row_major matrix inv_projection;
-    float camera_near;
-    float camera_far;
     int light_count;
 }
 
 RWStructuredBuffer<float> TileLightnum : register(u0);
 RWStructuredBuffer<float> TileLightindex : register(u1);
+StructuredBuffer<LightInfo> lights : register(t0);
+
+float3 PixeltoView(float2 pixelposition,bool isDepthNear)
+{
+    float ndcX = 2 * pixelposition.x / viewport_width - 1;
+    float ndcY = 1 - 2 * pixelposition.y / viewport_height;
+    float depth;
+    if (isDepthNear)
+    {
+        depth = 0;
+    }
+    else depth = 1;
+    float4 projectedPoint = float4(ndcX, ndcY, depth, 1.0);
+    float4 viewPointH = mul(projectedPoint, inv_projection);
+    float3 viewPoint = viewPointH.xyz / viewPointH.w;
+    return viewPoint;
+}
 
 void ComputeCellBounds(FTile tile)
 {
-    float3 tilefront1 = mul(float3(tile.start_position, camera_near), (float3x3)inv_projection);
-    float3 tilefront2 = mul(float3(tile.end_position.x, tile.start_position.y, camera_near), (float3x3) inv_projection);
-    float3 tilefront3 = mul(float3(tile.end_position, camera_near), (float3x3) inv_projection);
-    float3 tilefront4 = mul(float3(tile.start_position.x, tile.end_position.y, camera_near), (float3x3) inv_projection);
-    float3 tileback1 = mul(float3(tile.start_position, camera_far), (float3x3) inv_projection);
-    float3 tileback2 = mul(float3(tile.end_position.x, tile.start_position.y, camera_far), (float3x3) inv_projection);
-    float3 tileback3 = mul(float3(tile.end_position, camera_far), (float3x3) inv_projection));
-    float3 tileback4 = mul(float3(tile.start_position.x, tile.end_position.y, camera_far), (float3x3) inv_projection);
-    
+    float3 tilefront1 = PixeltoView(tile.start_position, true);
+    float3 tilefront2 = PixeltoView(float2(tile.end_position.x, tile.start_position.y), true);
+    float3 tilefront3 = PixeltoView(tile.end_position, true);
+    float3 tilefront4 = PixeltoView(float2(tile.start_position.x, tile.end_position.y), true);
+    float3 tileback1 = PixeltoView(tile.start_position, false);
+    float3 tileback2 = PixeltoView(float2(tile.end_position.x, tile.start_position.y), false);
+    float3 tileback3 = PixeltoView(tile.end_position, false);
+    float3 tileback4 = PixeltoView(float2(tile.start_position.x, tile.end_position.y), false);
+
     float3 currentMin = tilefront1;
     float3 currentMax = tilefront1;
     
@@ -68,22 +83,28 @@ void ComputeCellBounds(FTile tile)
 
     tile.AABB.ViewAabbMin = currentMin;
     tile.AABB.ViewAabbMax = currentMax;
-    tile.AABB.ViewCenter = currentMin + currentMax / 2;
-    tile.AABB.ViewExtent = currentMax + currentMin / 2;
+    tile.AABB.ViewCenter = (currentMin + currentMax) / 2;
+    tile.AABB.ViewExtent = (currentMax - currentMin) / 2;
 }
 
 [numthreads(8, 8, 1)]
 void CSMain(uint3 id : SV_DispatchThreadID)
 {
+    uint2 tile_pixel_size = uint2(viewport_width / tile_size.x, viewport_height / tile_size.y);
+    
     FTile tile;
+    
     tile.position = id.xy;
-    uint2 tile_pixel_size = (viewport_width / tile_size.x, viewport_height / tile_size.y);
     tile.start_position = float2(id.x * tile_pixel_size.x, id.y * tile_pixel_size.y);
     tile.end_position = float2(tile.start_position.x + tile_pixel_size.x, tile.start_position.y + tile_pixel_size.y);
     if (tile.position.x >= tile_size.x || tile.position.y >= tile_size.y) return;
-    tile.tileindex = tile.position.y * tile_size.x + tile.position.x;
-    
-    tile.AABB = ComputeCellBounds(tile);
+    tile.tileindex = tile.position.y * tile_size.x + tile.position.x; 
+    ComputeCellBounds(tile);
 
+    for (int i = 0; i < light_count; ++i)
+    {
+        LightInfo light = lights[i];
+    }
+    
 }
 
