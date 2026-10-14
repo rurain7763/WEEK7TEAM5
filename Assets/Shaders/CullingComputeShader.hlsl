@@ -60,7 +60,7 @@ float3 PixeltoView(float2 pixelposition,bool isDepthNear)
     return viewPoint;
 }
 
-void ComputeCellBounds(FTile tile)
+void ComputeCellBounds(inout FTile tile)
 {
     float3 tilefront1 = PixeltoView(tile.start_position, true);
     float3 tilefront2 = PixeltoView(float2(tile.end_position.x, tile.start_position.y), true);
